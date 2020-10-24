@@ -4,6 +4,8 @@
 DOT_FILE_NAME="depends.dot"
 TMP_DIR=~/.vinland-compliance-utils/plot-package
 
+FORMATS=png
+
 usage()
 {
     echo "usage text coming soon"
@@ -14,6 +16,10 @@ do
     case "$1" in
         "--depends-file" | "-df")
             DOT_FILE_NAME="$2"
+            shift
+            ;;
+        "-pdf")
+            FORMATS=" $FORMATS pdf "
             shift
             ;;
         "--tmp-dir" | "-td")
@@ -54,13 +60,16 @@ create_dot()
     tail -1 "$DOT_FILE"
 }
 
-create_pdf()
+create_format()
 {
-    dot -Tpdf -O "$PKG_DOT_FILE"
+    dot -T$1 -O "$PKG_DOT_FILE" &&  echo "Created $PKG_DOT_FILE.$1"
+
 }
 
 create_dot > $PKG_DOT_FILE
 
-create_pdf
-echo "Created $PKG_DOT_FILE.pdf"
+for format in $FORMATS
+do
+    create_format $format
+done
 
