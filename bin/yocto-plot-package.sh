@@ -78,7 +78,7 @@ usage()
     echo "    0    if OK"
     echo "    1    no dependency file could be found"
     echo "    2    no package specified"
-    echo "    3   something else, see error message"
+    echo "    3    something else, see error message"
     echo
 }
 
