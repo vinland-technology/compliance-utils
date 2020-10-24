@@ -3,10 +3,38 @@
 # default
 DOT_FILE_NAME="depends.dot"
 TMP_DIR=~/.vinland-compliance-utils/plot-package
+RECURSIVE=false
 
 FORMATS=png
 export LIBC=false
 PACKAGE_NAME=false
+
+err()
+{
+    echo "$*" 1>&2
+}
+
+debug()
+{
+    if [ "$DEBUG" = "true" ]
+    then
+        echo "$*" 1>&2
+    fi
+}
+
+exit_if_error()
+{
+    if [ $1 -ne 0 ]
+    then
+        if [ "$2" != "" ]
+        then
+            err $2
+        fi
+        exit 3
+    fi
+}
+
+
 
 usage()
 {
@@ -38,6 +66,9 @@ usage()
     echo
     echo "    -pn, --package-name"
     echo "        Use package names instead of libraries"
+    echo
+    echo "    -r, --recursive"
+    echo "        Prints dependencies recursively. Automatically turns on package names (-pn)"
     echo
     echo "    -h, --help"
     echo "        Prints this help text"
@@ -79,6 +110,10 @@ do
         "--package-name" | "-pn")
             PACKAGE_NAME=true
             ;;
+        "--recursive" | "-r")
+            RECURSIVE=true
+            PACKAGE_NAME=true
+            ;;
         *)
             # assume package
             PKG="$1"
@@ -102,9 +137,16 @@ then
     exit 1
 fi
 
+if [ "$RECURSIVE" = "true" ] && [ "$PACKAGE_NAME" != "true" ]
+then
+    err "When using recursive mode you must use package names (-pn)"
+fi
+    
+
 
 create_dot_helper()
 {
+    local PKG="$1"
     if [ "$PACKAGE_NAME" = "true" ]
     then
         grep "^\"$PKG\"" "$DOT_FILE" | grep -v "\.so" | grep -v "\-lic\"" | sed 's,\[label=\"[a-zA-Z0-9+\>\=. ]*\"\],,g' | sed 's,\[style=dotted\],,g' | sort -u 
@@ -113,18 +155,45 @@ create_dot_helper()
     fi
 }
 
+create_dot_package()
+{
+    local PKG="$1"
+    if [ "$RECURSIVE" = "true" ]
+    then
+        if [ "$LIBC" = "false" ]
+        then
+            PKGS=$(create_dot_helper $PKG | grep -v -e GLIBC -e libpthread -e librt -e libc.so -e libdl -e libc6\" -e \"rtld -e \"/bin/sh\" | tr '\n' '#')
+        else
+            PKGS=$(create_dot_helper $PKG | tr '\n' '#')
+        fi
+   #     echo askhsakjdh : $PKGS
+        echo $PKGS |  tr '#' '\n' | grep -v "^[ ]*$" | while read DEP_LINE
+        do
+            echo "$DEP_LINE"
+            DEP=$(echo $DEP_LINE | cut -d ">" -f 2 | sed -e 's,^[ ]*\",,g' -e 's,\"[ ]*$,,g' )
+ #           echo "new dep: \"$DEP_LINE\" ===> \"$DEP\""
+  #          echo create_dot_package "$DEP"
+            create_dot_package "$DEP"
+        done
+    else
+        if [ "$LIBC" = "false" ]
+        then
+            create_dot_helper "$PKG" | grep -v -e GLIBC -e libpthread -e librt -e libc.so -e libdl -e libc6\" -e \"rtld -e \"/bin/sh\"
+        else
+            create_dot_helper "$PKG"
+        fi
+    fi
+
+}
+
 create_dot()
 {
     head -2 "$DOT_FILE"
     exit_if_error $?
 
-    if [ "$LIBC" = "false" ]
-    then
-        create_dot_helper | grep -v -e GLIBC -e libpthread -e librt -e libc.so -e libdl -e libc6\" -e \"rtld -e \"/bin/sh\"
-    else
-        create_dot_helper 
-    fi
+    create_dot_package "$1" | sort -u
     exit_if_error $?
+
     tail -1 "$DOT_FILE"
     exit_if_error $?
 }
@@ -135,7 +204,8 @@ create_format()
     exit_if_error $? "Failed creating $PKG_DOT_FILE.$1"
 }
 
-create_dot > $PKG_DOT_FILE
+create_dot "$PKG"  > $PKG_DOT_FILE
+
 
 for format in $FORMATS
 do
