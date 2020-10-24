@@ -5,26 +5,65 @@ DOT_FILE_NAME="depends.dot"
 TMP_DIR=~/.vinland-compliance-utils/plot-package
 
 FORMATS=png
+export LIBC=false
+PACKAGE_NAME=false
 
 usage()
 {
-    echo "usage text coming soon"
+    echo "NAME"
+    echo "    $(basename $0) - plot dependecy graph in png format"
+    echo 
+    echo "SYNOPSIS"
+    echo "    $(basename $0) [OPTIONS] package"
+    echo
+    echo "DESCRIPTION"
+    echo "    Plots (in misc formats) a graphical view of a package, as found in a depends.dot"
+    echo "    file as produced by Yocto"
+    echo
+    echo "OPTIONS"
+    echo
+    echo "    -df, --depends-file <FILE> "
+    echo "        Use FILE as dependecy file. Default: depends.dot"
+    echo 
+    echo "    -pdf"
+    echo "        Produce pdf graph"
+    echo 
+    echo "    -jpg"
+    echo "        Produce jpg graph"
+    echo "    -td, --tmp-dir <DIR>"
+    echo "        Use DIR as tmp dir. Default is ~/.vinland-compliance-utils/plot-package"
+    echo
+    echo "    -nl, --no-libc"
+    echo "        Exclude libc libraries"
+    echo
+    echo "    -pn, --package-name"
+    echo "        Use package names instead of libraries"
+    echo
+    echo "    -h, --help"
+    echo "        Prints this help text"
+    echo
+    echo "EXIT CODES"
+    echo
+    echo "    0    if OK"
+    echo "    1    no dependency file could be found"
+    echo "    2    no package specified"
+    echo "    3   something else, see error message"
+    echo
 }
 
 while [ "$1" != "" ]
 do
     case "$1" in
         "--depends-file" | "-df")
+#            echo "USING $2 as dep file"
             DOT_FILE_NAME="$2"
             shift
             ;;
         "-pdf")
             FORMATS=" $FORMATS pdf "
-            shift
             ;;
         "-jpg")
             FORMATS=" $FORMATS jpg "
-            shift
             ;;
         "--tmp-dir" | "-td")
             TMP_DIR="$2"
@@ -34,6 +73,12 @@ do
             usage
             exit 0
             ;;
+        "--libc" | "-l")
+            LIBC=true
+            ;;
+        "--package-name" | "-pn")
+            PACKAGE_NAME=true
+            ;;
         *)
             # assume package
             PKG="$1"
@@ -41,33 +86,53 @@ do
     shift
 done
 
-DOT_FILE="$(dirname $(realpath $0))/resources/$DOT_FILE_NAME"
+DOT_FILE="$DOT_FILE_NAME"
 PKG_DOT_FILE="$TMP_DIR/${PKG}.dot"
 mkdir -p $TMP_DIR
 
 if [ "$PKG" = "" ]
 then
-    echo "No package specified"
-    exit 1
+    err "No package specified"
+    exit 2
 fi
 
 if [ "$DOT_FILE_NAME" = "" ] | [ ! -f $DOT_FILE_NAME ] 
 then
-    echo "No depends.dot found (\"$DOT_FILE_NAME\")"
+    err "No dependency file (\"$DOT_FILE_NAME\") found"
     exit 1
 fi
+
+
+create_dot_helper()
+{
+    if [ "$PACKAGE_NAME" = "true" ]
+    then
+        grep "^\"$PKG\"" "$DOT_FILE" | grep -v "\.so" | grep -v "\-lic\"" | sed 's,\[label=\"[a-zA-Z0-9+\>\=. ]*\"\],,g' | sed 's,\[style=dotted\],,g' | sort -u 
+    else
+        grep "^\"$PKG\"" "$DOT_FILE" | grep "\.so" | sed 's,([0-9A-Za-z_]*),,g' | sed 's,\[style=dotted\],,g' | sort -u 
+    fi
+}
 
 create_dot()
 {
     head -2 "$DOT_FILE"
-    grep "$PKG" "$DOT_FILE"
+    exit_if_error $?
+
+    if [ "$LIBC" = "false" ]
+    then
+        create_dot_helper | grep -v -e GLIBC -e libpthread -e librt -e libc.so -e libdl -e libc6\" -e \"rtld -e \"/bin/sh\"
+    else
+        create_dot_helper 
+    fi
+    exit_if_error $?
     tail -1 "$DOT_FILE"
+    exit_if_error $?
 }
 
 create_format()
 {
     dot -T$1 -O "$PKG_DOT_FILE" &&  echo "Created $PKG_DOT_FILE.$1"
-
+    exit_if_error $? "Failed creating $PKG_DOT_FILE.$1"
 }
 
 create_dot > $PKG_DOT_FILE
