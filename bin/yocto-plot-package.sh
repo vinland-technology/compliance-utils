@@ -22,6 +22,10 @@ do
             FORMATS=" $FORMATS pdf "
             shift
             ;;
+        "-jpg")
+            FORMATS=" $FORMATS jpg "
+            shift
+            ;;
         "--tmp-dir" | "-td")
             TMP_DIR="$2"
             shift
