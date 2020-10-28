@@ -23,9 +23,14 @@ SPLIT_PKG=""
 #   corresponds to flict's component
 #
 #
+DEFAULT_DIR=core2-64-poky-linux
 if [ -z ${BUILD_DIR} ]
 then
-    BUILD_DIR=./tmp/work/core2-64-poky-linux
+    BUILD_DIR=./tmp/work/$DEFAULT_DIR
+fi
+if [ -z ${LICENSE_MANIFEST} ]
+then
+    LICENSE_MANIFEST=tmp/deploy/licenses/core-image-minimal-qemux86-64-20201024110850/license.manifest
 fi
 
 LIBC_EXCLUDE=" -e GLIBC -e libpthread -e librt -e libc.so -e libdl -e libc6 -e rtld -e \"/bin/sh\" -e libc\.so -e ld-linux -e libm\.so" 
@@ -203,7 +208,73 @@ find_package_dirs()
 {
     local PKG="$1"
     local DIR="$2"
-    find $DIR/* -type d -prune | grep -v "${PKG}-lic$"
+    find ${DIR}* -type d -prune | grep -v "${PKG}-lic$" 
+}
+
+find_artefact_license_bb()
+{
+    # BLOG
+    local PKG=$1
+    local ART_NAME=$2
+    local SPLIT_PKG_NAME=$2
+    # TODO: fix this path
+
+    export LOCAL_PKG=$PKG
+    ART_NAME_EXPR=$(echo $ART_NAME | sed -e "s,$LOCAL_PKG,,g")
+    BB=$(find ../meta* -name "${PKG}*.bb" | grep "${PKG}/")
+
+    export LICENSE=$(grep "LICENSE_\${PN}${ART_NAME_EXPR}" $BB | cut -d = -f 2 | sed 's,",,g')
+    export LICENSE_COUNT=$(grep "LICENSE_\${PN}${ART_NAME_EXPR}" $BB | cut -d = -f 2 | sed 's,",,g' | wc -l)
+}
+    
+
+#
+#
+# 
+find_artefact_license()
+{
+    local PKG="$1"
+    local DIR="$2"
+    local ART="$3"
+
+    ART_NAME=$(echo $ART | sed 's,packages-split/,\n,g' | tail -1 | cut -d "/" -f 1)
+    
+#    SPLIT_PKG_NAME=$(basename $DIR)
+
+#    debug "    find license for $BUILD_DIR"
+#    debug "    PKG:   $PKG"
+#    debug "    DIR:   $DIR"
+ #   debug "    ART:   $ART"
+#    debug "    SPLIT: $SPLIT_PKG_NAME"
+
+    if [ -z "$ART_NAME" ]
+    then
+        err "Failed to find license for $ART"
+        exit 100
+    fi
+    
+#    LICENSE=$(grep -A 3 "PACKAGE NAME: $ART_NAME[ ]*$"  $LICENSE_MANIFEST | grep LICENSE | cut -d : -f 2)
+    LICENSE=$(grep -A 3  "PACKAGE NAME: $ART_NAME[ ]*$"  $LICENSE_MANIFEST | grep LICENSE | cut -d : -f 2)
+    LICENSE_COUNT=$(grep -A 3  "PACKAGE NAME: $ART_NAME[ ]*$"  $LICENSE_MANIFEST | grep LICENSE | cut -d : -f 2 | wc -l)
+
+    
+    if [ -z "$LICENSE" ] || [ $LICENSE_COUNT -ne 1 ]
+    then
+        find_artefact_license_bb $PKG $ART_NAME $SPLIT_PKG_NAME
+        
+        if [ -z "$LICENSE" ] || [ $LICENSE_COUNT -ne 1 ]
+        then
+            err "Failed to find one (found $LICENSE_COUNT) license expression for $ART ($LICENSE)"
+            err " *      PKG:           $PKG"
+            err " *      ART:           $ART"
+            err " *      ART_NAME:      $ART_NAME"
+            err " *      LICENSE_COUNT: $LICENSE_COUNT"
+            err " *      LICENSE:       $LICENSE"
+            err " *      MANIFEST:      $LICENSE_MANIFEST"
+        fi
+    fi
+    
+    export LICENSE
 }
 
 print_package_split_dir()
@@ -241,6 +312,17 @@ print_artefact_deps()
     
 #    echo "check type of \"$ART\""
     TYPE=$(file -b $ART)
+
+  #  debug "license:"
+ #   debug " * $DIR"
+    #    debug " * $ART"
+    find_artefact_license $PKG $DIR $ART
+    if [ -z "$LICENSE" ]
+    then
+        DISCARDED_ARTEFACTS="$DISCARDED_ARTEFACTS $ART"
+        LICENSE="unknown"
+    fi
+    
  #   echo " - type $TYPE "
     if [[ "${TYPE}" =~ "POSIX shell script" ]]
     then
@@ -249,7 +331,7 @@ print_artefact_deps()
     then
         echo "$INDENT {"
         echo "$INDENT   \"name\": \"$(basename $ART)\","
-        echo "$INDENT   \"license\": \"unknown\","
+        echo "$INDENT   \"license\": \"$LICENSE\","
         echo -n "$INDENT   \"dependencies\": ["
 
         #
@@ -369,7 +451,7 @@ print_split_package()
     local PKG="$1"
     local DIR="$2"
 
-    err "  print_split_package($1,$2)"
+    debug "  print_split_package($1,$2)"
     
     PKG_DIR_SHORT=$(basename ${DIR})
     debug "Calculating dependencies for: ${PKG} / ${PKG_DIR_SHORT}: "
@@ -388,9 +470,9 @@ handle_package()
     # package is specified - let's find artefacts
     local PKG_DIR=$(find_package_dir "$PKG")
     debug "PKG_DIR:         $PKG_DIR"
-    
+
     local SPLIT_PKGS_DIRS=$(find_package_dirs "$PKG" "$PKG_DIR" | sort -r)
-#    debug "SPLIT_PKGS_DIRS: $SPLIT_PKGS_DIRS"
+    debug "SPLIT_PKGS_DIRS: $SPLIT_PKGS_DIRS"
 
     JSON_FILES=""
     if [ ! -z $SPLIT_PKG ]
@@ -398,7 +480,7 @@ handle_package()
         debug "SPLIT_PKG set to $SPLIT_PKG"
         # PKG and artefact, keep only $SPLIT_PKG        
         SPLIT_PKGS_DIRS=$(find_package_dirs "$PKG" "$PKG_DIR" | egrep "/${SPLIT_PKG}$" | sort -r)
-        debug "SPLIT_PKGS: $SPLIT_PKGS_DIRS"
+        debug "SPLIT_PKGS_DIR: $SPLIT_PKGS_DIRS"
     fi
 
 #    echo debug "PKG:      $PKG"
