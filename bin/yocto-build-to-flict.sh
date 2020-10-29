@@ -3,7 +3,7 @@
 # default
 OUT_DIR=~/.vinland-compliance-utils/artefacts
 LIBC=false
-DEBUG=true
+DEBUG=false
 PKG=""
 SPLIT_PKG=""
 
@@ -135,6 +135,14 @@ do
             SPLIT_PKG=$2
             shift
             ;;
+        "--artefect" | "-a")
+            ARTEFACT=$2
+            shift
+            ;;
+        "--list-artefacts" | "-la")
+            LIST_ARTEFACTS=true
+            shift
+            ;;
         "--help" | "-h")
             usage
             exit 0
@@ -148,24 +156,6 @@ done
 
 
 
-if [ "$PKG" = "" ]
-then
-    err "No package specified"
-    exit 2
-fi
-
-if [ "$BUILD_DIR" = "" ]
-then
-    err "No build dir specified"
-    exit 2
-fi
-
-if [ "$LIBC" = "true" ]
-then
-    LIB_EXCLUDE=$LIBC_EXCLUDE
-else
-    LIB_EXCLUDE=$NONSENSE_EXCLUDE    
-fi
 
 
 
@@ -199,6 +189,43 @@ find_package_dir()
 {
     local PKG="$1"
     find $BUILD_DIR/$PKG/*/packages-split/ -type d -prune
+}
+
+#
+# For a given artefact ($1) finds the coresponding package split name
+#
+find_artefact_split_package_name()
+{
+    local ART="$1"
+
+    
+    ART_LINK=$(find $BUILD_DIR/*/*/*/runtime-reverse -name "${ART}" -type l | grep runtime-reverse | head -1)
+
+    if [ "$ART_LINK" = "" ]
+    then
+        echo ""
+    else
+        echo $ART_LINK | xargs readlink | xargs basename
+    fi
+}
+
+#
+# For a given package split package name ($1) find the package
+#
+find_split_package_package_name()
+{
+    local SPLIT_PKG="$1"
+
+    find $BUILD_DIR/*/*/packages-split/ -name "${SPLIT_PKG}" -type d | grep "packages-split/${SPLIT_PKG}[ ]*$" | grep -v "/src/" | sed 's,packages-split,\n,g' | head -1 | sed 's,/[-0-9a-zA-Z\.+_]*/$,,g' | xargs basename
+}
+
+#
+# For a given package split package name ($1) find the path
+#
+find_split_package_name_path()
+{
+    local SPLIT_PKG="$1"
+    find $BUILD_DIR/*/*/packages-split/ -name "${SPLIT_PKG}" -type d | grep "packages-split/*${SPLIT_PKG}[ ]*$" | grep -v -e "/src/" | grep "${SPLIT_PKG}$"
 }
 
 #
@@ -503,21 +530,120 @@ handle_package()
     fi
 }
 
+handle_artefact()
+{
+    debug "handle_artefact $1"
+
+    SPLIT_PKG_NAME=$(find_artefact_split_package_name $1)
+    debug "SPLIT_PKG_NAME: $SPLIT_PKG_NAME"
+
+    SPLIT_PKG=$(find_split_package_name_path $SPLIT_PKG_NAME)
+    debug "SPLIT_PKG:      $SPLIT_PKG"
+
+    PKG=$(find_split_package_package_name $SPLIT_PKG_NAME)
+    debug "PKG:            $PKG"
+
+    print_split_package $PKG $SPLIT_PKG
+    
+
+}
+
+list_artefacts()
+{
+    debug "list_artefacts $1"
+
+    #TODO: remove hard coded path
+    IMG_MF=tmp/deploy/images/qemux86-64/core-image-minimal-qemux86-64.manifest
+
+    ARTEFACT_EXCLUDE_LIST="-e base-files -e hicolor-icon-theme -e iso-codes -e update-rc.d "
+    ARTEFACTS=$(grep -v "\-lic " $IMG_MF | awk '{ print $1 }' | grep -v $ARTEFACT_EXCLUDE_LIST | sort -u)
+
+    
+    for art in $ARTEFACTS
+    do
+        SPLIT_PKG_NAME=$(find_artefact_split_package_name $art)
+        debug "SPLIT_PKG_NAME: $SPLIT_PKG_NAME"
+
+        echo -n "$art: "
+        if [ "$SPLIT_PKG_NAME" = "" ]
+        then
+            UN_MANAGED_ARTEFACTS="$UN_MANAGED_ARTEFACTS $art"
+            echo " no package found"
+        else
+#            echo  "time: "
+ #           time find_split_package_name_path $SPLIT_PKG_NAME
+                        
+            SPLIT_PKG=$(find_split_package_name_path $SPLIT_PKG_NAME)
+            debug "SPLIT_PKG:      $SPLIT_PKG"
+            
+            PKG=$(find_split_package_package_name $SPLIT_PKG_NAME)
+            debug "PKG:            $PKG"
+            echo
+            echo " - package     $PKG"
+            echo " - split name  $SPLIT_PKG_NAME"
+            echo " - split path  $SPLIT_PKG"
+        fi
+        
+        
+    done
+    if [ "$UN_MANAGED_ARTEFACTS" != "" ]
+    then
+        echo "Unmanaged artefacts:"
+        echo " - $UN_MANAGED_ARTEFACTS"
+    fi
+}
+
+
+#
+# prepare
+#
+if [ "$BUILD_DIR" = "" ]
+then
+    err "No build dir specified"
+    exit 2
+fi
+
+if [ "$LIBC" = "true" ]
+then
+    LIB_EXCLUDE=$LIBC_EXCLUDE
+else
+    LIB_EXCLUDE=$NONSENSE_EXCLUDE    
+fi
 
 if [ ! -d ${OUT_DIR} ]
 then
     mkdir -p ${OUT_DIR}
 fi
 
+#
+# main
+#
 if [ ! -z ${PKG} ]
 then
     handle_package "${PKG}"
+elif [ "${LIST_ARTEFACTS}" = "true" ]
+then
+    list_artefacts
+elif [ ! -z ${ARTEFACT} ]
+then
+    handle_artefact $ARTEFACT
 else
-    :
-    echo "NOT IMPLEMENTED YET:....."
+    echo "SYNTAX ERROR"
+    exit 2
 fi
-echo "Created: $JSON_FILES"
-echo "Discard scripts: $DISCARDED_SCRIPTS"
+
+
+#
+# reporting
+#
+if [ "$JSON_FILES" != "" ]
+then
+    echo "Created: $JSON_FILES"
+fi
+if [ "$DISCARDED_SCRIPTS" != "" ]
+then
+    echo "Discard scripts: $DISCARDED_SCRIPTS"
+fi
 
 
 
