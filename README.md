@@ -9,5 +9,5 @@ either a program (name of with path) or a library (name or with path)
 If the supplied file does not have path we do our best trying to find
 it using which or (internal function) findllib.
 
-[```dependencies.sh``` ](bin/dependencies.md)
+[```dependencies.sh``` ](dependencies.md)
 
