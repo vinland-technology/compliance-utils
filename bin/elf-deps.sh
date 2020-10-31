@@ -13,11 +13,12 @@
 
 OUTPUT_DIR=~/.vinland/elf-deps
 FORMAT=txt
-EXCLUDE_LIBC_STUFF="-e libm.so -e libdl.so -e libc.so -e librt.so -e libpthread.so -e ld-linux -e libresolv -e libgcc_s"
+EXCLUDE_LIBC_STUFF="-e libm.so -e libdl.so -e libc.so -e librt.so -e libpthread.so -e ld-linux -e libresolv -e libgcc_s -e linux-vdso"
 
 PROG=$(basename $0)
 
 DEFAULT_LIB_DIRS="/lib /usr/lib64 /usr/lib"
+LIST_DEP_MODE=readelf
 
 err()
 {
@@ -31,11 +32,27 @@ inform()
 
 list_dep()
 {
-    readelf -d $1 | \
-        grep NEEDED | \
-        grep -v $EXCLUDE_LIBC_STUFF | \
-        cut -d ":" -f 2 | \
-        sed -e 's,\[,,g' -e 's,],,g' -e 's,[ ]*,,g';
+    case "$LIST_DEP_MODE" in
+        "readelf")
+            DEPS=$(readelf -d $1 | \
+                       grep NEEDED | \
+                       grep -v $EXCLUDE_LIBC_STUFF | \
+                       cut -d ":" -f 2 | \
+                       sed -e 's,\[,,g' -e 's,],,g' -e 's,[ ]*,,g')
+            ;;
+        "ldd")
+            DEPS=$(ldd $1 | \
+                       awk ' { print $1} '| \
+                       grep -v $EXCLUDE_LIBC_STUFF | \
+                       sed -e 's,[ ]*,,g')
+            ;;
+        *)
+            echo "Unknown dep tool"
+            exit 100
+            ;;
+    esac
+#    inform "DEPS: $DEPS ($LIST_DEP_MODE)"
+    echo $DEPS
 }
 
 findlib()
@@ -138,11 +155,20 @@ usage()
     echo "   -od, --outdir DIR"
     echo "        output logs to DIR. Default is ~/.vinland/elf-deps"
     echo
+    echo "   -av, --auto-view"
+    echo "        open (using xdg-open) the first formats produced"
+    echo
     echo "   -l, --log"
     echo "        store log in outpur dir, as well as print to stdout"
     echo
     echo "   -s, --silent"
     echo "        do not print to stdout"
+    echo
+    echo "   -e, --ELF"
+    echo "        use readelf to find dependencies. Default."
+    echo
+    echo "   --ldd"
+    echo "        use ldd to find dependencies. Default is readelf."
     echo
     echo "   --lib-dir DIR"
     echo "        adds DIR to directories to search for libraries. For every use of this option"
@@ -256,6 +282,15 @@ do
             OUTPUT_DIR=$2
             shift
             ;;
+        "--ldd")
+            LIST_DEP_MODE=ldd
+            ;;
+        "--auto-view"|"-av")
+            AUTO_VIEW=true
+            ;;
+        "--readelf")
+            LIST_DEP_MODE=readelf
+            ;;
         "--log"| "-l")
             LOG=true
             ;;
@@ -332,6 +367,11 @@ then
         dot -O -T$fmt ${DOT_FILE}
         inform "Created $fmt file: $OUT_FILE"
     done
+    if [ "$AUTO_VIEW" = "true" ]
+    then
+        FMT=$(echo $DOT_FORMATS | awk '{ print $1}')
+        xdg-open ${DOT_FILE}.$FMT
+    fi
 else
     if [ "$SILENT" = "true" ]
     then
