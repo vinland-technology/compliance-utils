@@ -68,7 +68,7 @@ list_deps()
                 list_deps "${lib}" "${INDENT}  "
                 ;;
             "dot")
-                echo "\"$LIB\" -> \"$LIB\""
+                echo "\"$(basename $LIB)\" -> \"$lib\""
                 list_deps "${lib}" "${INDENT}  "
                 ;;
             *)
@@ -126,6 +126,12 @@ usage()
     echo "   -s, --silent"
     echo "        do not print to stdout"
     echo
+    echo "   --pdf"
+    echo "        create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo
+    echo "   --png"
+    echo "        create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo
     echo "AUTHOR"
     echo"    Written by Henrik Sandklef"
     echo
@@ -182,13 +188,6 @@ find_dependencies()
     # Check if it's a program or library
     IS_PROGRAM=$(file $FILE | grep -c interpreter)
 
-    if [ "$FORMAT" = "dot" ]
-    then
-       echo "digraph depends {"
-       echo " node [shape=plaintext]"
-    fi
-
-    
     if [ $IS_PROGRAM -eq 0 ]
     then
         list_deps $FILE ""
@@ -196,12 +195,6 @@ find_dependencies()
         list_prog_deps $FILE ""
     fi
 
-    if [ "$FORMAT" = "dot" ]
-    then
-       echo "}"
-    fi
-
-    
 }
 
 
@@ -253,16 +246,21 @@ then
         find_dependencies $FILE | tee $LOG_FILE
         inform "Log file created: $LOG_FILE"
     fi
+    DOT_FILE=${OUTPUT_DIR}/$(basename $FILE).dot
+    printf "digraph depends {\n node [shape=plaintext]" > $DOT_FILE
+    cat $LOG_FILE | sort -u >> $DOT_FILE
+    printf "}" >> $DOT_FILE
+
     if [ "$PDF" = "true" ]
     then
-        PDF_FILE=${LOG_FILE}.pdf
-        dot -O -Tpdf ${LOG_FILE}
+        PDF_FILE=${DOT_FILE}.pdf
+        dot -O -Tpdf ${DOT_FILE}
         inform "Created pdf file: $PDF_FILE"
     fi
     if [ "$PNG" = "true" ]
     then
-        PNG_FILE=${LOG_FILE}.png
-        dot -O -Tpng ${LOG_FILE}
+        PNG_FILE=${DOT_FILE}.png
+        dot -O -Tpng ${DOT_FILE}
         inform "Created png file: $PNG_FILE"
     fi
 else
