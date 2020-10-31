@@ -132,9 +132,17 @@ list_prog_deps()
     else
         PROG=$(which $PROG)
     fi
+    
+    if [ "$LONG" = "true" ]
+    then
+        PROG_NAME=$PROG
+    else
+        PROG_NAME=$(basename $PROG)
+    fi
+
     if [ "$FORMAT" = "txt" ]
     then
-       echo "$INDENT$LIB"
+       echo "$INDENT$PROG_NAME"
     fi
 
     local lib
@@ -145,7 +153,7 @@ list_prog_deps()
                 list_deps "${lib}" "${INDENT}  "
                 ;;
             "dot")
-                echo "\"$PROG\" -> \"$lib\""
+                echo "\"$PROG_NAME\" -> \"$lib\""
                 list_deps "${lib}" "${INDENT}  "
                 ;;
             *)
@@ -158,90 +166,107 @@ list_prog_deps()
 
 usage()
 {
-    echo "NAME"
-    echo "   $PROG - list dependencies recursively"
+    if [ "$MD" = "true" ]
+    then
+        HEADER="# "
+        HEADER_OUT="\n"
+        HEADER2="## "
+        CODE_COMMENT=""
+        CODE_IN="\`\`\`"
+        CODE_OUT="\`\`\`\n\n"
+    else
+        HEADER=""
+        HEADER2="  "
+        CODE_IN="   "
+        CODE_OUT=""
+        CODE_COMMENT="        "
+    fi
+    echo -e "${HEADER}NAME${HEADER_OUT}"
+    echo -e "   $PROG - list dependencies recursively"
     echo
-    echo "SYNOPSIS"
-    echo "   $PROG [OPTIONS] FILE"
+    echo -e "${HEADER}SYNOPSIS"
+    echo -e "   ${CODE_IN}$PROG [OPTIONS] FILE${CODE_OUT}"
     echo
-    echo "DESCRIPTION"
-    echo "   List dependencies recursively foe the given file. The files can be"
-    echo "   either a program (name of with path) or a library (name or with path)"
-    echo "   If the supplied file does not have path we do our best trying to find it"
-    echo "   using which or (internal function) findllib."
-    echo 
-    echo "OPTIONS"
-    echo "   Library related options"
-    echo "   -e, --ELF"
-    echo "        use readelf to find dependencies. Default."
+    echo -e "${HEADER}DESCRIPTION"
+    echo -e "   List dependencies recursively foe the given file. The files can be"
+    echo -e "   either a program (name of with path) or a library (name or with path)"
+    echo -e "   If the supplied file does not have path we do our best trying to find it"
+    echo -e "   using which or (internal function) findllib."
+    echo -e
+    echo -e "${HEADER}OPTIONS"
+    echo -e "${HEADER2}Library related options"
+    echo -e "${CODE_IN}-e, --ELF${CODE_OUT}"
+    echo -e "use readelf to find dependencies. Default."
     echo
-    echo "   --ldd"
-    echo "        use ldd to find dependencies. Default is readelf."
+    echo -e "${CODE_IN}--ldd${CODE_OUT}"
+    echo -e "${CODE_COMMENT}use ldd to find dependencies. Default is readelf."
     echo
-    echo "   --objdump"
-    echo "        use objdump to find dependencies. Default is readelf."
+    echo -e "${CODE_IN}--objdump${CODE_OUT}"
+    echo -e "${CODE_COMMENT}use objdump to find dependencies. Default is readelf."
     echo
-    echo "   --lib-dir DIR"
-    echo "        adds DIR to directories to search for libraries. For every use of this option"
-    echo "        the directories are added. If no directory is specified the default directories"
-    echo "        are: $DEFAULT_LIB_DIRS"
+    echo -e "${CODE_IN}--lib-dir DIR${CODE_OUT}"
+    echo -e "${CODE_COMMENT}adds DIR to directories to search for libraries. For every use of this option"
+    echo -e "${CODE_COMMENT}the directories are added. If no directory is specified the default directories"
+    echo -e "${CODE_COMMENT}are: $DEFAULT_LIB_DIRS"
     echo
-    echo "   Format options"
-    echo "   --dot"
-    echo "        create dot like file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo -e "${HEADER2}Format options"
+    echo -e "${CODE_IN}--dot${CODE_OUT}"
+    echo -e "${CODE_COMMENT}create dot like file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
-    echo "   --pdf"
-    echo "        create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo -e "${CODE_IN}--pdf${CODE_OUT}"
+    echo -e "${CODE_COMMENT}create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
-    echo "   --png"
-    echo "        create png file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo -e "${CODE_IN}--png${CODE_OUT}"
+    echo -e "${CODE_COMMENT}create png file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
-    echo "   --svg"
-    echo "        create svg file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo -e "${CODE_IN}--svg${CODE_OUT}"
+    echo -e "${CODE_COMMENT}create svg file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
-    echo "   --png"
-    echo "        create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo -e "${CODE_IN}--png${CODE_OUT}"
+    echo -e "${CODE_COMMENT}create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
-    echo "  Output options"
-    echo "   -od, --outdir DIR"
-    echo "        output logs to DIR. Default is ~/.vinland/elf-deps"
+    echo -e "${HEADER2}Output options"
+    echo -e "${CODE_IN}--outdir, -od DIR${CODE_OUT}"
+    echo -e "${CODE_COMMENT}output logs to DIR. Default is ~/.vinland/elf-deps"
     echo
-    echo "   -av, --auto-view"
-    echo "        open (using xdg-open) the first formats produced"
+    echo -e "${CODE_IN}-av, --auto-view${CODE_OUT}"
+    echo -e "${CODE_COMMENT}open (using xdg-open) the first formats produced"
     echo
-    echo "   --long"
-    echo "        output directory name with path"
+    echo -e "${CODE_IN}--long${CODE_OUT}"
+    echo -e "${CODE_COMMENT}output directory name with path"
     echo
-    echo "   -l, --log"
-    echo "        store log in outpur dir, as well as print to stdout"
+    echo -e "${CODE_IN}-l, --log${CODE_OUT}"
+    echo -e "${CODE_COMMENT}store log in outpur dir, as well as print to stdout"
     echo
-    echo "   -s, --silent"
-    echo "        do not print to stdout"
+    echo -e "${CODE_IN}-s, --silent${CODE_OUT}"
+    echo -e "${CODE_COMMENT}do not print to stdout"
     echo
+    echo -e "${CODE_IN}-u, --uniq${CODE_OUT}"
+    echo -e "${CODE_COMMENT}print uniq dependencies. Sets txt more and disables everything else."
     echo
-    echo "EXAMPLES"
-    echo "   $PROG evince"
-    echo "        lists all dependencies for the program evince"
+    echo -e "${HEADER}EXAMPLES"
+    echo -e "${CODE_IN}$PROG evince${CODE_OUT}"
+    echo -e "${CODE_COMMENT}lists all dependencies for the program evince"
     echo
-    echo "   $PROG --pdf libcairo2.so"
-    echo "        lists all dependencies for the library libcairo2.so and creates report in pdf format"
+    echo -e "${CODE_IN}$PROG --pdf libcairo2.so${CODE_OUT}"
+    echo -e "${CODE_COMMENT}lists all dependencies for the library libcairo2.so and creates report in pdf format"
     echo
-    echo "EXIT CODES"
-    echo "    0 success"
-    echo "    1 could not find file"
-    echo "    2 file not in ELF format"
-    echo "    3 silent and no logging not vailed"
-    echo "    4 unknown or unsupported format  "
+    echo -e "${HEADER}EXIT CODES${HEADER_OUT}"
+    echo -e "${CODE_IN}0 - success${CODE_OUT}"
+    echo -e "${CODE_IN}1 - could not find file${CODE_OUT}"
+    echo -e "${CODE_IN}2 - file not in ELF format${CODE_OUT}"
+    echo -e "${CODE_IN}3 - silent and no logging not vailed${CODE_OUT}"
+    echo -e "${CODE_IN}4 - unknown or unsupported format${CODE_OUT}"
     echo
-    echo "AUTHOR"
-    echo "    Written by Henrik Sandklef"
+    echo -e "${HEADER}AUTHOR"
+    echo -e "${CODE_COMMENT}Written by Henrik Sandklef"
     echo
-    echo "REPORTING BUGS"
-    echo "    Add an issue at https://github.com/vinland-technology/compliance-utils"
+    echo -e "${HEADER}REPORTING BUGS"
+    echo -e "${CODE_COMMENT}Add an issue at https://github.com/vinland-technology/compliance-utils"
     echo
-    echo "COPYRIGHT & LICENSE"
-    echo "   Copyright 2020 Henrik Sandklef"
-    echo "   License GPL-3.0-or-later"
+    echo -e "${HEADER}COPYRIGHT & LICENSE"
+    echo -e "${CODE_COMMENT}Copyright 2020 Henrik Sandklef"
+    echo -e "${CODE_COMMENT}License GPL-3.0-or-later"
 }
 
 find_dependencies()
@@ -310,8 +335,20 @@ do
             OUTPUT_DIR=$2
             shift
             ;;
+        "--uniq"| "-u")
+            UNIQ=true
+            LOG=false        
+            SILENT=false
+            DOT_FORMATS=""
+            FORMAT=txt
+            ;;
         "--ldd")
             LIST_DEP_MODE=ldd
+            ;;
+        "--markdown-help")
+            MD=true
+            usage
+            exit
             ;;
         "--objdump")
             LIST_DEP_MODE=objdump
@@ -412,6 +449,11 @@ else
         err "It does not make sense to use silent mode and NOT log"
         exit 3
     else
-        find_dependencies $FILE
+        if [ "$UNIQ" = "true" ]
+        then
+            find_dependencies $FILE | sed 's,[ ]*,,g' | tail -n +2 | sort -u
+        else
+            find_dependencies $FILE
+        fi
     fi
 fi
