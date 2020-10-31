@@ -1,1 +1,1 @@
-See [README](../) in parent directory for more information
+See [README](../README.md) in parent directory for more information
