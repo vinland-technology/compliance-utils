@@ -1,1 +1,1 @@
-See [README](../README.md) in parent directory for more information
+See [README](../blob/main/README.md) in parent directory for more information
