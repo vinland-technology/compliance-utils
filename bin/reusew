@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2020 Henrik Sandklef
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+COPYRIGHT_HOLDER=$(getent passwd "$(whoami)" | cut -d ':' -f 5)
+COPYRIGHT_YEAR=$(date '+%Y')
+LICENSE=GPL-3.0-or-later
+
+FILES=""
+
+usage()
+{
+    echo "NAME"
+    echo"    $(basename $0) - add reuse headers"
+    echo
+    echo "SYNOPSIS"
+    echo"    $(basename $0) [OPTIONS] files"
+    echo
+    echo "OPTIONS"
+    echo "    -l,  --license LICENSE"
+    echo "           set license (to add) to LICENSE"
+    echo                
+    echo "    -ch, --copyright-holder PERSON"
+    echo "           set copyright holder (to add) to PERSON"
+    echo                
+    echo "    -cy, --copyright-year YEAR"
+    echo "           set copyright year (to add) to YEAR"
+    echo                
+    echo "    -dr, --dry-run"
+    echo "           Show the reuse command rather than executing it"
+    echo                
+    echo "    -t, --type TYPE"
+    echo "           set file type year to TYPE"
+    echo                
+    echo "    -gt, --guess-type"
+    echo "           makes a qualified guess of the file type"
+    echo                
+    echo "    -h,  --help"
+    echo "           print this usage information"
+    echo
+    echo "AUTHOR"
+    echo"    Written by Henrik Sandklef"
+    echo
+    echo "REPORTING BUGS"
+    echo"    Add an issue at https://github.com/vinland-technology/compliance-utils"
+    echo
+    echo "COPYRIGHT & LICENSE"
+    echo "   Copyright 2020 Henrik Sandklef"
+    echo "   License GPL-3.0-or-later"
+}
+
+while [ "$1" != "" ]
+do
+    case "$1" in
+        "--license"|"-l")
+            LICENSE=$2
+            shift
+            ;;
+        "--copyright-holder"|"-ch")
+            COPYRIGHT_HOLDER=$2
+            shift
+            ;;
+        "--copyright-year"|"-cy")
+            COPYRIGHT_YEAR=$2
+            shift
+            ;;
+        "--help"|"-h")
+            usage
+            exit 0
+            ;;
+        "--type"|"-t")
+            TYPE="-s $2"
+            shift
+            ;;
+        "--guess-type"|"-gt")
+            GUESS_TYPE="true"
+            ;;
+        "--dry-run"|"-dr")
+            DRY_RUN=echo
+            ;;
+        *)
+            FILES="$FILES $1"
+            ;;
+    esac
+    shift
+done
+
+REUSE_ARGUMENTS="addheader"
+REUSE_ARGUMENTS="$REUSE_ARGUMENTS --copyright \"${COPYRIGHT_HOLDER}\""
+REUSE_ARGUMENTS="$REUSE_ARGUMENTS --year ${COPYRIGHT_YEAR}"
+REUSE_ARGUMENTS="$REUSE_ARGUMENTS --license ${LICENSE} "
+
+err()
+{
+    echo "$*" 1>&2
+}
+
+guess_type()
+{
+    local FILE=$1
+    local FILE_INFO=$(file $FILE)
+    if [[ "$FILE_INFO" =~ "shell script" ]]
+    then
+        echo "-s python"
+    else
+        err "Can't guess the file type of $FILE"
+        exit 2
+    fi
+}
+
+for file in $FILES
+do
+    if [ "$GUESS_TYPE" = "true" ]
+    then
+        TYPE=$(guess_type $file)
+    fi
+    $DRY_RUN reuse $REUSE_ARGUMENTS $TYPE $FILES
+done
