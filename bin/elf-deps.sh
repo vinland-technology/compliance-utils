@@ -126,6 +126,9 @@ usage()
     echo "   -s, --silent"
     echo "        do not print to stdout"
     echo
+    echo "   --dot"
+    echo "        create dot like file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo
     echo "   --pdf"
     echo "        create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
@@ -219,6 +222,8 @@ do
             ;;
         "--dot")
             FORMAT=dot
+            LOG=true            
+            SILENT=true
             ;;
         "--pdf")
             FORMAT=dot
@@ -264,20 +269,19 @@ then
         find_dependencies $FILE | tee $LOG_FILE
         inform "Log file created: $LOG_FILE"
     fi
-    if [ "$DOT_FORMATS" != "" ]
-    then
-        DOT_FILE=${OUTPUT_DIR}/$(basename $FILE).dot
-        printf "digraph depends {\n node [shape=plaintext]" > $DOT_FILE
-        cat $LOG_FILE | sort -u >> $DOT_FILE
-        printf "}" >> $DOT_FILE
 
-        for fmt in $DOT_FORMATS
-        do        
-            OUT_FILE=${DOT_FILE}.$fmt
-            dot -O -T$fmt ${DOT_FILE}
-            inform "Created $fmt file: $OUT_FILE"
-        done
-    fi
+    DOT_FILE=${OUTPUT_DIR}/$(basename $FILE).dot
+    printf "digraph depends {\n node [shape=plaintext]" > $DOT_FILE
+    cat $LOG_FILE | sort -u >> $DOT_FILE
+    printf "}" >> $DOT_FILE
+    inform "Created dot file: $DOT_FILE"
+    
+    for fmt in $DOT_FORMATS
+    do        
+        OUT_FILE=${DOT_FILE}.$fmt
+        dot -O -T$fmt ${DOT_FILE}
+        inform "Created $fmt file: $OUT_FILE"
+    done
 else
     if [ "$SILENT" = "true" ]
     then
