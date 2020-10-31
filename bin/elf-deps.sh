@@ -15,6 +15,10 @@ OUTPUT_DIR=~/.vinland/elf-deps
 FORMAT=txt
 EXCLUDE_LIBC_STUFF="-e libm.so -e libdl.so -e libc.so -e librt.so -e libpthread.so -e ld-linux -e libresolv -e libgcc_s"
 
+PROG=$(basename $0)
+
+DEFAULT_LIB_DIRS="/lib /usr/lib64 /usr/lib"
+
 err()
 {
     echo "$*" 1>&2
@@ -38,13 +42,13 @@ findlib()
 {
     LIB=$1
 #    err "check path for $1"
-    if [[ "$1" =~ ^/ ]] || [[ "$1" =~ ^./ ]]
+    if [[ "$LIB" =~ ^/ ]] || [[ "$LIB" =~ ^./ ]]
     then
  #       err " - use as is $1"
         echo $LIB
     else
   #      err " - find $1"
-        find /lib /usr/lib64 /usr/lib -name "${LIB}*" -type f | head -1
+        find $LIB_DIRS -name "${LIB}*" -type f | head -1
     fi
 }
 
@@ -103,7 +107,7 @@ list_prog_deps()
                 list_deps "${lib}" "${INDENT}  "
                 ;;
             "dot")
-                echo "\"$(basename $PROG)\" -> \"$lib\""
+                echo "\"$PROG\" -> \"$lib\""
                 list_deps "${lib}" "${INDENT}  "
                 ;;
             *)
@@ -117,13 +121,13 @@ list_prog_deps()
 usage()
 {
     echo "NAME"
-    echo"    $(basename $0) - list dependencies recursively"
+    echo "   $PROG - list dependencies recursively"
     echo
     echo "SYNOPSIS"
-    echo"    $(basename $0) [OPTIONS] FILE"
+    echo "   $PROG [OPTIONS] FILE"
     echo
     echo "DESCRIPTION"
-    echo"    List dependencies recursively foe the given file. The files can be"
+    echo "   List dependencies recursively foe the given file. The files can be"
     echo "   either a program (name of with path) or a library (name or with path)"
     echo "   If the supplied file does not have path we do our best trying to find it"
     echo "   using which or (internal function) findllib."
@@ -140,6 +144,12 @@ usage()
     echo "   -s, --silent"
     echo "        do not print to stdout"
     echo
+    echo "   --lib-dir DIR"
+    echo "        adds DIR to directories to search for libraries. For every use of this option"
+    echo "        the directories are added. If no directory is specified the default directories"
+    echo "        are: $DEFAULT_LIB_DIRS"
+    echo
+    echo "   Format options"
     echo "   --dot"
     echo "        create dot like file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
@@ -155,11 +165,25 @@ usage()
     echo "   --png"
     echo "        create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
+    echo "EXAMPLES"
+    echo "   $PROG evince"
+    echo "        lists all dependencies for the program evince"
+    echo
+    echo "   $PROG --pdf libcairo2.so"
+    echo "        lists all dependencies for the library libcairo2.so and creates report in pdf format"
+    echo
+    echo "EXIT CODES"
+    echo "    0 success"
+    echo "    1 could not find file"
+    echo "    2 file not in ELF format"
+    echo "    3 silent and no logging not vailed"
+    echo "    4 unknown or unsupported format  "
+    echo
     echo "AUTHOR"
-    echo"    Written by Henrik Sandklef"
+    echo "    Written by Henrik Sandklef"
     echo
     echo "REPORTING BUGS"
-    echo"    Add an issue at https://github.com/vinland-technology/compliance-utils"
+    echo "    Add an issue at https://github.com/vinland-technology/compliance-utils"
     echo
     echo "COPYRIGHT & LICENSE"
     echo "   Copyright 2020 Henrik Sandklef"
@@ -224,6 +248,10 @@ find_dependencies()
 while [ "$1" != "" ]
 do
     case "$1" in
+        "--help"| "-h")
+            usage
+            exit
+            ;;
         "--outdir"| "-od")
             OUTPUT_DIR=$2
             shift
@@ -263,6 +291,10 @@ do
             SILENT=true
             LOG=true
             ;;
+        "--lib-dir")
+            LIB_DIRS="$LIB_DIRS $2"
+            shift
+            ;;
         *)
             FILE=$1
             ;;
@@ -270,6 +302,10 @@ do
     shift
 done
 
+if [ "$LIB_DIRS" = "" ]
+then
+    LIB_DIRS=$DEFAULT_LIB_DIRS
+fi
 
 if [ "$LOG" = "true" ]
 then
