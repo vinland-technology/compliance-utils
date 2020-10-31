@@ -1,1 +1,1 @@
-See [README](../blob/main/README.md) in parent directory for more information
+See [README](https://github.com/vinland-technology/compliance-utils/blob/main/README.md) in parent directory for more information
