@@ -40,6 +40,13 @@ list_dep()
                        cut -d ":" -f 2 | \
                        sed -e 's,\[,,g' -e 's,],,g' -e 's,[ ]*,,g')
             ;;
+        "objdump")
+            DEPS=$(objdump -x $1 | \
+                       grep NEEDED | \
+                       grep -v $EXCLUDE_LIBC_STUFF | \
+                       awk ' { print $2 }' | \
+                       sed -e 's,[ ]*,,g')
+            ;;
         "ldd")
             DEPS=$(ldd $1 | \
                        awk ' { print $1} '| \
@@ -149,26 +156,16 @@ usage()
     echo "   If the supplied file does not have path we do our best trying to find it"
     echo "   using which or (internal function) findllib."
     echo 
-    echo "   The file must be in ELF format"
-    echo
     echo "OPTIONS"
-    echo "   -od, --outdir DIR"
-    echo "        output logs to DIR. Default is ~/.vinland/elf-deps"
-    echo
-    echo "   -av, --auto-view"
-    echo "        open (using xdg-open) the first formats produced"
-    echo
-    echo "   -l, --log"
-    echo "        store log in outpur dir, as well as print to stdout"
-    echo
-    echo "   -s, --silent"
-    echo "        do not print to stdout"
-    echo
+    echo "   Library related options"
     echo "   -e, --ELF"
     echo "        use readelf to find dependencies. Default."
     echo
     echo "   --ldd"
     echo "        use ldd to find dependencies. Default is readelf."
+    echo
+    echo "   --objdump"
+    echo "        use objdump to find dependencies. Default is readelf."
     echo
     echo "   --lib-dir DIR"
     echo "        adds DIR to directories to search for libraries. For every use of this option"
@@ -190,6 +187,20 @@ usage()
     echo
     echo "   --png"
     echo "        create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo
+    echo "  Output options"
+    echo "   -od, --outdir DIR"
+    echo "        output logs to DIR. Default is ~/.vinland/elf-deps"
+    echo
+    echo "   -av, --auto-view"
+    echo "        open (using xdg-open) the first formats produced"
+    echo
+    echo "   -l, --log"
+    echo "        store log in outpur dir, as well as print to stdout"
+    echo
+    echo "   -s, --silent"
+    echo "        do not print to stdout"
+    echo
     echo
     echo "EXAMPLES"
     echo "   $PROG evince"
@@ -284,6 +295,9 @@ do
             ;;
         "--ldd")
             LIST_DEP_MODE=ldd
+            ;;
+        "--objdump")
+            LIST_DEP_MODE=objdump
             ;;
         "--auto-view"|"-av")
             AUTO_VIEW=true
