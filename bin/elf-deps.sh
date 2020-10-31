@@ -130,6 +130,12 @@ usage()
     echo "        create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
     echo "   --png"
+    echo "        create png file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo
+    echo "   --svg"
+    echo "        create svg file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
+    echo
+    echo "   --png"
     echo "        create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
     echo "AUTHOR"
@@ -216,13 +222,25 @@ do
             ;;
         "--pdf")
             FORMAT=dot
-            PDF=true
+            DOT_FORMATS="$DOT_FORMATS pdf"
+            SILENT=true
+            LOG=true
+            ;;
+        "--svg")
+            FORMAT=dot
+            DOT_FORMATS="$DOT_FORMATS svg"
+            SILENT=true
+            LOG=true
+            ;;
+        "--jpg")
+            FORMAT=dot
+            DOT_FORMATS="$DOT_FORMATS svg"
             SILENT=true
             LOG=true
             ;;
         "--png")
             FORMAT=dot
-            PNG=true
+            DOT_FORMATS="$DOT_FORMATS png"
             SILENT=true
             LOG=true
             ;;
@@ -246,22 +264,19 @@ then
         find_dependencies $FILE | tee $LOG_FILE
         inform "Log file created: $LOG_FILE"
     fi
-    DOT_FILE=${OUTPUT_DIR}/$(basename $FILE).dot
-    printf "digraph depends {\n node [shape=plaintext]" > $DOT_FILE
-    cat $LOG_FILE | sort -u >> $DOT_FILE
-    printf "}" >> $DOT_FILE
+    if [ "$DOT_FORMATS" != "" ]
+    then
+        DOT_FILE=${OUTPUT_DIR}/$(basename $FILE).dot
+        printf "digraph depends {\n node [shape=plaintext]" > $DOT_FILE
+        cat $LOG_FILE | sort -u >> $DOT_FILE
+        printf "}" >> $DOT_FILE
 
-    if [ "$PDF" = "true" ]
-    then
-        PDF_FILE=${DOT_FILE}.pdf
-        dot -O -Tpdf ${DOT_FILE}
-        inform "Created pdf file: $PDF_FILE"
-    fi
-    if [ "$PNG" = "true" ]
-    then
-        PNG_FILE=${DOT_FILE}.png
-        dot -O -Tpng ${DOT_FILE}
-        inform "Created png file: $PNG_FILE"
+        for fmt in $DOT_FORMATS
+        do        
+            OUT_FILE=${DOT_FILE}.$fmt
+            dot -O -T$fmt ${DOT_FILE}
+            inform "Created $fmt file: $OUT_FILE"
+        done
     fi
 else
     if [ "$SILENT" = "true" ]
