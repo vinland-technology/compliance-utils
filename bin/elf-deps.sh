@@ -90,13 +90,27 @@ list_prog_deps()
     else
         PROG=$(which $PROG)
     fi
-    echo "$INDENT$PROG"
+    if [ "$FORMAT" = "txt" ]
+    then
+       echo "$INDENT$LIB"
+    fi
 
     local lib
     for lib in $(list_dep $PROG)
     do
-        #        echo "${INDENT}${lib}"
-        list_deps "${lib}" "${INDENT}  "
+        case "$FORMAT" in
+            "txt")
+                list_deps "${lib}" "${INDENT}  "
+                ;;
+            "dot")
+                echo "\"$(basename $PROG)\" -> \"$lib\""
+                list_deps "${lib}" "${INDENT}  "
+                ;;
+            *)
+                echo "Unsupported format ($FORMAT)"
+                exit 4
+                ;;
+        esac
     done
 }
 
@@ -271,7 +285,7 @@ then
     fi
 
     DOT_FILE=${OUTPUT_DIR}/$(basename $FILE).dot
-    printf "digraph depends {\n node [shape=plaintext]" > $DOT_FILE
+    printf "digraph depends {\n node [shape=plaintext]\n" > $DOT_FILE
     cat $LOG_FILE | sort -u >> $DOT_FILE
     printf "}" >> $DOT_FILE
     inform "Created dot file: $DOT_FILE"
