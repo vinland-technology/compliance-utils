@@ -8,7 +8,8 @@
 #   readelf
 #   ldd
 # gives the same result, under the condition that we only collect
-# uniq license names and discard the tree structure of the deps
+# uniq license names and use them as a heap ...
+# totally discarding the tree structure of the deps
 
 
 TMP_DIR=/tmp/.vinland/test
@@ -54,12 +55,12 @@ check_program()
 }
 
 
-#check_program cnee
-#check_program ls
-#check_program git
+check_program cnee
+check_program ls
+check_program git
 #check_program evince
 #check_program knock
-check_program vim.gtk3
+#check_program vim.gtk3
 check_program vlc
 check_program konqueror
 
