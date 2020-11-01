@@ -35,7 +35,7 @@ use objdump to find dependencies. Default is readelf.
 
 adds DIR to directories to search for libraries. For every use of this option
 the directories are added. If no directory is specified the default directories
-are: /lib /usr/lib64 /usr/lib
+are: 
 
 ## Format options
 ```--dot```
@@ -89,6 +89,11 @@ store log in outpur dir, as well as print to stdout
 
 do not print to stdout
 
+```-u, --uniq```
+
+
+print uniq dependencies in alphabetical order. 
+Sets txt more and disables everything else.
 
 # EXAMPLES
 ```dependencies.sh evince```
@@ -116,6 +121,9 @@ lists all dependencies for the library libcairo2.so and creates report in pdf fo
 
 
 ```4 - unknown or unsupported format```
+
+
+```6 - unsupported host operating system```
 
 
 
