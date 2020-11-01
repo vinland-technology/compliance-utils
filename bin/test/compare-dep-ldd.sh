@@ -27,11 +27,13 @@ check_program()
     PROG=$1
     PROG_SHORT=$(basename $PROG)
 
-    printf "%-30s" "$PROG:"
+    printf "%-30s" "$PROG: "
 
+    printf "|"
     # dependencies.sh
     ~/opt/vinland/compliance-utils/bin/dependencies.sh -u $PROG \
                                                        > ${TMP_DIR}/${PROG_SHORT}-deps.log
+    printf "\b/"
     # ldd
     ldd $(which $PROG)  | \
         awk ' { print $1 }' | \
@@ -39,8 +41,10 @@ check_program()
         sort -u \
              > ${TMP_DIR}/${PROG_SHORT}-ldd.log
     RET=$?
+    printf "\b-"
 
     diff ${TMP_DIR}/${PROG_SHORT}-deps.log ${TMP_DIR}/${PROG_SHORT}-ldd.log >/dev/null 2>&1
+    printf "\b"
     RET=$?
     echo "$RET"
     if [ $RET -ne 0 ]
