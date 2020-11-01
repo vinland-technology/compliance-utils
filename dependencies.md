@@ -8,10 +8,11 @@
 
 
 # DESCRIPTION
-   List dependencies recursively foe the given file. The files can be
-   either a program (name of with path) or a library (name or with path)
-   If the supplied file does not have path we do our best trying to find it
-   using which or (internal function) findllib.
+   List dependencies recursively for a given file. The files can be
+   either a program (named with or without path) or a library 
+   (nameed with or whothout with path). If the supplied file does
+   not have path we do our best trying to find it using which or
+   (internal function) findllib.
 
 # OPTIONS
 ## Library related options
