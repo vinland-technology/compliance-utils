@@ -13,12 +13,14 @@
 
 OUTPUT_DIR=~/.vinland/elf-deps
 FORMAT=txt
-EXCLUDE_LIBC_STUFF="-e libm.so -e libdl.so -e libc.so -e librt.so -e libpthread.so -e ld-linux -e libresolv -e libgcc_s -e linux-vdso"
+
+# for f in $(apt-file list libc6 | grep "gnu/lib" | cut -d ":" -f 2 ); do echo -n " -e $(basename $f)" ; done | xcpin
+EXCLUDE_LIBC_STUFF="$EXCLUDE_LIBC_STUFF -e libBrokenLocale-2.31.so -e libBrokenLocale.so.1 -e libSegFault.so -e libanl-2.31.so -e libanl.so.1 -e libc-2.31.so -e libc.so.6 -e libdl-2.31.so -e libdl.so.2 -e libm-2.31.so -e libm.so.6 -e libmemusage.so -e libmvec-2.31.so -e libmvec.so.1 -e libnsl-2.31.so -e libnsl.so.1 -e libnss_compat-2.31.so -e libnss_compat.so.2 -e libnss_dns-2.31.so -e libnss_dns.so.2 -e libnss_files-2.31.so -e libnss_files.so.2 -e libnss_hesiod-2.31.so -e libnss_hesiod.so.2 -e libnss_nis-2.31.so -e libnss_nis.so.2 -e libnss_nisplus-2.31.so -e libnss_nisplus.so.2 -e libpcprofile.so -e libpthread-2.31.so -e libpthread.so.0 -e libresolv-2.31.so -e libresolv.so.2 -e librt-2.31.so -e librt.so.1 -e libthread_db-1.0.so -e libthread_db.so.1 -e libutil-2.31.so -e libutil.so.1 "
 
 PROG=$(basename $0)
 
-DEFAULT_LIB_DIRS="/lib /usr/lib64 /usr/lib"
 LIST_DEP_MODE=readelf
+LIBC=false
 
 err()
 {
@@ -30,15 +32,55 @@ inform()
     echo "$*" 1>&2
 }
 
+determine_os()
+{
+    if [ "$(uname  | grep -ic linux)" != "0" ]
+    then
+        OS=linux
+        if [ -f /etc/fedora-release ]
+        then
+            DIST=fedora
+        elif [ -f /etc/fedora-release ]
+        then
+            DIST=redhat
+        elif [ -f /etc/os-release ]
+        then
+            if [ "$( grep NAME /etc/os-release | grep -i -c ubuntu)" != "0" ]
+            then
+                DIST=ubuntu
+            else
+                DIST=debian
+            fi
+        else
+            echo "UNSUPPORTED Linux distribution"
+            exit 1
+        fi
+    else
+        echo "UNSUPPORTED OS, bash or ... well, something else"
+        echo "Your software"
+        echo " * OS:    $(uname)"
+        echo " * bash:  $0"
+        exit 6
+    fi
+
+}
+
 list_dep()
 {
+    if [ "$1" = "" ]
+    then
+        echo
+        return
+    fi
     case "$LIST_DEP_MODE" in
         "readelf")
+            echo -n "readelf \"$1\": " >> /tmp/readelf.log
             DEPS=$(readelf -d $1 | \
                        grep NEEDED | \
                        grep -v $EXCLUDE_LIBC_STUFF | \
                        cut -d ":" -f 2 | \
                        sed -e 's,\[,,g' -e 's,],,g' -e 's,[ ]*,,g')
+            echo "$? " >> /tmp/readelf.log
             ;;
         "objdump")
             DEPS=$(objdump -x $1 | \
@@ -71,8 +113,9 @@ findlib()
  #       err " - use as is $1"
         echo $LIB
     else
-  #      err " - find $1"
-        find $LIB_DIRS -name "${LIB}*" -type f | head -1
+        #      err " - find $1"
+        #        inform "Looking for $LIB in $LIB_DIRS"
+        find $LIB_DIRS -name "${LIB}*" -type f -follow 2>/dev/null | head -1
     fi
 }
 
@@ -102,6 +145,7 @@ list_deps()
         if [ "$LONG" = "true" ]
         then
             lib_name=$(findlib $lib)
+#            inform "Looking for long lib name of $lib => $lib_name"
         else
             lib_name=$lib
         fi
@@ -242,7 +286,8 @@ usage()
     echo -e "${CODE_COMMENT}do not print to stdout"
     echo
     echo -e "${CODE_IN}-u, --uniq${CODE_OUT}"
-    echo -e "${CODE_COMMENT}print uniq dependencies. Sets txt more and disables everything else."
+    echo -e "${CODE_COMMENT}print uniq dependencies in alphabetical order. "
+    echo -e "${CODE_COMMENT}Sets txt more and disables everything else."
     echo
     echo -e "${HEADER}EXAMPLES"
     echo -e "${CODE_IN}$PROG evince${CODE_OUT}"
@@ -257,6 +302,7 @@ usage()
     echo -e "${CODE_IN}2 - file not in ELF format${CODE_OUT}"
     echo -e "${CODE_IN}3 - silent and no logging not vailed${CODE_OUT}"
     echo -e "${CODE_IN}4 - unknown or unsupported format${CODE_OUT}"
+    echo -e "${CODE_IN}6 - unsupported host operating system${CODE_OUT}"
     echo
     echo -e "${HEADER}AUTHOR"
     echo -e "${CODE_COMMENT}Written by Henrik Sandklef"
@@ -267,6 +313,50 @@ usage()
     echo -e "${HEADER}COPYRIGHT & LICENSE"
     echo -e "${CODE_COMMENT}Copyright 2020 Henrik Sandklef"
     echo -e "${CODE_COMMENT}License GPL-3.0-or-later"
+}
+
+setup_libc_excludes_fedora()
+{
+    :
+}
+
+setup_libc_excludes_debian()
+{
+    which -s apt-file >/dev/null 2>&1
+    if [ $? -eq 0 ]
+    then
+        for f in $(apt-file list libc6 | grep "gnu/lib" | cut -d ":" -f 2 );
+        do
+            echo -n " -e $(basename $f)" ;
+        done 
+    else
+#        inform "setup_libc_excludes_debian() using apt-file "
+        # generated 2020-11-01
+        echo " -e libBrokenLocale-2.31.so -e libBrokenLocale.so.1 -e libSegFault.so -e libanl-2.31.so -e libanl.so.1 -e libc-2.31.so -e libc.so.6 -e libdl-2.31.so -e libdl.so.2 -e libm-2.31.so -e libm.so.6 -e libmemusage.so -e libmvec-2.31.so -e libmvec.so.1 -e libnsl-2.31.so -e libnsl.so.1 -e libnss_compat-2.31.so -e libnss_compat.so.2 -e libnss_dns-2.31.so -e libnss_dns.so.2 -e libnss_files-2.31.so -e libnss_files.so.2 -e libnss_hesiod-2.31.so -e libnss_hesiod.so.2 -e libnss_nis-2.31.so -e libnss_nis.so.2 -e libnss_nisplus-2.31.so -e libnss_nisplus.so.2 -e libpcprofile.so -e libpthread-2.31.so -e libpthread.so.0 -e libresolv-2.31.so -e libresolv.so.2 -e librt-2.31.so -e librt.so.1 -e libthread_db-1.0.so -e libthread_db.so.1 -e libutil-2.31.so -e libutil.so.1 "
+    fi
+}
+
+
+setup()
+{
+    # libc
+    if [ "$LIBC" = true ]
+    then
+        EXCLUDE_LIBC_STUFF=" ______dummy______ "
+    else
+        EXCLUDE_LIBC_STUFF=" -e ld-linux-x86-64.so.2 -e linux-vdso.so.1 "
+        if [ "$DIST" = "debian" ] || [ "$DIST" = "ubuntu" ]
+        then
+            EXCLUDE_LIBC_STUFF="$EXCLUDE_LIBC_STUFF $(setup_libc_excludes_debian)"
+        fi
+    fi
+
+    if [ "$DIST" = "debian" ] || [ "$DIST" = "ubuntu" ]
+    then
+        DEFAULT_LIB_DIRS="/usr/lib64 /usr/lib /lib/x86_64-linux-gnu/"
+    else
+        DEFAULT_LIB_DIRS="/lib /usr/lib64 /usr/lib"
+    fi    
 }
 
 find_dependencies()
@@ -334,6 +424,12 @@ do
         "--outdir"| "-od")
             OUTPUT_DIR=$2
             shift
+            ;;
+        "--libc"| "-lc")
+            LIBC=true
+            ;;
+        "--no-libc"| "-nlc")
+            LIBC=false
             ;;
         "--uniq"| "-u")
             UNIQ=true
@@ -407,6 +503,13 @@ do
     esac
     shift
 done
+
+
+
+determine_os
+
+# Determine glibc related libraries
+setup
 
 if [ "$LIB_DIRS" = "" ]
 then
