@@ -96,11 +96,13 @@ do not print to stdout
 print uniq dependencies in alphabetical order. 
 Sets txt more and disables everything else.
 
-# SUPPORTED PLATFORMS{HEADER_OUT}
+# SUPPORTED PLATFORMS
+
 * Debian and Ubuntu
 * Fedora and RedHat
 
-# EXAMPLES{HEADER_OUT}
+# EXAMPLES
+
 ```dependencies.sh evince```
 
 
