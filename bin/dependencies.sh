@@ -11,7 +11,7 @@
 #
 #
 
-OUTPUT_DIR=~/.vinland/elf-deps
+OUTPUT_DIR=~/.vinland/compliance-utils/elf-deps
 FORMAT=txt
 
 # for f in $(apt-file list libc6 | grep "gnu/lib" | cut -d ":" -f 2 ); do echo -n " -e $(basename $f)" ; done | xcpin
@@ -21,6 +21,12 @@ PROG=$(basename $0)
 
 LIST_DEP_MODE=readelf
 LIBC=false
+
+declare -A LIB_DEPENDENCIES
+export LIB_DEPENDENCIES
+
+declare -A LIB_PATHS
+export LIB_PATHS
 
 err()
 {
@@ -72,6 +78,8 @@ list_dep()
         echo
         return
     fi
+
+
     case "$LIST_DEP_MODE" in
         "readelf")
             echo -n "readelf \"$1\": " >> /tmp/readelf.log
@@ -110,42 +118,73 @@ findlib()
 #    err "check path for $1"
     if [[ "$LIB" =~ ^/ ]] || [[ "$LIB" =~ ^./ ]]
     then
- #       err " - use as is $1"
+#        err " - use as is $1"
         echo $LIB
     else
-        #      err " - find $1"
+ #             err " - find $1"
         #        inform "Looking for $LIB in $LIB_DIRS"
-        find $LIB_DIRS -name "${LIB}*" -type f -follow 2>/dev/null | head -1
+        LIB=$(find $LIB_DIRS -name "${LIB}*" -type f  2>/dev/null | head -1)
     fi
+#    if [ "$LIB" = "" ]
+ #   then
+  #      LIB=$(find $LIB_DIRS -name "${LIB}*" -type f  -follow 2>/dev/null | head -1)
+    # fi
+    echo $LIB
 }
 
 list_deps()
 {
     local LIB=$1
     local INDENT="$2"
-    local LIB_PATH=$(findlib $LIB)
 
-    local LIB_NAME
-    if [ "$LONG" = "true" ]
-    then
-        LIB_NAME=$LIB_PATH
-    else
-        LIB_NAME=$(basename $LIB)
+    
+    if [ "${LIB_PATHS[$LIB]}" = "" ]
+    then  
+        LIB_PATHS[$LIB]=$(findlib $LIB)
+#        inform "$LIB saved path: ${LIB_PATHS[$LIB]}"
     fi
+    local LIB_PATH=${LIB_PATHS[$LIB]}
+ #   inform "$LIB : $LIB_PATH"
+    
+
+    if [ "${LIB_DEPENDENCIES[$LIB]}" = "" ]
+    then
+  #      inform "storing $LIB"
+        LIB_DEPENDENCIES[$LIB]=$(list_dep $LIB_PATH)
+    else
+        #     inform "reading $LIB"
+        :
+    fi
+    libs="${LIB_DEPENDENCIES[$LIB]}"
+
+#        for k in "${!LIB_DEPENDENCIES[@]}"
+ #   do
+  #      echo " -- $k"
+   # done
+
     
     if [ "$FORMAT" = "txt" ]
     then
-       echo "$INDENT$LIB_NAME"
+        if [ "$LONG" = "true" ]
+        then
+            echo "$INDENT$LIB_PATH"
+        else
+            echo "$INDENT$LIB"
+        fi            
     fi
 
-    local lib
-    for lib in $(list_dep $LIB_PATH)
+    for lib in $libs
     do
+        if [ "${LIB_PATHS[$lib]}" = "" ]
+        then  
+            LIB_PATHS[$lib]=$(findlib $lib)
+#            inform "$lib saved path: ${LIB_PATHS[$lib]}"
+        fi
+        local lib_long=${LIB_PATHS[$lib]}
         local libname
         if [ "$LONG" = "true" ]
         then
-            lib_name=$(findlib $lib)
-#            inform "Looking for long lib name of $lib => $lib_name"
+            lib_name=$lib_long
         else
             lib_name=$lib
         fi
@@ -232,10 +271,11 @@ usage()
     echo -e "   ${CODE_IN}$PROG [OPTIONS] FILE${CODE_OUT}"
     echo
     echo -e "${HEADER}DESCRIPTION"
-    echo -e "   List dependencies recursively foe the given file. The files can be"
-    echo -e "   either a program (name of with path) or a library (name or with path)"
-    echo -e "   If the supplied file does not have path we do our best trying to find it"
-    echo -e "   using which or (internal function) findllib."
+    echo -e "   List dependencies recursively for a given file. The files can be"
+    echo -e "   either a program (named with or without path) or a library "
+    echo -e "   (nameed with or whothout with path). If the supplied file does"
+    echo -e "   not have path we do our best trying to find it using which or"
+    echo -e "   (internal function) findllib."
     echo -e
     echo -e "${HEADER}OPTIONS"
     echo -e "${HEADER2}Library related options"
@@ -289,7 +329,11 @@ usage()
     echo -e "${CODE_COMMENT}print uniq dependencies in alphabetical order. "
     echo -e "${CODE_COMMENT}Sets txt more and disables everything else."
     echo
-    echo -e "${HEADER}EXAMPLES"
+    echo -e "${HEADER}SUPPORTED PLATFORMS${HEADER_OUT}"
+    echo -e "* Debian and Ubuntu"
+    echo -e "* Fedora and RedHat"
+    echo
+    echo -e "${HEADER}EXAMPLES${HEADER_OUT}"
     echo -e "${CODE_IN}$PROG evince${CODE_OUT}"
     echo -e "${CODE_COMMENT}lists all dependencies for the program evince"
     echo
@@ -406,7 +450,7 @@ find_dependencies()
 
     if [ $IS_PROGRAM -eq 0 ]
     then
-        list_deps $FILE ""
+        list_deps $(basename $FILE) ""
     else
         list_prog_deps $FILE ""
     fi
@@ -498,7 +542,7 @@ do
             shift
             ;;
         *)
-            FILE=$1
+            FILES="$FILES $1"
             ;;
     esac
     shift
@@ -516,47 +560,50 @@ then
     LIB_DIRS=$DEFAULT_LIB_DIRS
 fi
 
-if [ "$LOG" = "true" ]
-then
-    LOG_FILE=${OUTPUT_DIR}/$(basename $FILE).log
-    if [ "$SILENT" = "true" ]
+for FILE in $FILES
+do
+    if [ "$LOG" = "true" ]
     then
-        mkdir -p ${OUTPUT_DIR}
-        find_dependencies $FILE > $LOG_FILE
-        inform "Log file created: $LOG_FILE"
-    else
-        find_dependencies $FILE | tee $LOG_FILE
-        inform "Log file created: $LOG_FILE"
-    fi
-
-    DOT_FILE=${OUTPUT_DIR}/$(basename $FILE).dot
-    printf "digraph depends {\n node [shape=plaintext]\n" > $DOT_FILE
-    cat $LOG_FILE | sort -u >> $DOT_FILE
-    printf "}\n" >> $DOT_FILE
-    inform "Created dot file: $DOT_FILE"
-    
-    for fmt in $DOT_FORMATS
-    do        
-        OUT_FILE=${DOT_FILE}.$fmt
-        dot -O -T$fmt ${DOT_FILE}
-        inform "Created $fmt file: $OUT_FILE"
-    done
-    if [ "$AUTO_VIEW" = "true" ]
-    then
-        FMT=$(echo $DOT_FORMATS | awk '{ print $1}')
-        xdg-open ${DOT_FILE}.$FMT
-    fi
-else
-    if [ "$SILENT" = "true" ]
-    then
-        err "It does not make sense to use silent mode and NOT log"
-        exit 3
-    else
-        if [ "$UNIQ" = "true" ]
+        LOG_FILE=${OUTPUT_DIR}/$(basename $FILE).log
+        if [ "$SILENT" = "true" ]
         then
-            find_dependencies $FILE | sed 's,[ ]*,,g' | tail -n +2 | sort -u
+            mkdir -p ${OUTPUT_DIR}
+            find_dependencies $FILE > $LOG_FILE
+            inform "Log file created: $LOG_FILE"
         else
-            find_dependencies $FILE
+            find_dependencies $FILE | tee $LOG_FILE
+            inform "Log file created: $LOG_FILE"
+        fi
+        
+        DOT_FILE=${OUTPUT_DIR}/$(basename $FILE).dot
+        printf "digraph depends {\n node [shape=plaintext]\n" > $DOT_FILE
+        cat $LOG_FILE | sort -u >> $DOT_FILE
+        printf "}\n" >> $DOT_FILE
+        inform "Created dot file: $DOT_FILE"
+        
+        for fmt in $DOT_FORMATS
+        do        
+            OUT_FILE=${DOT_FILE}.$fmt
+            dot -O -T$fmt ${DOT_FILE}
+            inform "Created $fmt file: $OUT_FILE"
+        done
+        if [ "$AUTO_VIEW" = "true" ]
+        then
+            FMT=$(echo $DOT_FORMATS | awk '{ print $1}')
+            xdg-open ${DOT_FILE}.$FMT
+        fi
+    else
+        if [ "$SILENT" = "true" ]
+        then
+            err "It does not make sense to use silent mode and NOT log"
+            exit 3
+        else
+            if [ "$UNIQ" = "true" ]
+            then
+                find_dependencies $FILE | sed 's,[ ]*,,g' | tail -n +2 | sort -u
+            else
+                find_dependencies $FILE
+            fi
         fi
     fi
-fi
+done
