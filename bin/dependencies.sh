@@ -268,7 +268,7 @@ usage()
     echo -e "   $PROG - list dependencies recursively"
     echo
     echo -e "${HEADER}SYNOPSIS"
-    echo -e "   ${CODE_IN}$PROG [OPTIONS] FILE${CODE_OUT}"
+    echo -e "   ${CODE_IN}$PROG [OPTIONS] FILES${CODE_OUT}"
     echo
     echo -e "${HEADER}DESCRIPTION"
     echo -e "   List dependencies recursively for a given file. The files can be"
@@ -339,6 +339,9 @@ usage()
     echo
     echo -e "${CODE_IN}$PROG --pdf libcairo2.so${CODE_OUT}"
     echo -e "${CODE_COMMENT}lists all dependencies for the library libcairo2.so and creates report in pdf format"
+    echo
+    echo -e "${CODE_IN}$PROG xdpyinfo xauth{CODE_OUT}"
+    echo -e "${CODE_COMMENT}lists all dependencies xdpyino and xauth."
     echo
     echo -e "${HEADER}EXIT CODES${HEADER_OUT}"
     echo -e "${CODE_IN}0 - success${CODE_OUT}"
