@@ -25,14 +25,15 @@ SPLIT_PKG=""
 #
 
 # TODO: document
-DEFAULT_DIST_DIR=core2-64-poky-linux
+DIST_DIR=core2-64-poky-linux
 # TODO: document
-DEFAULT_MACHINE=qemux86-64
+MACHINE=qemux86-64
 # TODO: document
-DEFAULT_IMAGE=core-image-minimal-qemux86-64
+IMAGE=core-image-minimal-qemux86-64
 # TODO: document
-DEFAULT_DATE=20201024110850
+DATE=20201024110850
 
+META_TOP_DIR=../
 
 
 declare -A LIB_DEPENDENCIES
@@ -737,6 +738,10 @@ do
             ;;
         "--image" | "-i")
             IMAGE="$2"
+            shift
+            ;;
+        "--meta-top-dir" | "-mtd")
+            META_TOP_DIR="$2"
             shift
             ;;
         "--dist-dir" | "-dd")
