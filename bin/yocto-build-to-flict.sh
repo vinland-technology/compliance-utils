@@ -626,12 +626,24 @@ handle_package()
     fi
 }
 
+
+
 handle_artefact()
 {
     debug "handle_artefact $1"
 
     SPLIT_PKG_NAME=$(find_artefact_split_package_name $1)
     debug "SPLIT_PKG_NAME: $SPLIT_PKG_NAME"
+    if [ "$SPLIT_PKG_NAME" = "" ]
+    then
+        err "Can't find split package name for artefact: $1"
+        err "Perhaps your DIST_DIR ($DIST_DIR) is incorrect."
+        err "If so, try -dd <DIR>"
+        err "...."
+        # TODO: exit code
+        exit 213
+    fi
+        
 
     SPLIT_PKG=$(find_split_package_name_path $SPLIT_PKG_NAME)
     debug "SPLIT_PKG:      $SPLIT_PKG"
@@ -665,12 +677,21 @@ list_artefacts()
     do
         SPLIT_PKG_NAME=$(find_artefact_split_package_name $art)
         debug "SPLIT_PKG_NAME: $SPLIT_PKG_NAME"
-
         if [ "$SPLIT_PKG_NAME" = "" ]
         then
-            err "$art: no package found"
-            UN_MANAGED_ARTEFACTS="$UN_MANAGED_ARTEFACTS $art"
-        else
+            err "Can't find split package name for artefact: $1"
+            err "Perhaps your DIST_DIR ($DIST_DIR) is incorrect."
+            err "If so, try -dd <DIR>"
+            err "...."
+            # TODO: exit code
+            exit 213
+        fi
+        
+#        if [ "$SPLIT_PKG_NAME" = "" ]
+ #       then
+  #          err "$art: no package found"
+   #         UN_MANAGED_ARTEFACTS="$UN_MANAGED_ARTEFACTS $art"
+    #    else
 #            echo  "time: "
  #           time find_split_package_name_path $SPLIT_PKG_NAME
                         
@@ -691,7 +712,7 @@ list_artefacts()
                 echo " - split name  $SPLIT_PKG_NAME"
                 echo " - split path  $SPLIT_PKG"
             fi
-        fi
+     #   fi
         
         
     done
@@ -710,7 +731,7 @@ list_artefacts()
 while [ "$1" != "" ]
 do
     case "$1" in
-        "--build-dir" | "-td")
+        "--build-dir" | "-bd")
             BUILD_DIR="$2"
             shift
             ;;
@@ -789,13 +810,26 @@ if [ ! -f $LICENSE_MANIFEST ]
 then
     err "Can't find license manifest file"
     err " \"$LICENSE_MANIFEST\""
+    err "If you set it yourself, make sure your path is correct"
+    err "else, check your settings for:"
+    err "  IMAGE: $IMAGE"
+    err "  DATE:  $DATE"
+    err " .... leaving"
     exit 104
 fi
 
 
-if [ "$BUILD_DIR" = "" ]
+if [ "$BUILD_DIR" = "" ] 
 then
     err "No build dir specified"
+    exit 2
+fi
+
+if [ ! -d $BUILD_DIR ] 
+then
+    err "Build dir not found"
+    err "  BUILD_DIR: $BUILD_DIR"
+    err "... leaving"
     exit 2
 fi
 
