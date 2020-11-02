@@ -29,19 +29,10 @@ DIST_DIR=core2-64-poky-linux
 # TODO: document
 MACHINE=qemux86-64
 # TODO: document
-IMAGE=core-image-minimal-${MACHINE}
+IMAGE=core-image-minimal-qemux86-64
 # TODO: document
 DATE=20201024110850
 
-TMP_WORK=tmp/work
-if [ -z ${BUILD_DIR} ]
-then
-    BUILD_DIR=./tmp/work/$DIST_DIR
-fi
-if [ -z ${LICENSE_MANIFEST} ]
-then
-    LICENSE_MANIFEST=tmp/deploy/licenses/${IMAGE}-${DATE}/license.manifest
-fi
 
 
 declare -A LIB_DEPENDENCIES
@@ -152,72 +143,6 @@ setup_glibc_excludes()
         echo -n " -e $(basename $i) ";
     done
 }
-
-while [ "$1" != "" ]
-do
-    case "$1" in
-        "--build-dir" | "-td")
-            BUILD_DIR="$2"
-            shift
-            ;;
-        "--image" | "-i")
-            IMAGE="$2"
-            shift
-            ;;
-        "--dist-dir" | "-dd")
-            DIST_DIR="$2"
-            shift
-            ;;
-        "--machine" | "-m")
-            MACHINE="$2"
-            shift
-            ;;
-        "--date" | "-d")
-            DATE="$2"
-            shift
-            ;;
-        "--OUT-dir" | "-td")
-            OUT_DIR="$2"
-            shift
-            ;;
-        "--no-libc" | "-nl")
-            LIBC=false
-            ;;
-        "--verbose" | "-v")
-            VERBOSE=true
-            ;;
-        "--split-package" | "-sp")
-            SPLIT_PKG=$2
-            shift
-            ;;
-        "--artefect" | "-a")
-            ARTEFACT=$2
-            shift
-            ;;
-        "--list-artefacts" | "-la")
-            LIST_ARTEFACTS=true
-            shift
-            ;;
-        "--manage-artefacts" | "-ma")
-            MANAGE_ARTEFACTS=true
-            shift
-            ;;
-        "--help" | "-h")
-            echo no not now
-            exit 0
-            ;;
-        *)
-            # assume package
-            PKG="$1"
-    esac
-    shift
-done
-
-
-
-
-
-
 
 
 find_lib()
@@ -771,8 +696,82 @@ list_artefacts()
 
 
 #
+# parse
+#
+
+while [ "$1" != "" ]
+do
+    case "$1" in
+        "--build-dir" | "-td")
+            BUILD_DIR="$2"
+            shift
+            ;;
+        "--image" | "-i")
+            IMAGE="$2"
+            shift
+            ;;
+        "--dist-dir" | "-dd")
+            DIST_DIR="$2"
+            shift
+            ;;
+        "--machine" | "-m")
+            MACHINE="$2"
+            shift
+            ;;
+        "--date" | "-d")
+            DATE="$2"
+            shift
+            ;;
+        "--OUT-dir" | "-td")
+            OUT_DIR="$2"
+            shift
+            ;;
+        "--no-libc" | "-nl")
+            LIBC=false
+            ;;
+        "--verbose" | "-v")
+            VERBOSE=true
+            ;;
+        "--split-package" | "-sp")
+            SPLIT_PKG=$2
+            shift
+            ;;
+        "--artefect" | "-a")
+            ARTEFACT=$2
+            shift
+            ;;
+        "--list-artefacts" | "-la")
+            LIST_ARTEFACTS=true
+            shift
+            ;;
+        "--manage-artefacts" | "-ma")
+            MANAGE_ARTEFACTS=true
+            shift
+            ;;
+        "--help" | "-h")
+            echo no not now
+            exit 0
+            ;;
+        *)
+            # assume package
+            PKG="$1"
+    esac
+    shift
+done
+
+
+#
 # prepare
 #
+TMP_WORK=tmp/work
+if [ -z ${BUILD_DIR} ]
+then
+    BUILD_DIR=./tmp/work/$DIST_DIR
+fi
+if [ -z ${LICENSE_MANIFEST} ]
+then
+    LICENSE_MANIFEST=tmp/deploy/licenses/${IMAGE}-${DATE}/license.manifest
+fi
 if [ "$BUILD_DIR" = "" ]
 then
     err "No build dir specified"
@@ -794,6 +793,8 @@ if [ ! -d ${OUT_DIR} ]
 then
     mkdir -p ${OUT_DIR}
 fi
+
+
 
 #
 # main
