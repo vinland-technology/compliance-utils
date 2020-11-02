@@ -25,13 +25,13 @@ SPLIT_PKG=""
 #
 
 # TODO: document
-DIST_DIR=core2-64-poky-linux
+DEFAULT_DIST_DIR=core2-64-poky-linux
 # TODO: document
-MACHINE=qemux86-64
+DEFAULT_MACHINE=qemux86-64
 # TODO: document
-IMAGE=core-image-minimal-qemux86-64
+DEFAULT_IMAGE=core-image-minimal-qemux86-64
 # TODO: document
-DATE=20201024110850
+DEFAULT_DATE=20201024110850
 
 
 
@@ -646,9 +646,17 @@ list_artefacts()
 {
     debug "list_artefacts $1"
 
-    #TODO: remove hard coded path
     IMG_MF=tmp/deploy/images/${MACHINE}/${IMAGE}.manifest
 
+    if [ ! -f $IMG_MF ]
+    then
+        err "Can't find manifest file"
+        err " MACHINE:  $MACHINE"
+        err " IMAGE:    $IMAGE"
+        err " MANIFEST: $IMG_MF"
+        exit 103
+    fi
+    
     ARTEFACT_EXCLUDE_LIST="-e base-files -e hicolor-icon-theme -e iso-codes -e update-rc.d -e epiphany -e gcr -e busy -e desktop -e elfutils -e aspell -e dbus -e enchant -e passwd -e eudev -e fontconfig -e dazzle -e config -e asm1 -e atk -e arspi -e attr -e cairo -e cap2 -e crypt  -e glib -e gstreamer -e kernel -e atsp -e blkid -e elf -e mesa -e fonts -e ff -e freetype -e gbm -e gcc -e pixbuf -e glapi -e glib -e gnutls -e gpg -e stalloc -e gstdaudio -e tfft -e gstgl "
     ARTEFACTS=$(grep -v "\-lic " $IMG_MF | awk '{ print $1 }' | grep -v $ARTEFACT_EXCLUDE_LIST | sort -u)
 
@@ -759,10 +767,15 @@ do
     shift
 done
 
-
+guess_settings()
+{
+    MACHINE=$(grep MACHINE conf/local.conf | grep -v "^#" | cut -d "=" -f 2 | sed -e 's,[ "]*,,g')
+    
+}
 #
 # prepare
 #
+
 TMP_WORK=tmp/work
 if [ -z ${BUILD_DIR} ]
 then
@@ -772,6 +785,14 @@ if [ -z ${LICENSE_MANIFEST} ]
 then
     LICENSE_MANIFEST=tmp/deploy/licenses/${IMAGE}-${DATE}/license.manifest
 fi
+if [ ! -f $LICENSE_MANIFEST ]
+then
+    err "Can't find license manifest file"
+    err " \"$IMG_MF\""
+    exit 104
+fi
+
+
 if [ "$BUILD_DIR" = "" ]
 then
     err "No build dir specified"
