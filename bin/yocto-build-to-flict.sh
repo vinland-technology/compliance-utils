@@ -251,7 +251,7 @@ find_artefact_license_bb()
 
     export LOCAL_PKG=$PKG
     ART_NAME_EXPR=$(echo $ART_NAME | sed -e "s,$LOCAL_PKG,,g")
-    BB=$(find ../meta* -name "${PKG}*.bb" | grep -e "${PKG}/" -e  "/${PKG}" )
+    BB=$(find $META_TOP_DIR/meta* -name "${PKG}*.bb" | grep -e "${PKG}/" -e  "/${PKG}" )
 #    err "recipe for \"$PKG\": $BB"
 
     if [ "$BB" != "" ]
