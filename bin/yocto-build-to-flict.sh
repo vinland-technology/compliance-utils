@@ -266,7 +266,7 @@ find_artefact_license_bb()
             export LICENSE=$(grep "LICENSE_\${PN}${ART_NAME_EXPR}" $BB | cut -d = -f 2 | sed 's,",,g')
         fi
     else
-        err "Can't find recipe for \"$PKG\""
+        err "Can't find recipe for \"$PKG\", using META_TOP_DIR=$META_TOP_DIR"
         export LICENSE=""
         export LICENSE_COUNT=0
         # TODO: exit or handle
