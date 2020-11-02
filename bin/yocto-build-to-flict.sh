@@ -788,7 +788,7 @@ fi
 if [ ! -f $LICENSE_MANIFEST ]
 then
     err "Can't find license manifest file"
-    err " \"$IMG_MF\""
+    err " \"$LICENSE_MANIFEST\""
     exit 104
 fi
 
