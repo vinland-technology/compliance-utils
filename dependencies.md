@@ -3,7 +3,7 @@
    dependencies.sh - list dependencies recursively
 
 # SYNOPSIS
-   ```dependencies.sh [OPTIONS] FILE```
+   ```dependencies.sh [OPTIONS] FILES```
 
 
 
@@ -112,6 +112,11 @@ lists all dependencies for the program evince
 
 
 lists all dependencies for the library libcairo2.so and creates report in pdf format
+
+```dependencies.sh xdpyinfo xvinfo```
+
+
+lists all dependencies xdpyino and xauth.
 
 # EXIT CODES
 
