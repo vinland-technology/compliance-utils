@@ -20,5 +20,5 @@ designed to be used by flict (link below)
 
 script: [```yocto-build-to-flict.sh``` ](https://github.com/vinland-technology/compliance-utils/blob/main/bin/yocto-build-to-flict.sh)
 
-manual: [```yocto-build-to-flict..md``` ](yocto-build-to-flict..md)
+manual: [```yocto-build-to-flict.md``` ](yocto-build-to-flict.md)
 
