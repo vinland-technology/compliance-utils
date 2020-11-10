@@ -24,6 +24,7 @@ SPLIT_PKG=""
 #
 #
 
+
 # TODO: document
 DIST_DIR=core2-64-poky-linux
 # TODO: document
@@ -59,8 +60,6 @@ READELF=readelf
 LIBC_EXCLUDE="" 
 NONSENSE_EXCLUDE=" -e _z_z_z_z_z_z_z_z_z"
 
-
-LIBC=true
 
 VERBOSE=false
 VERBOSE_SPINNER=(\| / - \\ ); 
@@ -138,7 +137,7 @@ exit_if_error()
 
 setup_glibc_excludes()
 {
-    local LIBS=$(find ${TMP_WORK}/$DIST_DIR/glibc/*/sysroot-destdir/ -name "lib*.so*" )
+    local LIBS=$(find ${TMP_WORK}/$DIST_DIR/glibc/*/image/lib -name "*.so*")
     for i in $LIBS
     do
         echo -n " -e $(basename $i) ";
@@ -212,6 +211,105 @@ find_artefact_split_package_name()
     fi
 }
 
+usage()
+{
+    echo "NAME"
+    echo "   $(basename $0)"
+    echo
+    
+    echo "SYNOPSIS"
+    echo "   $(basename $0) [OPTION] package"
+    echo
+    
+    echo "DESCRIPTION"
+    echo "   List information about packages from a Yocto build. The output"
+    echo "   is designed to be used by flict ()"
+    echo
+    
+    echo "OPTIONS"
+    echo "   -bd, --build-dir <DIR>"
+    echo "      Sets the build dir to DIR "
+    echo
+    echo "   -i, --image <IMAGE>"
+    echo "      Sets the image dir to IMAGE "
+    echo
+    echo "   -mtd, --meta-top-dir <DIR>"
+    echo "      Sets the top level directory for meta files (e.g. bitbake recipes)"
+    echo
+    echo "   -dd, --dist-dir <DIR>"
+    echo "      Sets the distribution directory to DIR"
+    echo
+    echo "   -m, --machine <MACHINE>"
+    echo "      Sets the machine to MACHINE"
+    echo "      "
+    echo
+    echo "   -d, --date <DATE>"
+    echo "      Set the date to DATE. This is needed to find license manifest"
+    echo
+    echo "   -od, --out-dir <DIR>"
+    echo "      Set the output directory to DIR. Default is $OUT_DIR"
+    echo
+    echo "   -nl, --no-libc"
+    echo "      Exclude all libc related dependencies"
+    echo
+    echo "   -v, --verbose"
+    echo "      Enable verbose output"
+    echo
+    echo "   -sp, --split-package <SPLIT PACKAGE>"
+    echo "      List only split package (sub package) for the package. Do not list all split packages."
+    echo
+    echo "   -a, --artefect <ARTEFECT>"
+    echo "      Print information about ARTEFACT "
+    echo
+    echo "   -la, --list-artefacts"
+    echo "     List all artefacts or if package is set (before -la) list all artefacts for that package"
+    echo
+    echo "   -ma, --manage-artefacts"
+    echo "     Print information about all artefacts. Warning, there be dragins here"
+    echo
+    echo "    --help, h"
+    echo "      Prints this help text."
+    echo
+    
+    echo "ENVIRONMENT VARIABLES"
+    echo "   The following environment variables can be used to tweak $PROG"
+    echo 
+    echo "   DIST_DIR (see -dd). Default is \"core2-64-poky-linux\""
+    echo
+    echo "   MACHINE (see -m).  Default is \"qemux86-64\""
+    echo
+    echo "   IMAGE (see -i). Default is \"core-image-minimal-qemux86-64\""
+    echo 
+    echo "   DATE (see -d). Default is \"20201024110850\""
+    echo
+    echo "   META_TOP_DIR (see -mtd).Default is \"../\""
+    echo "   "
+    
+    echo "EXAMPLES"
+    echo "   The examples below assume you have set the environment as desribed above"
+    echo
+    echo "   $ yocto-build-to-flict.sh -a bsdtar"
+    echo "      Prints information about the split package bsdtar (from the package libarchive)"
+    echo
+    echo "   $ yocto-build-to-flict.sh libarchive"
+    echo "      Prints information about the package libarchive"
+    echo
+    echo "   $ yocto-build-to-flict.sh libarchive -sp bsdtar"
+    echo "      Prints information about the split package bsdtar from the package libarchive"
+    echo
+    echo "   $ yocto-build-to-flict.sh libarchive -la"
+    echo "      List all artefacts"
+    echo
+    echo "   $ yocto-build-to-flict.sh libarchive -la"
+    echo "      List all artefacts for libarchive"
+    echo
+    echo "      Prints information about the package libarchive"
+    echo
+
+
+    
+}
+
 #
 # For a given package split package name ($1) find the package
 #
@@ -262,6 +360,7 @@ find_artefact_license_bb()
         if [ $LICENSE_COUNT -eq 0 ]
         then
             export LICENSE=$(grep "LICENSE" $BB | cut -d = -f 2 | sed 's,",,g')
+            export LICENSE_COUNT=$(grep "LICENSE" $BB | cut -d = -f 2 | sed 's,",,g' | wc -l)
         else
             export LICENSE=$(grep "LICENSE_\${PN}${ART_NAME_EXPR}" $BB | cut -d = -f 2 | sed 's,",,g')
         fi
@@ -345,6 +444,35 @@ print_package_split_dir()
         grep -v $EXCLUDES
 }
 
+updatelib_deps()
+{
+ #   err "update "
+  #  err "update \"$1\""
+  #  err "update ==============================================================================================0"
+  #  err "update --> \"$1\": ${LIB_DEPENDENCIES[${1}]}"
+  #  err "     ---> update keys"
+    for i in "${!LIB_DEPENDENCIES[@]}"
+    do
+   #     err "update key  : $i ( ${#LIB_DEPENDENCIES[$i]})"
+        #            err "value: ${LIB_DEPENDENCIES[$i]}"
+        :
+    done
+    if [ "$2" = "" ]
+    then
+        LIB_DEPENDENCIES["${1}"]="dummy"
+    else
+        LIB_DEPENDENCIES["${1}"]="$2"
+    fi
+#    err "     <--- update keys"
+    for i in "${!LIB_DEPENDENCIES[@]}"
+    do
+#        err "update key  : $i ( ${#LIB_DEPENDENCIES[$i]})"
+        #            err "value: ${LIB_DEPENDENCIES[$i]}"
+        :
+    done
+    
+}
+    
 print_artefact_deps()
 {
     local PKG="$1"
@@ -354,7 +482,7 @@ print_artefact_deps()
 
     verbose_spin
 
-    debug "   $INDENT- print: $ART"
+#    debug "   $INDENT- print: $ART"
     
     if [ -h "$ART" ]
     then
@@ -368,13 +496,17 @@ print_artefact_deps()
     fi
     
 #    err "check type of \"$ART\""
-    TYPE=$(file -b $ART)
+    local TYPE=$(file -b $ART)
 
     if [[ "${TYPE}" =~ "directory" ]]
     then
         err "$ART is a directory"
         exit 123
     elif [[ "${TYPE}" =~ "POSIX shell script" ]]
+    then
+        DISCARDED_ARTEFACTS="$DISCARDED_ARTEFACTS $ART"
+        return
+    elif [[ "${TYPE}" =~ "current ar archive" ]]
     then
         DISCARDED_ARTEFACTS="$DISCARDED_ARTEFACTS $ART"
         return
@@ -415,48 +547,52 @@ print_artefact_deps()
         echo "$INDENT   \"license\": \"$LICENSE\","
         echo -n "$INDENT   \"dependencies\": ["
 
-
+        local DEPS
         # if no cache, build it
-        if [[ ! -v LIB_DEPENDENCIES[$ART] ]]
+        if [[ "${LIB_DEPENDENCIES[$ART]}" = "" ]] && [[ "${LIB_DEPENDENCIES[$ART]}" != "*dummy" ]]
         then
-            local DEPS=$($READELF -d $ART | grep NEEDED | cut -d ":" -f 2 | \
+#            err "read and cache 1: $ART since = \"${LIB_DEPENDENCIES[$ART]}\" (#: ${#LIB_DEPENDENCIES[@]})"
+
+            DEPS="$($READELF -d $ART | grep NEEDED | cut -d ":" -f 2 | \
                    sed -e 's,^[ ]*\[,,g' -e 's,\]$,,g' | \
-                   grep -v $LIBC_EXCLUDE | grep -v "^[ ]*$")
-#            debug "caching: $ART  ($DEPS)"
-            
-            LIB_DEPENDENCIES[$ART]=$DEPS
-            
+                   grep -v $LIBC_EXCLUDE | grep -v "^[ ]*$" | tr '\n' ' ')"
+
+ #           err "DEPS: \"$DEPS\""
+  #          err "caching: $ART 1 (DEPS:\"$DEPS\")"
+
+   #         err ""
+
+            updatelib_deps "$ART" "$DEPS"
+
+#            err "read and cache 2: $ART since = \"${LIB_DEPENDENCIES[$ART]}\" (#: ${#LIB_DEPENDENCIES[@]})"
+ #           err "caching: $ART 2  (DEPS:\"${LIB_DEPENDENCIES[${ART}]}\")"
+#            err "caching: $(basename $ART)  => $(echo ${DEPS}                   | tr '\n' ' ')"
  #           debug "## ${#LIB_DEPENDENCIES[@]} ## $ART ===> ${LIB_DEPENDENCIES[$ART]} "
 #            for i in "${!LIB_DEPENDENCIES[@]}"
  #           do
   #              debug "     ## $i"
    #             debug "     ## value: ${LIB_DEPENDENCIES[$i]}"
-    #        done
+            #        done
         else
-            debug "using cache of: $ART"
+            #            err "using cache for $ART"
+            :
         fi
         # use cached
         DEPS="${LIB_DEPENDENCIES[$ART]}"
-        
-        #        echo "bin  DEPS: $DEPS"
+#        echo "hesa  DEPS: $DEPS " # (using $LIBC_EXCLUDE)
+
         local loop_cnt=0
-        if [ "$DEPS" = "" ]
+        if [ "$DEPS" = "" ] || [ "$DEPS" = "dummy" ] 
         then
             echo "]"
 #            echo "#DEPS: \"$DEPS\""
         else
 #            echo "#DEPS: \"$DEPS\""
-            echo
             for dep in $DEPS
             do
                 #            echo "dep: $dep [[$loop_cnt]]"
                 if [ "$dep" != "" ]
                 then
-                    if [ $loop_cnt -ne 0 ]
-                    then
-                        echo -n ","
-                    fi
-                    loop_cnt=$(( $loop_cnt + 1 ))
                     #           echo "dep: $dep"
                     #          echo "------------------------"
                     #         echo find_lib $dep; find_lib $dep
@@ -467,14 +603,22 @@ print_artefact_deps()
                     fi
                     LIB=${LIB_PATHS[$dep]}
                     #      echo "------------------------"
-#                    echo "\"$dep\" ===> \"$LIB\""
+                    #                    echo "\"$dep\" ===> \"$LIB\""
                     if [ "$LIB" = "" ]
                     then
                         err "Can't find lib path for $dep"
                         exit 2
                     fi
-                    #      echo "------------------------"
-                    print_artefact_deps "$PKG" "$DIR" "$LIB" "$INDENT    "
+                    print_artefact_deps "$PKG" "$DIR" "$LIB" "$INDENT    " 
+                    if [ $loop_cnt -ne 0 ]
+                    then
+                        debug "loop_cnt: $loop_cnt, adding ,"
+                        echo -n ","
+                        
+                    else
+                        debug "loop_cnt: $loop_cnt, ignore ,"
+                    fi
+                    echo -n "$RES"
                 fi
             done
             echo "   ]"
@@ -548,6 +692,8 @@ print_split_package_helper()
 #echo            print_artefact $PKG $DIR $art 
 
             print_artefact $PKG $DIR $art > $JSON_FILE
+            # ugly fix
+            sed -i 's/}[ \n]*{/},{/g'  $JSON_FILE
             if [ $(grep -c name $JSON_FILE) -eq 0 ]
             then
                 rm $JSON_FILE
@@ -629,6 +775,14 @@ handle_package()
 
 
 
+#
+# handle_artefact
+#
+# description: given the artefact ($1) this function:
+#  finds the split package name as well as the package name
+#  and then prints the artefact 
+# 
+# 
 handle_artefact()
 {
     debug "handle_artefact $1"
@@ -657,9 +811,10 @@ handle_artefact()
 
 list_artefacts()
 {
-    debug "list_artefacts $1"
 
     IMG_MF=tmp/deploy/images/${MACHINE}/${IMAGE}.manifest
+    debug "list_artefacts from $IMG_MF"
+    err- "list_artefacts from $IMG_MF"
 
     if [ ! -f $IMG_MF ]
     then
@@ -676,16 +831,14 @@ list_artefacts()
     
     for art in $ARTEFACTS
     do
+        echo "art: $art"
         SPLIT_PKG_NAME=$(find_artefact_split_package_name $art)
         debug "SPLIT_PKG_NAME: $SPLIT_PKG_NAME"
+
         if [ "$SPLIT_PKG_NAME" = "" ]
         then
             err "Can't find split package name for artefact: $1"
-            err "Perhaps your DIST_DIR ($DIST_DIR) is incorrect."
-            err "If so, try -dd <DIR>"
-            err "...."
-            # TODO: exit code
-            exit 213
+            err "Ignoring...."
         fi
         
 #        if [ "$SPLIT_PKG_NAME" = "" ]
@@ -756,7 +909,7 @@ do
             DATE="$2"
             shift
             ;;
-        "--OUT-dir" | "-td")
+        "--out-dir" | "-od")
             OUT_DIR="$2"
             shift
             ;;
@@ -783,7 +936,7 @@ do
             shift
             ;;
         "--help" | "-h")
-            echo no not now
+            usage
             exit 0
             ;;
         *)
@@ -843,7 +996,7 @@ if [ "$LIBC" = "true" ]
 then
     LIB_EXCLUDE=$NONSENSE_EXCLUDE    
 else
-    setup_glibc_excludes
+#    setup_glibc_excludes
     LIB_EXCLUDE=$(setup_glibc_excludes)
 fi
 EXCLUDES="-e \.debug -e pkgconfig "
@@ -870,6 +1023,7 @@ then
     handle_artefact $ARTEFACT
 else
     echo "SYNTAX ERROR"
+    usage
     exit 2
 fi
 
@@ -879,6 +1033,7 @@ fi
 #
 if [ "$JSON_FILES" != "" ]
 then
+    echo
     echo "Created: "
     for file in $JSON_FILES
     do
@@ -887,10 +1042,10 @@ then
 fi
 if [ "$DISCARDED_ARTEFACTS" != "" ]
 then
-    echo "Discard files:"
-    echo $DISCARDED_ARTEFACTS | tr ' ' '\n' | sort -u | while read file
+    err "Discarded files:"
+    err $DISCARDED_ARTEFACTS | tr ' ' '\n' | sort -u | while read file
     do
-        echo " $file"
+        err " $file"
     done
 #    echo $DISCARDED_ARTEFACTS 
 fi
