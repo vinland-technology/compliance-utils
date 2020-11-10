@@ -1,11 +1,24 @@
 #!/bin/bash
 
+###################################################################
+#
+# FOSS License Compatibility Graph
+#
+# SPDX-FileCopyrightText: 2020 Henrik Sandklef
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+###################################################################
+
 # default
 OUT_DIR=~/.vinland/compliance-utils/artefacts
 LIBC=false
 DEBUG=false
 PKG=""
 SPLIT_PKG=""
+
+DATE_FMT="%Y-%m-%d %H:%M:%S  %Z" 
+CURRENT_DATE=$(date +"$DATE_FMT")
 
 # Nomenclature
 # --------------------
@@ -200,14 +213,19 @@ find_artefact_split_package_name()
 {
     local ART="$1"
 
-    
     ART_LINK=$(find $BUILD_DIR/*/*/*/runtime-reverse -name "${ART}" -type l | grep runtime-reverse | head -1)
 
     if [ "$ART_LINK" = "" ]
     then
         echo ""
     else
-        echo $ART_LINK | xargs readlink | xargs basename
+#        echo "echo $ART_LINK | xargs readlink | xargs basename" >> /tmp/check.txt
+        LINK=$(echo $ART_LINK | xargs readlink)
+        if [ "${LINK}" = "" ]
+        then
+            echo ""
+        fi
+        basename "${LINK}"
     fi
 }
 
@@ -223,7 +241,7 @@ usage()
     
     echo "DESCRIPTION"
     echo "   List information about packages from a Yocto build. The output"
-    echo "   is designed to be used by flict ()"
+    echo "   is designed to be used by flict (link below)"
     echo
     
     echo "OPTIONS"
@@ -265,7 +283,8 @@ usage()
     echo "     List all artefacts or if package is set (before -la) list all artefacts for that package"
     echo
     echo "   -ma, --manage-artefacts"
-    echo "     Print information about all artefacts. Warning, there be dragins here"
+    echo "     Print information about all artefacts. Warning, there be dragons here"
+    echo "     TOTALLY UNSUPPORTED!!"
     echo
     echo "    --help, h"
     echo "      Prints this help text."
@@ -305,9 +324,22 @@ usage()
     echo
     echo "      Prints information about the package libarchive"
     echo
-
-
-    
+    echo "AUTHOR"
+    echo "    Written by Henrik Sandklef."
+    echo ""
+    echo "REPORTING BUGS"
+    echo "    File an issue over at: https://github.com/vinland-technology/compliance-utils"
+    echo ""
+    echo "COPYRIGHT"
+    echo "    Copyright © 2020 Henrik Sandklef"
+    echo "    License GPLv3+: GNU GPL  version  3  or  later"
+    echo "    <https://gnu.org/licenses/gpl.html>."
+    echo "    This  is  free  software: you are free to change and redistribute it.  There is NO WARRANTY,"
+    echo "    to the extent permitted by law."
+    echo 
+    echo "SEE ALSO"
+    echo "    flict: https://github.com/vinland-technology/flict"
+    echo
 }
 
 #
@@ -317,7 +349,7 @@ find_split_package_package_name()
 {
     local SPLIT_PKG="$1"
 
-    find $BUILD_DIR/*/*/packages-split/ -name "${SPLIT_PKG}" -type d | grep "packages-split/${SPLIT_PKG}[ ]*$" | grep -v "/src/" | sed 's,packages-split,\n,g' | head -1 | sed 's,/[-0-9a-zA-Z\.+_]*/$,,g' | xargs basename
+    find $BUILD_DIR/*/*/packages-split/ -name "${SPLIT_PKG}" -type d | grep "packages-split/${SPLIT_PKG}[ ]*$" | grep -v "/src/" | sed 's,packages-split,\n,g' | head -1 | sed 's,/[-0-9a-zA-Z\.+_]*/$,,g' | xargs basename 2>/dev/null
 }
 
 #
@@ -809,9 +841,15 @@ handle_artefact()
     print_split_package $PKG $SPLIT_PKG
 }
 
+ARTEFACTS_JSON=artefacts.json
+rm ${ARTEFACTS_JSON}
+artefact_json()
+{
+    echo "$*" | tee -a ${ARTEFACTS_JSON}
+}
+
 list_artefacts()
 {
-
     IMG_MF=tmp/deploy/images/${MACHINE}/${IMAGE}.manifest
     debug "list_artefacts from $IMG_MF"
     err- "list_artefacts from $IMG_MF"
@@ -825,56 +863,80 @@ list_artefacts()
         exit 103
     fi
     
-    ARTEFACT_EXCLUDE_LIST="-e base-files -e hicolor-icon-theme -e iso-codes -e update-rc.d -e epiphany -e gcr -e busy -e desktop -e elfutils -e aspell -e dbus -e enchant -e passwd -e eudev -e fontconfig -e dazzle -e config -e asm1 -e atk -e arspi -e attr -e cairo -e cap2 -e crypt  -e glib -e gstreamer -e kernel -e atsp -e blkid -e elf -e mesa -e fonts -e ff -e freetype -e gbm -e gcc -e pixbuf -e glapi -e glib -e gnutls -e gpg -e stalloc -e gstdaudio -e tfft -e gstgl "
-    ARTEFACTS=$(grep -v "\-lic " $IMG_MF | awk '{ print $1 }' | grep -v $ARTEFACT_EXCLUDE_LIST | sort -u)
+    ARTEFACTS=$(grep -v "\-lic " $IMG_MF | awk '{ print $1 }' | sort -u)
 
-    
+
+    artefact_json "{"
+    artefact_json "  \"meta\": {"
+    artefact_json "    \"date\": \"${CURRENT_DATE}\","
+    artefact_json "    \"host\": \"$(uname -a)\","
+    artefact_json "    \"user\": \"$(whoami)\""
+    artefact_json "  },"
+    artefact_json "  \"build-information\": {"
+    artefact_json "    \"image\": \"${IMAGE}\","
+    artefact_json "    \"machine\": \"${MACHINE}\","
+    artefact_json "    \"manifest\": \"${IMG_MF}\""
+    artefact_json "  },"
+    artefact_json "  \"artefacts\": ["
+
+    FAILED_ARTEFACTS=""
+    FIRST_ARTEFACT=true
     for art in $ARTEFACTS
     do
-        echo "art: $art"
         SPLIT_PKG_NAME=$(find_artefact_split_package_name $art)
         debug "SPLIT_PKG_NAME: $SPLIT_PKG_NAME"
 
         if [ "$SPLIT_PKG_NAME" = "" ]
         then
-            err "Can't find split package name for artefact: $1"
-            err "Ignoring...."
+            err "Can't find split package name for artefact: $art"
+            FAILED_ARTEFACTS="$FAILED_ARTEFACTS $art" 
+            continue
         fi
         
-#        if [ "$SPLIT_PKG_NAME" = "" ]
- #       then
-  #          err "$art: no package found"
-   #         UN_MANAGED_ARTEFACTS="$UN_MANAGED_ARTEFACTS $art"
-    #    else
-#            echo  "time: "
- #           time find_split_package_name_path $SPLIT_PKG_NAME
-                        
-            SPLIT_PKG=$(find_split_package_name_path $SPLIT_PKG_NAME)
-            debug "SPLIT_PKG:      $SPLIT_PKG"
-            
-            PKG=$(find_split_package_package_name $SPLIT_PKG_NAME)
-            debug "PKG:            $PKG"
+        SPLIT_PKG=$(find_split_package_name_path $SPLIT_PKG_NAME)
+        debug "SPLIT_PKG:      $SPLIT_PKG"
+        
+        PKG=$(find_split_package_package_name $SPLIT_PKG_NAME)
+        debug "PKG:            $PKG"
+        
+        if [ "$PKG" = "" ]
+        then
+            err "Can't find package name for artefact: $art"
+            FAILED_ARTEFACTS="$FAILED_ARTEFACTS $art" 
+            continue
+        fi
 
-            if [ "${MANAGE_ARTEFACTS}" = "true" ]
+        if [ "${MANAGE_ARTEFACTS}" = "true" ]
+        then
+            echo -n "$art: "
+            print_split_package $PKG $SPLIT_PKG
+            echo "OK"
+        else
+            if [ "$FIRST_ARTEFACT" = "true" ]
             then
-                echo -n "$art: "
-                print_split_package $PKG $SPLIT_PKG
-                echo "OK"
+                FIRST_ARTEFACT=false
             else
-                echo "$art: "
-                echo " - package     $PKG"
-                echo " - split name  $SPLIT_PKG_NAME"
-                echo " - split path  $SPLIT_PKG"
+                artefact_json "   ,"
             fi
-     #   fi
-        
-        
+            artefact_json "   {"
+            artefact_json "     \"name\": \"$art\","
+            artefact_json "     \"package\": \"$PKG\","
+            artefact_json "     \"split-package-name\": \"$SPLIT_PKG_NAME\","
+            artefact_json "     \"split-package\": \"$SPLIT_PKG\""
+            artefact_json "   }"
+        fi
+        #   fi
     done
-    if [ "$UN_MANAGED_ARTEFACTS" != "" ]
-    then
-        echo "Unmanaged artefacts:"
-        echo " - $UN_MANAGED_ARTEFACTS"
-    fi
+    artefact_json "  ]"
+
+#    if [ "$UN_MANAGED_ARTEFACTS" != "" ]
+ #   then
+  #      artefact_json ","
+   #     artefact_json "  \"unmanaged_artefacts\": \"$UN_MANAGED_ARTEFACTS\""
+    #fi
+    artefact_json ","
+    artefact_json "  \"failed_artefacts\": \"$FAILED_ARTEFACTS $ARTEFACT\"" 
+    artefact_json "}"
 }
 
 
