@@ -1,5 +1,15 @@
 #!/bin/bash
 
+###################################################################
+#
+# FOSS Compliance Utils / make-compliant.sh
+#
+# SPDX-FileCopyrightText: 2020 Henrik Sandklef
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+###################################################################
+
 PACKAGE="$1"
 SPLIT_PACKAGE="$2"
 OUT_DIR=test-results/$PACKAGE
