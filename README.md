@@ -13,3 +13,12 @@ script: [```dependencies.sh``` ](https://github.com/vinland-technology/complianc
 
 manual: [```dependencies.md``` ](dependencies.md)
 
+## yocto-build-to-flict.sh
+
+List information about packages from a Yocto build. The output is
+designed to be used by flict (link below)
+
+script: [```yocto-build-to-flict.sh``` ](https://github.com/vinland-technology/compliance-utils/blob/main/bin/yocto-build-to-flict.sh)
+
+manual: [```yocto-build-to-flict..md``` ](yocto-build-to-flict..md)
+
