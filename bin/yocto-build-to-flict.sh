@@ -2,7 +2,7 @@
 
 ###################################################################
 #
-# FOSS License Compatibility Graph
+# FOSS Compliance Utils / yocto-build-to-flict.sh
 #
 # SPDX-FileCopyrightText: 2020 Henrik Sandklef
 #
@@ -842,7 +842,6 @@ handle_artefact()
 }
 
 ARTEFACTS_JSON=artefacts.json
-rm ${ARTEFACTS_JSON}
 artefact_json()
 {
     echo "$*" | tee -a ${ARTEFACTS_JSON}
@@ -865,6 +864,7 @@ list_artefacts()
     
     ARTEFACTS=$(grep -v "\-lic " $IMG_MF | awk '{ print $1 }' | sort -u)
 
+    rm -f ${ARTEFACTS_JSON}
 
     artefact_json "{"
     artefact_json "  \"meta\": {"
