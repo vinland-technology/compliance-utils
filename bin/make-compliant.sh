@@ -12,7 +12,7 @@
 
 PACKAGE="$1"
 SPLIT_PACKAGE="$2"
-OUT_DIR=test-results/$PACKAGE
+OUT_DIR=compliant-results/$PACKAGE
 GRAPH_OUT_DIR=compliant-results/$PACKAGE/graphs
 LOG_FILE=${OUT_DIR}/$(basename $0).log
 mkdir -p $OUT_DIR
