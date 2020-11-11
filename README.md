@@ -22,3 +22,5 @@ script: [```yocto-build-to-flict.sh``` ](https://github.com/vinland-technology/c
 
 manual: [```yocto-build-to-flict.md``` ](yocto-build-to-flict.md)
 
+## yocto-compliance.sh
+
