@@ -368,7 +368,7 @@ find_package_dirs()
 {
     local PKG="$1"
     local DIR="$2"
-    find ${DIR}* -type d -prune | grep -v "${PKG}-lic$" 
+    find ${DIR}* -type d -prune | grep -v "${PKG}-lic$"
 }
 
 find_artefact_license_bb()
@@ -381,7 +381,7 @@ find_artefact_license_bb()
 
     export LOCAL_PKG=$PKG
     ART_NAME_EXPR=$(echo $ART_NAME | sed -e "s,$LOCAL_PKG,,g")
-    BB=$(find $META_TOP_DIR/meta* -name "${PKG}*.bb" | grep -e "${PKG}/" -e  "/${PKG}" )
+    BB=$(find $META_TOP_DIR/meta*  $META_TOP_DIR/poky/meta* -name "${PKG}*.bb" | grep -e "${PKG}/" -e  "/${PKG}" )
 #    err "recipe for \"$PKG\": $BB"
 
     if [ "$BB" != "" ]
@@ -391,9 +391,19 @@ find_artefact_license_bb()
         # only one artefact? That's the case if LICENSE_COUNT==0
         if [ $LICENSE_COUNT -eq 0 ]
         then
-            export LICENSE=$(grep "LICENSE" $BB | cut -d = -f 2 | sed 's,",,g')
-            export LICENSE_COUNT=$(grep "LICENSE" $BB | cut -d = -f 2 | sed 's,",,g' | wc -l)
+    echo "------------------------------------------------------------------------------------0" 1>&2
+    echo "grep \"LICENSE\" $BB | grep -v file | cut -d = -f 2 " 1>&2
+    echo "    find $META_TOP_DIR/meta*  $META_TOP_DIR/poky/meta* -name \"${PKG}*.bb\" | grep -e \"${PKG}/\" -e  \"/${PKG}\"     " 1>&2
+    echo "    $PKG $ART_NAME $SPLIT_PKG_NAME   " 1>&2
+    echo "------------------------------------------------------------------------------------0" 1>&2
+    
+            
+            export LICENSE=$(grep "LICENSE" $BB | grep -v file | cut -d = -f 2 | sed 's,",,g')
+            export LICENSE_COUNT=$(grep "LICENSE" $BB | grep -v file | cut -d = -f 2 | sed 's,",,g' | wc -l)
         else
+    echo "------------------------------------------------------------------------------------1" 1>&2
+    
+            
             export LICENSE=$(grep "LICENSE_\${PN}${ART_NAME_EXPR}" $BB | cut -d = -f 2 | sed 's,",,g')
         fi
     else
@@ -441,14 +451,12 @@ find_artefact_license()
     fi
     
 #    LICENSE=$(grep -A 3 "PACKAGE NAME: $ART_NAME[ ]*$"  $LICENSE_MANIFEST | grep LICENSE | cut -d : -f 2)
-    LICENSE=$(grep -A 3  "PACKAGE NAME: $ART_NAME[ ]*$"  $LICENSE_MANIFEST | grep LICENSE | cut -d : -f 2)
-    LICENSE_COUNT=$(grep -A 3  "PACKAGE NAME: $ART_NAME[ ]*$"  $LICENSE_MANIFEST | grep LICENSE | cut -d : -f 2 | wc -l)
-
+    LICENSE=$(grep -A 3  "PACKAGE NAME: $ART_NAME[ ]*$"  $LICENSE_MANIFEST | grep LICENSE | grep -v file | cut -d : -f 2)
+    LICENSE_COUNT=$(grep -A 3  "PACKAGE NAME: $ART_NAME[ ]*$"  $LICENSE_MANIFEST | grep LICENSE | grep -v file | cut -d : -f 2 | wc -l)
     
     if [ -z "$LICENSE" ] || [ $LICENSE_COUNT -ne 1 ]
     then
         find_artefact_license_bb $PKG $ART_NAME $SPLIT_PKG_NAME
-        
         if [ -z "$LICENSE" ] || [ $LICENSE_COUNT -ne 1 ]
         then
             err "Failed to find one (found $LICENSE_COUNT) license expression for $ART ($LICENSE)"
@@ -458,6 +466,7 @@ find_artefact_license()
             err " *      LICENSE_COUNT: $LICENSE_COUNT"
             err " *      LICENSE:       $LICENSE"
             err " *      MANIFEST:      $LICENSE_MANIFEST"
+            err " *      command:       grep -A 3  \"PACKAGE NAME: $ART_NAME[ ]*\$\"  $LICENSE_MANIFEST | grep LICENSE | grep -v file | cut -d : -f 2 | wc -l"
         fi
     fi
     
@@ -767,6 +776,7 @@ print_split_package()
 handle_package()
 {
     local PKG="$1"
+    local SPLIT_PKG="$2"
 
     # package is specified - let's find artefacts
     local PKG_DIR=$(find_package_dir "$PKG")
@@ -776,11 +786,19 @@ handle_package()
     debug "SPLIT_PKGS_DIRS: $SPLIT_PKGS_DIRS"
 
     JSON_FILES=""
-    if [ ! -z $SPLIT_PKG ]
+    
+    if [ ! -z "${SPLIT_PKG}" ]
     then
+        local SPLIT_PKG_REGEXP=""
+        for sp in ${SPLIT_PKG}
+        do
+            SPLIT_PKG_REGEXP="$SPLIT_PKG_REGEXP -e /${sp}\$ "
+#            echo "SPLIT_PKG_REGEXP: $SPLIT_PKG_REGEXP"
+        done
         debug "SPLIT_PKG set to $SPLIT_PKG"
         # PKG and artefact, keep only $SPLIT_PKG        
-        SPLIT_PKGS_DIRS=$(find_package_dirs "$PKG" "$PKG_DIR" | egrep "/${SPLIT_PKG}$" | sort -r)
+#        SPLIT_PKGS_DIRS=$(find_package_dirs "$PKG" "$PKG_DIR" | egrep "/${SPLIT_PKG}\$" | sort -r)
+        SPLIT_PKGS_DIRS=$(find_package_dirs "$PKG" "$PKG_DIR" | egrep $SPLIT_PKG_REGEXP | sort -r)
         debug "SPLIT_PKGS_DIR: $SPLIT_PKGS_DIRS"
     fi
 
@@ -864,7 +882,10 @@ list_artefacts()
     
     ARTEFACTS=$(grep -v "\-lic " $IMG_MF | awk '{ print $1 }' | sort -u)
 
-    rm -f ${ARTEFACTS_JSON}
+    if [ -f ${ARTEFACTS_JSON} ]
+    then
+        mv ${ARTEFACTS_JSON} ${ARTEFACTS_JSON}.bak
+    fi
 
     artefact_json "{"
     artefact_json "  \"meta\": {"
@@ -982,7 +1003,7 @@ do
             VERBOSE=true
             ;;
         "--split-package" | "-sp")
-            SPLIT_PKG=$2
+            SPLIT_PKG="$SPLIT_PKG $2"
             shift
             ;;
         "--artefect" | "-a")
@@ -1076,7 +1097,7 @@ fi
 #
 if [ ! -z ${PKG} ]
 then
-    handle_package "${PKG}"
+    handle_package "${PKG}" "${SPLIT_PKG}" 
 elif [ "${LIST_ARTEFACTS}" = "true" ] ||  [ "${MANAGE_ARTEFACTS}" = "true" ]
 then
     list_artefacts 
