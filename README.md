@@ -13,7 +13,15 @@ script: [```dependencies.sh``` ](https://github.com/vinland-technology/complianc
 
 manual: [```dependencies.md``` ](dependencies.md)
 
+## yoda.py
+
+List information about packages from a Yocto build. The output is
+designed to be used by flict. More information soon
+
+
 ## yocto-build-to-flict.sh
+
+This script is being replaced by yoda.py 
 
 List information about packages from a Yocto build. The output is
 designed to be used by flict (link below)
