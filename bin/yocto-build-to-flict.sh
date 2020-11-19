@@ -10,6 +10,17 @@
 #
 ###################################################################
 
+echo
+echo
+echo "This script is now replaced by yoda.py"
+echo
+echo "- which you can find over at:"
+echo "  https://github.com/vinland-technology/compliance-utils"
+echo
+echo
+echo ".... sleeping for 2 secs and will continue as normal after that"
+sleep 2
+
 # default
 OUT_DIR=~/.vinland/compliance-utils/artefacts
 LIBC=false
@@ -416,7 +427,9 @@ find_artefact_license()
     local DIR="$2"
     local ART="$3"
 
-
+    err ""
+    err "find_artefact_license($1, $2, $3)"
+    err ""
     ART_NAME=$(echo $ART | sed 's,packages-split/,\n,g' | tail -1 | cut -d "/" -f 1)
 
     # if cache, use it
@@ -563,7 +576,6 @@ print_artefact_deps()
         DISCARDED_ARTEFACTS="$DISCARDED_ARTEFACTS $ART"
         return
     fi
-
 
     find_artefact_license $PKG $DIR $ART
     
