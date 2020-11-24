@@ -218,12 +218,21 @@ create_format()
 
 verify_dot_file()
 {
-    local DOT_FILE=$1
+    local PKG_DOT_FILE=$1
     local PACKAGE=$2
-    if [ $(wc -l ${DOT_FILE} | awk ' { print $1}') -le 3 ]
+    if [ $(wc -l ${PKG_DOT_FILE} | awk ' { print $1}') -le 3 ]
     then
-        err "Could not create dot file for package: $PACKAGE"
-        exit 3
+        HITS=$(cat ${DOT_FILE} | awk ' { print $1} ' |grep "\"$PACKAGE\"" )
+        #echo "HITS: $HITS  ($PACKAGE)"
+        if [ "$HITS" != "" ]
+        then
+            echo "$PACKAGE does not seem to have any dependencies"
+            exit 0
+        else
+            err "Could not create dot file for package: $PACKAGE"
+            err "Did you use an existing name? Try searching with the -s option"
+            exit 3
+        fi
     fi
 }
 
