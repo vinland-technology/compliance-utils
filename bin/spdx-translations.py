@@ -33,11 +33,17 @@ def to_sed(translations):
         print(pipe + " sed -e 's," + t_value + "\\([ |&\\\"]\\)," + t_spdx + "\\1,g' ", end="")
       first=False
 
-def update_license(translations, license):
+def update_license(translations, license_expr):
+    license_list = license_expr.split()
     for i, d in enumerate(translations):
-        if d['value'] == license:
-            license = d['spdx'] 
-    return license
+        for x in range(len(license_list)):
+            if d['value'] in license_list[x]:
+                #print(license_list[x] + " ---> " + str(d['value']) + " ===> " + str(d['spdx']))
+                license_list[x]=d['spdx']         
+    license_string=""
+    for l in license_list:
+        license_string = license_string + l + " "
+    return license_string
 
 def update_components(translations, dependencies):
     updates_deps=[]
@@ -45,7 +51,6 @@ def update_components(translations, dependencies):
 #        print("license: \"" + dep["license"] + "\"")
         license = dep["license"].strip(' ')
         updated_license=update_license(translations, license)
- #       print("license: \"" + updated_license + "\"")
         dep["license"]=updated_license
         dep_deps = dep["dependencies"]
         updates_deps = update_components(translations, dep_deps)
