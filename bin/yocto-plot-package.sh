@@ -2,7 +2,7 @@
 
 # default
 DOT_FILE_NAME="depends.dot"
-TMP_DIR=~/.vinland-compliance-utils/plot-package
+TMP_DIR=~/.vinland/compliance-utils/plot-package
 RECURSIVE=false
 
 FORMATS=png
@@ -200,8 +200,10 @@ create_dot()
 
 create_format()
 {
-    dot -T$1 -O "$PKG_DOT_FILE" &&  echo "Created $PKG_DOT_FILE.$1"
-    exit_if_error $? "Failed creating $PKG_DOT_FILE.$1"
+    FMT=$1
+    FMT_FILE=$(basename $PKG_DOT_FILE | sed "s,\.dot$,\.${FMT},g")
+    dot -T$FMT "$PKG_DOT_FILE" > ${FMT_FILE} &&  echo "Created $FMT_FILE (from $PKG_DOT_FILE)"
+    exit_if_error $? "Failed creating $FMT_FILE (from $PKG_DOT_FILE)"
 }
 
 create_dot "$PKG"  > $PKG_DOT_FILE
