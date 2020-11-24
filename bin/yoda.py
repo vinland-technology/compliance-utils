@@ -58,7 +58,8 @@ PKG_FILES={}
 LIB_DEPS={}
 GLIBC_EXCLUDES=[]
 BIN_PATHS={}
-PKG_TO_LICENSE={}
+SUB_PKG_TO_LICENSE={}
+#PACKAGE_TO_LICENSE={}
 MISSING_FILE=10
 
 START_TIME=0
@@ -86,7 +87,7 @@ def lib_to_regexp(lib):
     return lib.replace('+',"\+")
 
 def build_license_cache():
-    global PKG_TO_LICENSE
+    global SUB_PKG_TO_LICENSE
     with open(LICENSE_MANIFEST) as f:
         package=None
         for line in f.readlines():
@@ -94,11 +95,14 @@ def build_license_cache():
                 package=line.split(":")[1].rstrip().replace(" ","")
             if line.startswith("LICENSE:"):
                 p_license=line.split(":")[1].rstrip()
-                #verbose("cache license: \"" + p_license + "\" for ---->\"" + package + "\"<----")
-                PKG_TO_LICENSE[package]=p_license
+                verbose("cache license: \"" + p_license + "\" for ---->\"" + package + "\"<----")
+                SUB_PKG_TO_LICENSE[package]=p_license
     
 
 def build_cache(build_dir, libc):
+    global SUB_PKG_TO_LICENSE
+    global PACKAGE_TO_LICENSE
+    build_license_cache()
     dir=build_dir + "/*/*/packages-split/"
     verbose(" build cache for: " + dir + "\n")
     for file in glob.glob(dir+"/**/"):
@@ -111,12 +115,13 @@ def build_cache(build_dir, libc):
         short_file=str(file).replace(build_dir+"/", "")
         package=short_file.split(os.sep)[0]
         key = os.path.basename(os.path.normpath(file))
-#        verbose("package: " + package + " <=== " + key)
+        #verbose("package: " + package + " <=== " + key)
         #verbose("store:   " + key + "=>" + package )
         SUB_PKG_TO_PACKAGE_MAP[key]=package
         SUB_PKG_TO_PATH[key]=file
         SUB_PKG_PATH_TO_SUB_PKG[file]=key
         #verbose("store:   " + key + "=>" + file )
+        #PACKAGE_TO_LICENSE[package]=SUB_PKG_TO_LICENSE[]
 
     if libc:
         global GLIBC_EXCLUDES
@@ -125,7 +130,6 @@ def build_cache(build_dir, libc):
         setup_glibc_excludes()
         
     verbose("glibc excludes: " + str(GLIBC_EXCLUDES))
-    build_license_cache()
 
     return None
 
@@ -141,7 +145,8 @@ def build_cache(build_dir, libc):
 #            return file_name
 #
 #    return None
-    
+
+
 def sub_package_to_path(build_dir, sub_pkg):
     if sub_pkg in SUB_PKG_TO_PATH:
         return SUB_PKG_TO_PATH[sub_pkg]
@@ -168,7 +173,15 @@ def artefact_to_sub_package(build_dir, artefact):
             sub_package = os.path.basename(followed_link)
             return sub_package
         
-
+def package_license(package):
+    file=BUILD_DIR + "/*/*/" + package + ".spec"
+    for file_path in glob.glob(file, recursive=True):
+        with open(file_path) as f:
+            for line in f.readlines():
+                if "License" in line:
+                    return line.split(":")[1]
+                
+    return "unknown"
 
 def image_artefacts(image_file):
     artefacts=[]
@@ -363,8 +376,8 @@ def setup_glibc_excludes():
         if ".so" in lib:
             GLIBC_EXCLUDES.append(lib)
             
-def license_for_pkg(pkg_file, bin_file):
-    global PKG_TO_LICENSE
+def license_for_sub_pkg(pkg_file, bin_file):
+    global SUB_PKG_TO_LICENSE
     #verbose("license_for_pkg(" + pkg_file + ", " + bin_file + ")")
     #verbose(" * manifest: " + LICENSE_MANIFEST)
     # Try getting from cache
@@ -372,8 +385,8 @@ def license_for_pkg(pkg_file, bin_file):
     paths=bin_file.replace(BUILD_DIR,"").split("/")
     if len(paths) >= 5:
         path=paths[4]
-        if path in PKG_TO_LICENSE:
-            lic=PKG_TO_LICENSE[path]
+        if path in SUB_PKG_TO_LICENSE:
+            lic=SUB_PKG_TO_LICENSE[path]
             #verbose(" * cached license:     " + lic + " for " + path)
             return lic
 
@@ -401,10 +414,10 @@ def license_for_pkg(pkg_file, bin_file):
                     else:
                         license=line.split("=")[1].rstrip().replace("\"","")
             if pn_license != None:
-                PKG_TO_LICENSE[path]=pn_license                
+                SUB_PKG_TO_LICENSE[path]=pn_license                
                 return pn_license
             if license != None:
-                PKG_TO_LICENSE[path]=license                
+                SUB_PKG_TO_LICENSE[path]=license                
                 return license
     return "UNKNOWN"
             
@@ -413,15 +426,18 @@ def package_file_to_component(pkg_file, indent):
     bin_file=find_bin_file(pkg_file)
     if bin_file == None:
         return failed_component(pkg_file, "Failed to find binary file for " + pkg_file)
-    
     deps=dependencies(bin_file)
     deps_deps=[]
     for dep in deps:
         dep_component = package_file_to_component(dep, indent+"  ")
         deps_deps.append(dep_component)
     component={}
-    component['name']=pkg_file
-    component['license']=license_for_pkg(pkg_file, bin_file)
+    component['file']=pkg_file
+    sub_pkg=sub_package_for_bin_file(bin_file)
+    component['name']=sub_pkg
+    package=SUB_PKG_TO_PACKAGE_MAP[sub_pkg]
+    component['package'] = package
+    component['license']=license_for_sub_pkg(pkg_file, bin_file)
     component['dependencies']=deps_deps
     return component
 
@@ -430,6 +446,12 @@ def short_name_for_sub_pkg_path(sub_pkg_path):
         SUB_PKG_PATH_TO_SUB_PKG[sub_pkg_path]=str(os.path.basename(sub_pkg_path.rstrip('/')))
     return SUB_PKG_PATH_TO_SUB_PKG[sub_pkg_path]
     
+def package_for_bin_file(bin_file):
+    return bin_file.replace(BUILD_DIR, "").split("/")[1]
+
+def sub_package_for_bin_file(bin_file):
+    return bin_file.replace(BUILD_DIR, "").split("/")[4]
+
 def path_for_sub_pkg(sub_pkg):
     if not sub_pkg in SUB_PKG_TO_PATH:
         SUB_PKG_TO_PATH[sub_pkg]=str(os.path.basename(sub_pkg_path.rstrip('/')))
@@ -552,14 +574,16 @@ def package_to_component(package, sub_pkg):
                 sub_pkgs.append(os.path.basename(f))
                 
     components_map={}
-    components=[]
+    component_files=[]
     for sp in sub_pkgs:
         try:
-            components.extend(sub_package_to_component_helper(sp))
+            component_files.extend(sub_package_to_component_helper(sp))
         except Exception as e:
             error("Could not create component from: " + str(sp))
             error(e)
-    components_map['components']=components
+    components_map['package']=package
+    components_map['license']=package_license(package)
+    components_map['componentFiles']=component_files
     return components_map
 
 def artefact_to_component(artefact):
@@ -569,6 +593,7 @@ def artefact_to_component(artefact):
         return None
 
     components_map={}
+    components_map['package']=package
     components_map['components']=sub_package_to_component_helper(sub_pkg)
     return components_map
     
