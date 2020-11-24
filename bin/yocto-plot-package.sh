@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: 2020 Henrik Sandklef
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # default
 DOT_FILE_NAME="depends.dot"
 TMP_DIR=~/.vinland/compliance-utils/plot-package
@@ -39,7 +43,7 @@ exit_if_error()
 usage()
 {
     echo "NAME"
-    echo "    $(basename $0) - plot dependecy graph in png format"
+    echo "    $(basename $0) - plot dependecy graph in misc formats"
     echo 
     echo "SYNOPSIS"
     echo "    $(basename $0) [OPTIONS] package"
