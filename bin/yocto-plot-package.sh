@@ -74,6 +74,9 @@ usage()
     echo "    -r, --recursive"
     echo "        Prints dependencies recursively. Automatically turns on package names (-pn)"
     echo
+    echo "    -s, --search"
+    echo "        Search for package(s), matching package name, instead of creating graph"
+    echo
     echo "    -h, --help"
     echo "        Prints this help text"
     echo
@@ -113,6 +116,9 @@ do
             ;;
         "--package-name" | "-pn")
             PACKAGE_NAME=true
+            ;;
+        "--search" | "-s")
+            SEARCH=true
             ;;
         "--recursive" | "-r")
             RECURSIVE=true
@@ -210,8 +216,37 @@ create_format()
     exit_if_error $? "Failed creating $FMT_FILE (from $PKG_DOT_FILE)"
 }
 
+verify_dot_file()
+{
+    local DOT_FILE=$1
+    local PACKAGE=$2
+    if [ $(wc -l ${DOT_FILE} | awk ' { print $1}') -le 3 ]
+    then
+        err "Could not create dot file for package: $PACKAGE"
+        exit 3
+    fi
+}
+
+if [ "$SEARCH" = "true" ]
+then
+    echo -n "Searching for $PKG in $DOT_FILE:"
+    HITS=$(cat ${DOT_FILE} | awk ' { print $1 }' | sed 's,\",,g'  | grep "$PKG" | grep -v "\-lic\"" | sed 's,\[label=\"[a-zA-Z0-9+\>\=. ]*\"\],,g' | sed 's,\[style=dotted\],,g' | sort -u )
+    if [ "$HITS" = "" ]
+    then
+        echo " nothing found"
+    else
+        echo
+        for hit in $HITS
+        do
+            echo " * $hit"
+        done
+    fi
+    exit 0
+fi
+
 create_dot "$PKG"  > $PKG_DOT_FILE
 
+verify_dot_file $PKG_DOT_FILE $PKG
 
 for format in $FORMATS
 do
