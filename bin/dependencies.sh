@@ -193,7 +193,7 @@ list_deps()
                 list_deps "${lib}" "${INDENT}  "
                 ;;
             "dot")
-                echo "\"$LIB_NAME\" -> \"$lib_name\""
+                echo "\"$LIB\" -> \"$lib_name\""
                 list_deps "${lib}" "${INDENT}  "
                 ;;
             *)
@@ -340,7 +340,7 @@ usage()
     echo -e "${CODE_IN}$PROG --pdf libcairo2.so${CODE_OUT}"
     echo -e "${CODE_COMMENT}lists all dependencies for the library libcairo2.so and creates report in pdf format"
     echo
-    echo -e "${CODE_IN}$PROG xdpyinfo xvinfo{CODE_OUT}"
+    echo -e "${CODE_IN}$PROG xdpyinfo xvinfo${CODE_OUT}"
     echo -e "${CODE_COMMENT}lists all dependencies xdpyino and xauth."
     echo
     echo -e "${HEADER}EXIT CODES${HEADER_OUT}"

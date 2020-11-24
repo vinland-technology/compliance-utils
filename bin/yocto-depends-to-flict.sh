@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+# THIS SCRIPT IS FROM NOW ON OBSLETE (2020-11-24)
+
 # default
 TMP_DIR=~/.vinland-compliance-utils/plot-package
 LIBC="false"
@@ -38,6 +41,10 @@ do
             DOT_FILE_NAME="$2"
             shift
             ;;
+        "--license-manifest" | "-lm")
+            LICENSE_MANIFEST="$2"
+            shift
+            ;;
         "--tmp-dir" | "-td")
             TMP_DIR="$2"
             shift
@@ -53,6 +60,7 @@ do
     shift
 done
 
+#echo LICENSE_MANIFEST: $LICENSE_MANIFEST
 DOT_FILE="$DOT_FILE_NAME"
 mkdir -p $TMP_DIR
 
@@ -68,6 +76,19 @@ then
     exit 1
 fi
 
+if [ "$LICENSE_MANIFEST" = "" ] | [ ! -f $LICENSE_MANIFEST ] 
+then
+    err "No license manifest file (\"$LICENSE_MANIFEST\") found"
+    exit 2
+fi
+
+find_license()
+{
+    local PKG="$1"
+
+    echo grep "$PKG" $LICENSE_MANIFEST 
+}
+
 package_to_json_helper()
 {
     local PKG="$1"
@@ -78,6 +99,10 @@ package_to_json()
 {
     local PKG="$1"
     local INDENT="$2"
+
+    find_license $PKG
+#    local license=$(find_license $PKG)
+
     echo "$INDENT{"
     echo "$INDENT  \"name\": \"$PKG\","
     echo "$INDENT \"license\": \"unknown\","
@@ -91,6 +116,8 @@ package_to_json()
         PKGS=$(package_to_json_helper "$PKG")
     fi
 
+
+    
     local cnt=0
     for pkg in $PKGS
     do
