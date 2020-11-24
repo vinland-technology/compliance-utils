@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: 2020 Henrik Sandklef
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # default
 DOT_FILE_NAME="depends.dot"
 TMP_DIR=~/.vinland/compliance-utils/plot-package
@@ -39,7 +43,7 @@ exit_if_error()
 usage()
 {
     echo "NAME"
-    echo "    $(basename $0) - plot dependecy graph in png format"
+    echo "    $(basename $0) - plot dependecy graph in misc formats"
     echo 
     echo "SYNOPSIS"
     echo "    $(basename $0) [OPTIONS] package"
@@ -69,6 +73,9 @@ usage()
     echo
     echo "    -r, --recursive"
     echo "        Prints dependencies recursively. Automatically turns on package names (-pn)"
+    echo
+    echo "    -s, --search"
+    echo "        Search for package(s), matching package name, instead of creating graph"
     echo
     echo "    -h, --help"
     echo "        Prints this help text"
@@ -109,6 +116,9 @@ do
             ;;
         "--package-name" | "-pn")
             PACKAGE_NAME=true
+            ;;
+        "--search" | "-s")
+            SEARCH=true
             ;;
         "--recursive" | "-r")
             RECURSIVE=true
@@ -206,8 +216,46 @@ create_format()
     exit_if_error $? "Failed creating $FMT_FILE (from $PKG_DOT_FILE)"
 }
 
+verify_dot_file()
+{
+    local PKG_DOT_FILE=$1
+    local PACKAGE=$2
+    if [ $(wc -l ${PKG_DOT_FILE} | awk ' { print $1}') -le 3 ]
+    then
+        HITS=$(cat ${DOT_FILE} | awk ' { print $1} ' |grep "\"$PACKAGE\"" )
+        #echo "HITS: $HITS  ($PACKAGE)"
+        if [ "$HITS" != "" ]
+        then
+            echo "$PACKAGE does not seem to have any dependencies"
+            exit 0
+        else
+            err "Could not create dot file for package: $PACKAGE"
+            err "Did you use an existing name? Try searching with the -s option"
+            exit 3
+        fi
+    fi
+}
+
+if [ "$SEARCH" = "true" ]
+then
+    echo -n "Searching for $PKG in $DOT_FILE:"
+    HITS=$(cat ${DOT_FILE} | awk ' { print $1 }' | sed 's,\",,g'  | grep "$PKG" | grep -v "\-lic\"" | sed 's,\[label=\"[a-zA-Z0-9+\>\=. ]*\"\],,g' | sed 's,\[style=dotted\],,g' | sort -u )
+    if [ "$HITS" = "" ]
+    then
+        echo " nothing found"
+    else
+        echo
+        for hit in $HITS
+        do
+            echo " * $hit"
+        done
+    fi
+    exit 0
+fi
+
 create_dot "$PKG"  > $PKG_DOT_FILE
 
+verify_dot_file $PKG_DOT_FILE $PKG
 
 for format in $FORMATS
 do
