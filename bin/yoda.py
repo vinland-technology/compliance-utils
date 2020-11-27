@@ -22,6 +22,7 @@ PROGRAM_NAME="Yoda (Yocto Dependencies Analyser)"
 PROGRAM_VERSION="0.1"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
+PROGRAM_LICENSE="GPL-3.0-or-larer"
 OUTPUT_LICENSE="public domain"
 
 DATE_FMT='%Y-%m-%d'
@@ -94,7 +95,7 @@ def build_license_cache():
             if line.startswith("PACKAGE NAME:"):
                 package=line.split(":")[1].rstrip().replace(" ","")
             if line.startswith("LICENSE:"):
-                p_license=line.split(":")[1].rstrip()
+                p_license=line.split(":")[1].rstrip().replace("\n","")
                 verbose("cache license: \"" + p_license + "\" for ---->\"" + package + "\"<----")
                 SUB_PKG_TO_LICENSE[package]=p_license
     
@@ -164,9 +165,9 @@ def sub_package_to_path(build_dir, sub_pkg):
 
 
 
-def artefact_to_sub_package(build_dir, artefact):
-#    print("arty: " + artefact)
-    file=build_dir + "/*/*/*/runtime-reverse/" + artefact
+def imagepackage_to_sub_package(build_dir, imagepackage):
+#    print("arty: " + imagepackage)
+    file=build_dir + "/*/*/*/runtime-reverse/" + imagepackage
     for file_path in glob.glob(file, recursive=True):
         if os.path.islink(file_path):
             followed_link = os.readlink(file_path)
@@ -179,12 +180,12 @@ def package_license(package):
         with open(file_path) as f:
             for line in f.readlines():
                 if "License" in line:
-                    return line.split(":")[1]
+                    return line.split(":")[1].rstrip().replace("\"","").replace("\n","")
                 
     return "unknown"
 
-def image_artefacts(image_file):
-    artefacts=[]
+def image_imagepackages(image_file):
+    imagepackages=[]
     if not os.path.isfile(image_file):
         error ("File \"" + image_file + "\" does not exist")
         error_settings()
@@ -192,10 +193,10 @@ def image_artefacts(image_file):
     with open(image_file) as f:
         for line in f.readlines():
             cols = line.split()
-            artefact = cols[0]
-            if not artefact.endswith("-lic"):
-                artefacts.append(artefact)
-    return artefacts            
+            imagepackage = cols[0]
+            if not imagepackage.endswith("-lic"):
+                imagepackages.append(imagepackage)
+    return imagepackages            
 
 def program_info():
     return {
@@ -386,7 +387,7 @@ def license_for_sub_pkg(pkg_file, bin_file):
     if len(paths) >= 5:
         path=paths[4]
         if path in SUB_PKG_TO_LICENSE:
-            lic=SUB_PKG_TO_LICENSE[path]
+            lic=SUB_PKG_TO_LICENSE[path].rstrip().replace("\"","").replace("\n","")
             #verbose(" * cached license:     " + lic + " for " + path)
             return lic
 
@@ -407,12 +408,12 @@ def license_for_sub_pkg(pkg_file, bin_file):
                     if "file:" in line: 
                         pass
                     else:
-                        pn_license=line.split("=")[1].rstrip().replace("\"","")
+                        pn_license=line.split("=")[1].rstrip().replace("\"","").replace("\n","")
                 if "LICENSE" in line:
                     if "file:" in line: 
                         pass
                     else:
-                        license=line.split("=")[1].rstrip().replace("\"","")
+                        license=line.split("=")[1].rstrip().replace("\"","").replace("\n","")
             if pn_license != None:
                 SUB_PKG_TO_LICENSE[path]=pn_license                
                 return pn_license
@@ -421,25 +422,25 @@ def license_for_sub_pkg(pkg_file, bin_file):
                 return license
     return "UNKNOWN"
             
-def package_file_to_component(pkg_file, indent):
+def package_file_to_exportpackage(pkg_file, indent):
     #verbose(indent + pkg_file + " <----------------")
     bin_file=find_bin_file(pkg_file)
     if bin_file == None:
-        return failed_component(pkg_file, "Failed to find binary file for " + pkg_file)
+        return failed_exportpackage(pkg_file, "Failed to find binary file for " + pkg_file)
     deps=dependencies(bin_file)
     deps_deps=[]
     for dep in deps:
-        dep_component = package_file_to_component(dep, indent+"  ")
-        deps_deps.append(dep_component)
-    component={}
-    component['file']=pkg_file
+        dep_exportpackage = package_file_to_exportpackage(dep, indent+"  ")
+        deps_deps.append(dep_exportpackage)
+    exportpackage={}
+    exportpackage['file']=pkg_file
     sub_pkg=sub_package_for_bin_file(bin_file)
-    component['name']=sub_pkg
+    exportpackage['subPackage']=sub_pkg
     package=SUB_PKG_TO_PACKAGE_MAP[sub_pkg]
-    component['package'] = package
-    component['license']=license_for_sub_pkg(pkg_file, bin_file)
-    component['dependencies']=deps_deps
-    return component
+    exportpackage['package']=package
+    exportpackage['license']=license_for_sub_pkg(pkg_file, bin_file)
+    exportpackage['dependencies']=deps_deps
+    return exportpackage
 
 def short_name_for_sub_pkg_path(sub_pkg_path):
     if not sub_pkg_path in SUB_PKG_PATH_TO_SUB_PKG:
@@ -474,55 +475,58 @@ def files_for_sub_pkg(sub_pkg_short):
         PKG_FILES[sub_pkg_short]=FILES
     return PKG_FILES[sub_pkg_short]
 
-def component_to_map(component):
-    component_map = {}
-    component_map['producer']=producer_info()
-    component_map['flict-meta']=flict_info()
-    component_map['valid']=True
-    component_map['component']=component
-    return component_map
+def exportpackage_to_map(exportpackage):
+    exportpackage_map = {}
+    exportpackage_map['producer']=producer_info()
+    exportpackage_map['flict-meta']=flict_info()
+    exportpackage_map['valid']=True
+    exportpackage_map['exportpackage']=exportpackage
+    return exportpackage_map
 
-def failed_components(sub_pkg, msg):
-    component={}
+def failed_exportpackages(sub_pkg, msg):
+    exportpackage={}
     if msg == None:
         msg=""
-    component['valid']=False
-    component['cause']=msg
-    return component
+    exportpackage['valid']=False
+    exportpackage['cause']=msg
+    return exportpackage
 
-def failed_component(name, msg):
-    component={}
-    component['name']=name
-    component['valid']=False
+def failed_exportpackage(name, msg):
+    exportpackage={}
+    
+    exportpackage['package']=name
+    exportpackage['subPackage']=name
+    exportpackage['valid']=False
     if msg == None:
         msg=""
-    component['cause']=msg
-    return component
+    exportpackage['cause']=msg
+    return exportpackage
 
 
-def failed_package_to_component(package, msg):
-    component={}
+def failed_package_to_exportpackage(package, msg):
+    exportpackage={}
     if msg == None:
         msg=""
-    component['name']=package
-    component['license']="unknown"
-    component['depencencies']="unknown"
-    component['valid']=False
-    component['cause']=msg
-    return component
+    exportpackage['file']=package
+    #exportpackage['package']=package
+    exportpackage['license']="unknown"
+    exportpackage['depencencies']="unknown"
+    exportpackage['valid']=False
+    exportpackage['cause']=msg
+    return exportpackage
 
-def sub_package_to_component_helper(sub_pkg):
+def sub_package_to_exportpackage_helper(sub_pkg):
     # e.g
     # package=cairo
     # sub_pkg=cairo-gobject
-    #verbose("artefact_to_component_helper " + str(sub_pkg))
+    #verbose("imagepackage_to_exportpackage_helper " + str(sub_pkg))
 
     sub_pkg_path = sub_package_to_path(BUILD_DIR, sub_pkg)
     if sub_pkg_path is None:
         error("Failed to find sub-package-path for: " + sub_pkg)
-        components=[]
-        components.append(failed_package_to_component(sub_pkg, None))
-        return components
+        exportpackages=[]
+        exportpackages.append(failed_package_to_exportpackage(sub_pkg, None))
+        return exportpackages
 
     # Get short name of lib (possibly cached)
     #sub_pkg_short=short_name_for_sub_pkg_path(sub_pkg_path)
@@ -532,31 +536,31 @@ def sub_package_to_component_helper(sub_pkg):
     sub_pkg_files=files_for_sub_pkg(sub_pkg)
     
     files=[]
-    components=[]
+    exportpackages=[]
     for f in sub_pkg_files:
         ftype = file_type(f)
         if ftype == FileType.ELF_PROGRAM or ftype == FileType.ELF_LIBRARY:
-            #verbose("  package_file_to_component: " + str(ftype))
+            #verbose("  package_file_to_exportpackage: " + str(ftype))
             try:
-                component = package_file_to_component(os.path.basename(f), "  ")
-                component_map = component_to_map(component)
-                #verbose("helper: " + str(component_map))
-                components.append(component_map)
+                exportpackage = package_file_to_exportpackage(os.path.basename(f), "  ")
+#                exportpackage_map = exportpackage_to_map(exportpackage)
+                #verbose("helper: " + str(exportpackage_map))
+                exportpackages.append(exportpackage)
             except Exception as e:
-                component = failed_package_to_component(os.path.basename(f), "failed producing component.")
-                components.append(component)
-                error("Failed building component structure for: " + str(f))
+                exportpackage = failed_package_to_exportpackage(os.path.basename(f), "failed producing exportpackage.")
+                exportpackages.append(exportpackage)
+                error("Failed building exportpackage structure for: " + str(f))
                 error(e)
         else:
             verbose("Ignoring file since not a lib or program: " + str(f))
-            component = failed_package_to_component(os.path.basename(f), "Ignoring file since not a lib or program: " + str(f))
-            components.append(component)
-            #verbose("ignore component: " + str(component))
+            exportpackage = failed_package_to_exportpackage(os.path.basename(f), "Ignoring file since not a lib or program: " + str(f))
+            exportpackages.append(exportpackage)
+            #verbose("ignore exportpackage: " + str(exportpackage))
 
-    return components
+    return exportpackages
 
 
-def package_to_component(package, sub_pkg):
+def package_to_exportpackage(package, sub_pkg):
     # e.g
     # package=cairo
     # sub_pkg=cairo-gobject (None)
@@ -564,7 +568,7 @@ def package_to_component(package, sub_pkg):
 #    print("sub_pkg: " + str(sub_pkg))
     sub_pkgs=[]
     if sub_pkg != None:
-        sub_pkgs.append(sub_pkg)
+        sub_pkgs = sub_pkg.split(":")
     else:
         dir=BUILD_DIR + "/" + package + "/*/packages-split/*"
         for f in glob.glob(dir, recursive=False):
@@ -572,95 +576,108 @@ def package_to_component(package, sub_pkg):
                 pass
             else:
                 sub_pkgs.append(os.path.basename(f))
-                
-    components_map={}
-    component_files=[]
+
+    exportpackages_map={}
+    exportpackage_files=[]
+    version=None
     for sp in sub_pkgs:
         try:
-            component_files.extend(sub_package_to_component_helper(sp))
+            exportpackage_files.extend(sub_package_to_exportpackage_helper(sp))
+            if version == None:
+                sub_pkg_path = sub_package_to_path(BUILD_DIR, sp)
+                version=sub_pkg_to_version_short(package, sub_pkg_path, sp)
         except Exception as e:
-            error("Could not create component from: " + str(sp))
+            error("Could not create exportpackage from: " + str(sp))
             error(e)
-    components_map['package']=package
-    components_map['license']=package_license(package)
-    components_map['componentFiles']=component_files
-    return components_map
+    exportpackages_map['package']=package
+    exportpackages_map['version']=version
+    exportpackages_map['license']=package_license(package)
+    exportpackages_map['packageFiles']=exportpackage_files
+    return exportpackages_map
 
-def artefact_to_component(artefact):
-    sub_pkg = artefact_to_sub_package(BUILD_DIR, artefact)
+def imagepackage_to_exportpackage(imagepackage):
+    sub_pkg = imagepackage_to_sub_package(BUILD_DIR, imagepackage)
     if sub_pkg == None:
-        error("Failed to find sub-package for: " + artefact)
+        error("Failed to find sub-package for: " + imagepackage)
         return None
 
-    components_map={}
-    components_map['package']=package
-    components_map['components']=sub_package_to_component_helper(sub_pkg)
-    return components_map
+    exportpackages_map={}
+    exportpackages_map['package']=package
+    exportpackages_map['exportpackages']=sub_package_to_exportpackage_helper(sub_pkg)
+    return exportpackages_map
     
 
-def print_artefacts_as_txt(artefacts):
-    for key in artefacts:
-        if key=='artefacts':
+def print_imagepackages_as_txt(imagepackages):
+    for key in imagepackages:
+        if key=='imagepackages':
             continue
         print()
         print(str(key))
         print("---------------------------")
         items={}
-        items = artefacts[key]
+        items = imagepackages[key]
         for subkey in items:
             print("  " + str(subkey) + "=\"" + str(items[subkey])+"\"")
     print()
-    print("artefacts")
+    print("imagepackages")
     print("===========================")
-    for artefact in artefacts['artefacts']:
-        if 'valid' not in artefact or artefact['valid']=="true":
+    for imagepackage in imagepackages['imagepackages']:
+        if 'valid' not in imagepackage or imagepackage['valid']=="true":
             print()
-            print("  " + str(artefact['name']))
+            print("  " + str(imagepackage['name']))
             print("  ---------------------------")
-            print("    package:           \"" + str(artefact['package']) + "\"")
-            print("    version:           \"" + str(artefact['packageVersion']) + "\"")
-            print("    version dir:       \"" + str(artefact['packageVersionDir']) + "\"")
-            print("    sub package:       \"" + str(artefact['subPackage']) + "\"")
-            print("    sub package path:  \"" + str(artefact['subPackagePath']) + "\"")
+            print("    package:           \"" + str(imagepackage['package']) + "\"")
+            print("    version:           \"" + str(imagepackage['packageVersion']) + "\"")
+            print("    version dir:       \"" + str(imagepackage['packageVersionDir']) + "\"")
+            print("    sub package:       \"" + str(imagepackage['subPackage']) + "\"")
+            print("    sub package path:  \"" + str(imagepackage['subPackagePath']) + "\"")
         else:
             print()
-            print("  " + str(artefact['name']))
+            print("  " + str(imagepackage['name']))
             print("  ---------------------------")
-            print("    invalid:            " + str(artefact['cause']))
+            print("    invalid:            " + str(imagepackage['cause']))
 
+
+def sub_pkg_to_version(package, sub_pkg_path, sub_pkg):
+    return str(sub_pkg_path).replace(BUILD_DIR, "").replace("packages-split/" + sub_pkg, "").replace(package,"").replace("/","")
+
+def sub_pkg_to_version_short(package, sub_pkg_path, sub_pkg):
+    return re.sub(r"-r[0-9]","", sub_pkg_to_version(package, sub_pkg_path, sub_pkg))
+
+def image_to_imagepackages(image_file):
+    imagepackages_map = {}
+    imagepackages_map['imagepackages']=[]
+    imagepackages_map['meta']=program_info()
+    imagepackages_map['producer-info']=producer_info()
     
-def image_to_artefacts(image_file):
-    artefacts_map = {}
-    artefacts_map['artefacts']=[]
-    artefacts_map['meta']=program_info()
-    artefacts_map['producer-info']=producer_info()
-    
-    artefacts = image_artefacts(image_file)
-    for artefact in artefacts:
+    imagepackages = image_imagepackages(image_file)
+    for imagepackage in imagepackages:
         #verbose(".")
-        sub_pkg = artefact_to_sub_package(BUILD_DIR, artefact)
+        sub_pkg = imagepackage_to_sub_package(BUILD_DIR, imagepackage)
         if sub_pkg == None:
-            error("Failed to find sub-package for: " + artefact)
-            artefacts_map['artefacts'].append({
-                'name': artefact,
+            error("Failed to find sub-package for: " + imagepackage)
+            imagepackages_map['imagepackages'].append({
+                'imagepackage': imagepackage,
                 'valid': "false",
-                'cause': "Can't find sub-package for artefect " + artefact
+                'cause': "Can't find sub-package for abstract package " + imagepackage
             })
             continue
         sub_pkg_path = sub_package_to_path(BUILD_DIR, sub_pkg)
         #        package = sub_pkg_to_package(BUILD_DIR, sub_pkg)
         if sub_pkg_path is None:
-            error("Failed to find sub-package-path for: " + artefact + " " + sub_pkg)
+            error("Failed to find sub-package-path for: " + imagepackage + " " + sub_pkg)
             continue
         if sub_pkg in SUB_PKG_TO_PACKAGE_MAP:
             package = SUB_PKG_TO_PACKAGE_MAP[sub_pkg]
-            package_version_dir=str(sub_pkg_path).replace(BUILD_DIR, "").replace("packages-split/" + sub_pkg, "").replace(package,"").replace("/","")
-            package_version=re.sub(r"-r[0-9]","",package_version_dir)
+            #            package_version_dir=str(sub_pkg_path).replace(BUILD_DIR, "").replace("packages-split/" + sub_pkg, "").replace(package,"").replace("/","")
+            package_version_dir=sub_pkg_to_version(package, sub_pkg_path, sub_pkg)
+#            package_version=re.sub(r"-r[0-9]","",package_version_dir)
+            package_version=sub_pkg_to_version_short(package, sub_pkg_path, sub_pkg)
             #verbose("package_version: " + package_version_dir + "  ===>  " + package_version + "\n")
             #verbose("arg 1: " + BUILD_DIR + "\n")
             #verbose("arg 2: " + sub_pkg + "\n")
-            artefacts_map['artefacts'].append({
-                'name': artefact,
+            imagepackages_map['imagepackages'].append({
+                'imagepackage': imagepackage,
                 'package': package,
                 'valid': "true",
                 'packageVersion': package_version,
@@ -669,7 +686,7 @@ def image_to_artefacts(image_file):
                 'subPackagePath': sub_pkg_path
             })
 
-    return artefacts_map
+    return imagepackages_map
 
 def parse():
     parser = argparse.ArgumentParser(
@@ -696,14 +713,14 @@ def parse():
                         help='date of build', default="20201024110850")
     parser.add_argument('-mtd', '--meta-top-dir', type=str, dest='meta_top_dir',
                         help='directory containing for meta directories', default="../")
-    parser.add_argument('-a', '--artefact', type=str, dest='managed_artefact',
-                        help='artefact to handle')
-    parser.add_argument('-aa', '--artefacts-packages', action='store_true', dest='artefact_packages',
-                        help='handle all packages as found via artefact list')
+    parser.add_argument('-a', '--imagepackage', type=str, dest='managed_imagepackage',
+                        help='imagepackage to handle')
+    parser.add_argument('-aa', '--imagepackages-packages', action='store_true', dest='imagepackage_packages',
+                        help='handle all packages as found via imagepackage list')
     parser.add_argument('-p', '--package', type=str, dest='managed_package',
                         help='packge to handle')
-    parser.add_argument('-sp', '--sub-package', type=str, dest='managed_sub_package',
-                        help='sub package (requires package) to handle')
+    parser.add_argument('-sps', '--sub-packages', type=str, dest='managed_sub_packages',
+                        help='sub packages (requires package) to handle')
     parser.add_argument('-c', '--libc', dest='includelibc', action='store_true',
                         help="include glibc libraries as dependencies", default=False)
 
@@ -750,47 +767,47 @@ def main():
     verbose("mode:    " + str(args.mode) + "\n")
     if args.mode=="list":
         verbose("format: " + str(args.format) + "\n")
-        map = image_to_artefacts(IMG_MF)
+        map = image_to_imagepackages(IMG_MF)
         if args.format=='JSON':
             print(json.dumps(map))
         elif args.format=='txt':
-            print_artefacts_as_txt(map)
-    elif args.mode=="component":
-        if args.artefact_packages:
-            verbose("Getting list of artefacts")
-            map = image_to_artefacts(IMG_MF)
-            verbose("Looping over the list of artefacts")
-            artefacts = map['artefacts']
-            artefacts_list=[]
-            for artefact in artefacts:
-                verbose("Handling artefact: " + str(artefact['name']))
-                artefact_map={}
-                artefact_map['name']=artefact
-                if 'valid' not in artefact or artefact['valid']=="true":
-                    package=artefact['package']
-                    sub_package=artefact['subPackage']
-                    components_map=package_to_component(package, sub_package)
-                    artefact_map['components']=components_map['components']
+            print_imagepackages_as_txt(map)
+    elif args.mode=="exportpackage":
+        if args.imagepackage_packages:
+            verbose("Getting list of imagepackages")
+            map = image_to_imagepackages(IMG_MF)
+            verbose("Looping over the list of imagepackages")
+            imagepackages = map['imagepackages']
+            imagepackages_list=[]
+            for imagepackage in imagepackages:
+                verbose("Handling imagepackage: " + str(imagepackage['name']))
+                imagepackage_map={}
+                imagepackage_map['imagepackage']=imagepackage
+                if 'valid' not in imagepackage or imagepackage['valid']=="true":
+                    package=imagepackage['package']
+                    sub_package=imagepackage['subPackage']
+                    exportpackages_map=package_to_exportpackage(package, sub_package)
+                    imagepackage_map['exportpackages']=exportpackages_map['exportpackages']
                 else:
-                    artefact_map['components']={}
-                    #print("---leave  " + str(artefact['name']))
-                artefacts_list.append([artefact_map])
+                    imagepackage_map['exportpackages']={}
+                    #print("---leave  " + str(imagepackage['name']))
+                imagepackages_list.append([imagepackage_map])
                 continue
-            artefacts_map={}
-            artefacts_map['meta']=program_info()
-            artefacts_map['producer-info']=producer_info()
-            artefacts_map['artefacts']=artefacts_list
+            imagepackages_map={}
+            imagepackages_map['meta']=program_info()
+            imagepackages_map['producer-info']=producer_info()
+            imagepackages_map['imagepackages']=imagepackages_list
             
-            print(json.dumps(artefacts_map))
+            print(json.dumps(imagepackages_map))
         elif args.managed_package != None:
             if args.format=='JSON':
-                components_map=package_to_component(args.managed_package, args.managed_sub_package)
-                print(json.dumps(components_map))
+                exportpackages_map=package_to_exportpackage(args.managed_package, args.managed_sub_packages)
+                print(json.dumps(exportpackages_map))
 
         else:
             if args.format=='JSON':
-                components_map=artefact_to_component(args.managed_artefact)
-                print(json.dumps(components_map))
+                exportpackages_map=imagepackage_to_exportpackage(args.managed_imagepackage)
+                print(json.dumps(exportpackages_map))
     else:
         error("Missing or incorrect mode")
         exit(110)
