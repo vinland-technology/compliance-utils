@@ -239,7 +239,7 @@ def write_html(outdir, packages):
     return res
               
 def write_json(outdir, packages):
-    print(json.dumps(packages))
+    return json.dumps(packages)
     
 
 def fmt_funs():
