@@ -28,15 +28,19 @@ def contains_name(deps, name):
       return True
   return False
 
-def pile_of_deps(component):
+def pile_of_deps(package):
   dep_map={}
   comp={}
-  comp['name']=component['package']
-  comp['license']=component['license']
+  #print("package: " + str(package))
+  if "valid" in package and package['valid']==False:
+    #print("package: " + str(package)  + " " + str(package['valid']))
+    return dep_map
+  comp['name']=package['package']
+  comp['license']=package['license']
   comp['dependencies']=[]
   dep_map[comp['name']]=comp
   #print("map: " + str(dep_map))
-  for dep in component['dependencies']:
+  for dep in package['dependencies']:
     dep_comp = pile_of_deps(dep)
     dep_map=merge_deps(dep_comp, dep_map)
   #print("return: " + str(dep_map))
@@ -49,23 +53,25 @@ def dep_map_to_list(dep_map):
     dep_list.append(value)
   return dep_list
 
-def print_pile(component):
-    componentFiles = component["componentFiles"]
+def print_pile(package):
+    packageFiles = package["packageFiles"]
     dep_map={}
     pile = {}
-    for file in componentFiles:
+    for file in packageFiles:
+      #print("file: " + str(file))
       if "valid" not in file or file['valid']==True:
-        actual = file['component']
-        dep_map=merge_deps(pile_of_deps(actual), dep_map)
+        #actual = file['package']
+        dep_map=merge_deps(pile_of_deps(file), dep_map)
       else:
         pass
-    component_map={}
-    component_map['name']=component['package']
-    component_map['license']=component['license']
-    component_map['dependencies']=dep_map_to_list(dep_map)
+    package_map={}
+    package_map['name']=package['package']
+    package_map['license']=package['license']
+    package_map['version']=package['version']
+    package_map['dependencies']=dep_map_to_list(dep_map)
     top_map={}
-    top_map['component']=component_map
-    
+    # TODO: sync with flict (should be "package")
+    top_map['component']=package_map
     print(json.dumps(top_map))
 
 
@@ -73,8 +79,8 @@ def print_pile(component):
 
 def main(inpath):
   with open(os.path.join(here, inpath)) as fp:
-    component = json.load(fp)
-    print_pile(component)
+    package = json.load(fp)
+    print_pile(package)
 
 if __name__ == "__main__":
   main(sys.argv[1])
