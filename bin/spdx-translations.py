@@ -45,7 +45,7 @@ def update_license(translations, license_expr):
         license_string = license_string + l + " "
     return license_string
 
-def update_components(translations, dependencies):
+def update_packages(translations, dependencies):
     updates_deps=[]
     for dep in dependencies:
 #        print("license: \"" + dep["license"] + "\"")
@@ -53,7 +53,7 @@ def update_components(translations, dependencies):
         updated_license=update_license(translations, license)
         dep["license"]=updated_license
         dep_deps = dep["dependencies"]
-        updates_deps = update_components(translations, dep_deps)
+        updates_deps = update_packages(translations, dep_deps)
     return updates_deps
 
 def main(inpath, jsonfile):
@@ -66,13 +66,14 @@ def main(inpath, jsonfile):
    # print("apa" + str(type (translations)))
     #    to_sed(translations)
   with open(jsonfile) as fp:
-    components=json.load(fp)
-    component = components["component"]
-    deps = component["dependencies"]
-    license=component["license"].strip(' ')
-    component["license"]=update_license(translations, license)
-    update_components(translations, deps)
-    print(json.dumps(components))
+    packages=json.load(fp)
+    # TODO: sync with flict (should be "package")
+    package = packages["component"]
+    deps = package["dependencies"]
+    license=package["license"].strip(' ')
+    package["license"]=update_license(translations, license)
+    update_packages(translations, deps)
+    print(json.dumps(packages))
     
 if __name__ == "__main__":
   main(sys.argv[1], sys.argv[2])
