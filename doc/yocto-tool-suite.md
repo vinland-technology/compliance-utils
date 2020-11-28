@@ -63,7 +63,7 @@ For each such package the link *runtime-reverse* is used to find the sub package
 
 For the sub packages, the *files* (binaries for now) are analysed to find their dependencies and license information.
 
-# Tools
+# Manuals
 
 ## yoda
 
