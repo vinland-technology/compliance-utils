@@ -1,0 +1,17 @@
+digraph graphname {
+    yoctoout [label="Yocto\nfiles", shape=note];
+    yoda [label="yoda"];
+    imout [label="image\npackages", shape=note];
+    packout [label="packages\ninfo", shape=note];
+    yoctoout -> yoda;
+    yoda -> imout;
+    yoda -> packout;
+    yoga [label="yoga"];
+    yogaout [label="package\ncompliance info", shape=note];
+    packout -> yoga;
+    yoga -> yogaout;
+    yocr [label="yocr"];
+    yocrout [label="Compliance report", shape=note];
+    yogaout -> yocr;
+    yocr -> yocrout;
+}

@@ -1,0 +1,13 @@
+digraph graphname {
+    img_mf[label="image.manifest", shape=note, style=filled, fillcolor=gray66]
+    rt_rev[label="runtime-reverse", shape=note, style=filled, fillcolor=gray66]
+    package[label="packages\nwith deps"]
+    files[label="files", shape=note, style=filled, fillcolor=gray66]
+    ipackage[label="image\npackages"]
+    report[label="compliance report", fillcolor = blue]
+    img_mf-> ipackage;
+    ipackage -> rt_rev;
+    files -> package
+    rt_rev -> package;
+    package -> report;
+}
