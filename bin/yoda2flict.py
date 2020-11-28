@@ -2,7 +2,7 @@
 
 ###################################################################
 #
-# Yoda to flict 
+# FOSS Compliance Utils / Yoda to flict 
 #
 # SPDX-FileCopyrightText: 2020 Henrik Sandklef
 #
@@ -10,6 +10,7 @@
 #
 ###################################################################
 
+import argparse
 import json
 import os
 import sys
