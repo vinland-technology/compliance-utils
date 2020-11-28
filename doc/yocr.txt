@@ -1,0 +1,39 @@
+usage: yocr [-h] [-v] [-f FORMAT] [-yd YOGA_DIR] [-d OUTDIR]
+
+NAME
+  yocr (yoga's compliance reporter)
+
+DESCRIPTION
+  yocr compiles license compliance information from a Yocto build (as produced by yoda and yoga) and writes a report in various formats
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         output verbose information to stderr
+  -f FORMAT, --format FORMAT
+                        output result in specified format(s) separated by colon, default is JSON
+  -yd YOGA_DIR, --yoga-dir YOGA_DIR
+                        directory where yoga's output is located, default is ./yoga-output
+  -d OUTDIR, --output-dir OUTDIR
+                        directory for reports, default is ./yocr-output
+
+OUTPUT
+  Supported output formats:  
+    JSON
+    html
+
+  The output of this program is licensed under "Public domain"
+
+AUTHOR
+  Henrik Sandklef
+
+REPORTING BUGS
+  File a ticket at https://github.com/vinland-technology/compliance-utils
+
+COPYRIGHT
+  Copyright (c) 2020 Henrik Sandklef<hesa@sandklef.com>.
+  License GPL-3.0-or-later
+
+SEE ALSO
+  yoda (Yocto Dependency analyzer)
+  yoga (Yoda's Generic Aggregator)
+  flict (FOSS License Compatibility Tool)

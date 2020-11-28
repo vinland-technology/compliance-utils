@@ -1,0 +1,4 @@
+Creating imagepackages file compliance-results//imagepackage-list.json: Fail
+Extracting information about packages (in imagepackage list):         OK                                                                    
+Listing single package -h                                             
+done
