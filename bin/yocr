@@ -1,5 +1,16 @@
 #!/usr/bin/python3
 
+
+###################################################################
+#
+# FOSS Compliance Utils / yocr
+#
+# SPDX-FileCopyrightText: 2020 Henrik Sandklef
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+###################################################################
+
 import os.path
 import os
 import getpass
@@ -16,7 +27,7 @@ import time
 from datetime import date
 
 
-PROGRAM_NAME="Yoga (Yoda's Generic Analyser)"
+PROGRAM_NAME="Yocr (Yoda's Compliance Reporter)"
 PROGRAM_VERSION="0.1"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
@@ -32,7 +43,7 @@ def verbose(msg):
         sys.stderr.write("\n")
         sys.stderr.flush()
 
-
+        
 #
 def read_flict_file(package, directory):
     flict_exit_code=None
