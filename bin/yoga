@@ -10,7 +10,7 @@
 #
 ###################################################################
 
-PROGRAM_NAME="Yoga (Yoda's Generic Analyser)"
+PROGRAM_NAME="Yoga (Yoda's Generic Aggregator)"
 PROGRAM_VERSION="0.1"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
@@ -97,7 +97,7 @@ create_imagepackage_json()
     inform0n "Creating imagepackages file ${IMAGEPACKAGES_JSON}: "
     if [ ! -f ${IMAGEPACKAGES_JSON} ]
     then
-        yoda.py ${YBTF_ARGS} list > ${IMAGEPACKAGES_JSON}
+        yoda ${YBTF_ARGS} list > ${IMAGEPACKAGES_JSON}
         if [ $? -eq 0 ]
         then
             echo "OK"
@@ -120,11 +120,11 @@ create_json()
     local COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-component.json
     if [ ! -f ${COMPONENT_JSON} ]
     then
-#        echo "yoda.py ${YBTF_ARGS} ${PACKAGE_ARGS} component"
-        yoda.py ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage  > ${COMPONENT_JSON}
+#        echo "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} component"
+        yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage  > ${COMPONENT_JSON}
         if [ $? -ne 0 ]
         then
-            inform0 "yoda.py ${YBTF_ARGS} ${PACKAGE_ARGS} component failed"
+            inform0 "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} component failed"
             return
         fi
         echo "OK"
