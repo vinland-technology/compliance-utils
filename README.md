@@ -2,6 +2,39 @@
 
 Misc small utils in your every day compliance work
 
+
+## Yocto related tools
+
+### yoda
+
+yoda analyses various files produced during a Yocto build and produces either:
+
+* a list of packages that is put in to the image built
+
+* a file containing information about packages 
+
+### yoga
+
+*yoga* invokes *yoda* to create a list of image packages 
+
+For each package in this files:
+
+* invokes yoda to analyse the package and collect relevant compliance information 
+
+* invokes flict to do license compatibility check on the package
+
+* collects source code
+
+* collects copyright and license information
+
+* creates a graph, in various formats, over the package and its dependencies
+
+### yocr
+
+yocr creates a report summarising the compliance result from yocr. The
+report can be created for humans (html) and computers (JSON).
+
+
 ## dependencies.sh
 
 List dependencies recursively foe the given file. The files can be
@@ -13,10 +46,6 @@ script: [```dependencies.sh``` ](https://github.com/vinland-technology/complianc
 
 manual: [```dependencies.md``` ](dependencies.md)
 
-## yoda.py
-
-List information about packages from a Yocto build. The output is
-designed to be used by flict. More information soon
 
 
 ## yocto-build-to-flict.sh
