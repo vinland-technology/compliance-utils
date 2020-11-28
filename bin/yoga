@@ -2,13 +2,21 @@
 
 ###################################################################
 #
-# FOSS Compliance Utils / make-compliant.sh
+# FOSS Compliance Utils / yoga
 #
 # SPDX-FileCopyrightText: 2020 Henrik Sandklef
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 ###################################################################
+
+PROGRAM_NAME="Yoga (Yoda's Generic Analyser)"
+PROGRAM_VERSION="0.1"
+PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
+PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
+LICENSE="GPL-3.0-or-later"
+OUTPUT_LICENSE="public domain"
+
 
 # TODO: use jq with raw option to get rid of "
 
