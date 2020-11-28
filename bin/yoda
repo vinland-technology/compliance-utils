@@ -1,9 +1,19 @@
 #!/usr/bin/python3
 
+###################################################################
+#
+# FOSS Compliance Utils / yoda
+#
+# SPDX-FileCopyrightText: 2020 Henrik Sandklef
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+###################################################################
+
+
 import os.path
 import os
 import getpass
-import datetime
 import sys
 import glob
 from re import search
@@ -14,16 +24,30 @@ import subprocess
 from enum import Enum
 import time
 from datetime import date
+from argparse import RawTextHelpFormatter
 
 #
 #
 #
 PROGRAM_NAME="Yoda (Yocto Dependencies Analyser)"
+PROGRAM_DESCRIPTION="yoda compiles license compliance related information from a Yocto build (for later use by yoga and yocr)"
 PROGRAM_VERSION="0.1"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
 PROGRAM_LICENSE="GPL-3.0-or-larer"
+PROGRAM_AUTHOR="Henrik Sandklef"
+PROGRAM_SEE_ALSO="yoga (yoda's generic aggregator)\n  yocr (yoga's compliance reporter)\n  flict (FOSS License Compatibility Tool)"
+
 OUTPUT_LICENSE="public domain"
+OUTPUT_DIR="./yocr-output"
+
+DEFAULT_IMAGE="core-image-minimal-qemux86-64"
+DEFAULT_MACHINE="qemux86-64"
+DEFAULT_DIST_DIR="core2-64-poky-linux"
+DEFAULT_DATE="20201024110850"
+DEFAULT_BUILD_DIR="./tmp/work/"
+DEFAULT_META_TOP_DIR="../"
+DEFAULT_OUTPUT_FORMAT="JSON"
 
 DATE_FMT='%Y-%m-%d'
 
@@ -689,40 +713,85 @@ def image_to_imagepackages(image_file):
     return imagepackages_map
 
 def parse():
+
+    description = "NAME\n  " + PROGRAM_NAME + "\n\n"
+    description = description + "DESCRIPTION\n  " + PROGRAM_DESCRIPTION + "\n\n"
+    
+    epilog = ""
+    epilog = epilog + "AUTHOR\n  " + PROGRAM_AUTHOR + "\n\n"
+    epilog = epilog + "REPORTING BUGS\n  File a ticket at " + PROGRAM_URL + "\n\n"
+    epilog = epilog + "COPYRIGHT\n  Copyright " + PROGRAM_COPYRIGHT + ".\n  License " + PROGRAM_LICENSE + "\n\n"
+    epilog = epilog + "SEE ALSO\n  " + PROGRAM_SEE_ALSO + "\n\n"
+    
     parser = argparse.ArgumentParser(
-        description=PROGRAM_NAME,
-        epilog=PROGRAM_COPYRIGHT
+        description=description,
+        epilog=epilog,
+        formatter_class=RawTextHelpFormatter
     )
     parser.add_argument('mode', type=str,
-                        help='list or nada', default='list')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                        help='output verbose information to stderr', default=False)
-    parser.add_argument('-f', '--format', type=str,
-                        help='output result in specified format', default="JSON")
-    parser.add_argument('-lf', '--list-formats', action='store_true', dest='listformats',
-                        help='output result in specified format', default=False)
-    parser.add_argument('-m', '--machine', type=str,
-                        help='machine of Yocto build', default="qemux86-64")
-    parser.add_argument('-dd', '--dist-dir', dest='distdir', type=str,
-                        help='distribution directory', default="core2-64-poky-linux")
-    parser.add_argument('-i', '--image', type=str,
-                        help='image', default="core-image-minimal-qemux86-64")
-    parser.add_argument('-d', '--date', type=str,
-                        help='date of build', default="20201024110850")
-    parser.add_argument('-bd', '--build-dir', type=str,
-                        help='date of build', default="20201024110850")
-    parser.add_argument('-mtd', '--meta-top-dir', type=str, dest='meta_top_dir',
-                        help='directory containing for meta directories', default="../")
-    parser.add_argument('-a', '--imagepackage', type=str, dest='managed_imagepackage',
-                        help='imagepackage to handle')
-    parser.add_argument('-aa', '--imagepackages-packages', action='store_true', dest='imagepackage_packages',
-                        help='handle all packages as found via imagepackage list')
-    parser.add_argument('-p', '--package', type=str, dest='managed_package',
-                        help='packge to handle')
-    parser.add_argument('-sps', '--sub-packages', type=str, dest='managed_sub_packages',
-                        help='sub packages (requires package) to handle')
-    parser.add_argument('-c', '--libc', dest='includelibc', action='store_true',
-                        help="include glibc libraries as dependencies", default=False)
+                            help='list or nada',
+                            default='list')
+    parser.add_argument('-v', '--verbose',
+                            action='store_true',
+                            help='output verbose information to stderr',
+                            default=False)
+    parser.add_argument('-f', '--format',
+                            type=str,
+                            help='output result in specified format, default is ' + DEFAULT_OUTPUT_FORMAT,
+                            default=DEFAULT_OUTPUT_FORMAT)
+    parser.add_argument('-lf', '--list-formats',
+                            action='store_true',
+                            dest='listformats',
+                            help='output result in specified format',
+                            default=False)
+    parser.add_argument('-m', '--machine',
+                            type=str,
+                            help='machine of Yocto build, default is ' + DEFAULT_MACHINE,
+                            default=DEFAULT_MACHINE)
+    parser.add_argument('-dd', '--dist-dir',
+                            dest='distdir',
+                            type=str,
+                            help='distribution directory, default is ' + DEFAULT_DIST_DIR,
+                            default=DEFAULT_DIST_DIR)
+    parser.add_argument('-i', '--image',
+                            type=str,
+                            help='image, default is ' + DEFAULT_IMAGE,
+                            default=DEFAULT_IMAGE)
+    parser.add_argument('-d', '--date',
+                            type=str,
+                            help='date of build, default is ' + DEFAULT_DATE,
+                            default=DEFAULT_DATE)
+    parser.add_argument('-bd', '--build-dir',
+                            type=str,
+                            dest="build_dir",
+                            help='date of build, default is ' + DEFAULT_BUILD_DIR,
+                            default=DEFAULT_BUILD_DIR)
+    parser.add_argument('-mtd', '--meta-top-dir',
+                            type=str,
+                            dest='meta_top_dir',
+                            help='directory containing for meta directories, default is ' + DEFAULT_META_TOP_DIR,
+                            default=DEFAULT_META_TOP_DIR)
+    parser.add_argument('-a', '--imagepackage',
+                            type=str,
+                            dest='managed_imagepackage',
+                            help='imagepackage to handle')
+    parser.add_argument('-aa', '--imagepackages-packages',
+                            action='store_true',
+                            dest='imagepackage_packages',
+                            help='handle all packages as found via imagepackage list')
+    parser.add_argument('-p', '--package',
+                            type=str,
+                            dest='managed_package',
+                            help='packge to handle')
+    parser.add_argument('-sps', '--sub-packages',
+                            type=str,
+                            dest='managed_sub_packages',
+                            help='sub packages (requires package) to handle')
+    parser.add_argument('-c', '--libc',
+                            dest='includelibc',
+                            action='store_true',
+                            help="include glibc libraries as dependencies",
+                            default=False)
 
     args = parser.parse_args()
 
@@ -746,7 +815,7 @@ def parse():
     IMG_MF="tmp/deploy/images/" + MACHINE + "/" + IMAGE + ".manifest"
 
     global BUILD_DIR
-    BUILD_DIR="./tmp/work/" + DIST_DIR
+    BUILD_DIR=str(args.build_dir) + DIST_DIR
 
     global META_TOP_DIR
     META_TOP_DIR=str(args.meta_top_dir)
@@ -813,5 +882,4 @@ def main():
         exit(110)
         
 if __name__ == '__main__':
-    START_TIME=datetime.datetime.now()
     main()
