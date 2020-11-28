@@ -1,0 +1,56 @@
+usage: yoda [-h] [-v] [-f FORMAT] [-lf] [-m MACHINE] [-dd DISTDIR] [-i IMAGE]
+            [-d DATE] [-bd BUILD_DIR] [-mtd META_TOP_DIR]
+            [-a MANAGED_IMAGEPACKAGE] [-aa] [-p MANAGED_PACKAGE]
+            [-sps MANAGED_SUB_PACKAGES] [-c]
+            mode
+
+NAME
+  Yoda (Yocto Dependencies Analyser)
+
+DESCRIPTION
+  yoda compiles license compliance related information from a Yocto build (for later use by yoga and yocr)
+
+positional arguments:
+  mode                  list or nada
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         output verbose information to stderr
+  -f FORMAT, --format FORMAT
+                        output result in specified format, default is JSON
+  -lf, --list-formats   output result in specified format
+  -m MACHINE, --machine MACHINE
+                        machine of Yocto build, default is qemux86-64
+  -dd DISTDIR, --dist-dir DISTDIR
+                        distribution directory, default is core2-64-poky-linux
+  -i IMAGE, --image IMAGE
+                        image, default is core-image-minimal-qemux86-64
+  -d DATE, --date DATE  date of build, default is 20201024110850
+  -bd BUILD_DIR, --build-dir BUILD_DIR
+                        date of build, default is ./tmp/work/
+  -mtd META_TOP_DIR, --meta-top-dir META_TOP_DIR
+                        directory containing for meta directories, default is ../
+  -a MANAGED_IMAGEPACKAGE, --imagepackage MANAGED_IMAGEPACKAGE
+                        imagepackage to handle
+  -aa, --imagepackages-packages
+                        handle all packages as found via imagepackage list
+  -p MANAGED_PACKAGE, --package MANAGED_PACKAGE
+                        packge to handle
+  -sps MANAGED_SUB_PACKAGES, --sub-packages MANAGED_SUB_PACKAGES
+                        sub packages (requires package) to handle
+  -c, --libc            include glibc libraries as dependencies
+
+AUTHOR
+  Henrik Sandklef
+
+REPORTING BUGS
+  File a ticket at https://github.com/vinland-technology/compliance-utils
+
+COPYRIGHT
+  Copyright (c) 2020 Henrik Sandklef<hesa@sandklef.com>.
+  License GPL-3.0-or-larer
+
+SEE ALSO
+  yoga (yoda's generic aggregator)
+  yocr (yoga's compliance reporter)
+  flict (FOSS License Compatibility Tool)
