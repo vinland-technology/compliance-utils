@@ -6,7 +6,9 @@ PNG_FILES=${DOT_FILES:dot=png}
 JPG_FILES=${DOT_FILES:dot=jpg}
 PDF_FILES=${DOT_FILES:dot=pdf} ${MD_FILES:md=pdf} 
 
-ALL_FORMAT_FILES=$(PNG_FILES) $(JPG_FILES) $(PDF_FILES) 
+HELP_FILES=yoda.txt yoga.txt yocr.txt
+
+ALL_FORMAT_FILES=$(PNG_FILES) $(JPG_FILES) $(PDF_FILES) $(HELP_FILES)
 
 %.png:%.dot
 	dot -Tpng -o $@ $<
@@ -23,6 +25,11 @@ ALL_FORMAT_FILES=$(PNG_FILES) $(JPG_FILES) $(PDF_FILES)
 
 %.html:%.md
 	pandoc -o $@ $<
+
+: ../bin/yoda  ../bin/yoga  ../bin/yocr
+	../bin/yoda -h > yoda.txt
+	../bin/yoga -h > yoga.txt
+	../bin/yocr -h > yocr.txt
 
 all: $(ALL_FORMAT_FILES)
 
