@@ -376,14 +376,16 @@ collect_source_code()
     local FAILED_DIRS
     inform2 "Collecting source code"
     VERSION_SHORT_TRIMMED=$(echo ${VERSION_SHORT} | sed 's,[0-9]*_,,g')
-    local TRY_DIRS="${BUILD_DIR}/${PACKAGE}/${VERSION}/archiver-work  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}   ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-src   ${BUILD_DIR}/${PACKAGE}/${VERSION}/git   ${BUILD_DIR}/${PACKAGE}/packages-split/${PACAKAGE}-src/"
+    local TRY_DIRS="${BUILD_DIR}/${PACKAGE}/${VERSION}/archiver-work  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}   ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-src   ${BUILD_DIR}/${PACKAGE}/${VERSION}/git ${BUILD_DIR}/${PACKAGE}/packages-split/${PACAKAGE}-src/ "
     RES=Fail
     inform3n "Finding src directory: "
     for dir in $TRY_DIRS
     do
+        echo "TRYING DIR: $dir"
         pushd ${dir}  >/dev/null 2>&1
         RET=$?
-        if [ $RET -eq 0 ]
+        NR_FILES=$(ls -1 | wc -l)
+        if [ $RET -eq 0 ] && [ $NR_FILES -gt 0 ]
         then
             : #echo "found a place: $dir"
             RES=OK
