@@ -39,7 +39,7 @@ OUTPUT_LICENSE="\"Public domain\""
 OUTPUT_FORMATS="\n    JSON\n    html"
 OUTPUT_FORMAT="JSON"
 OUTPUT_DIR="./yocr-output"
-INPUT_DIR="./yoga-output"
+INPUT_DIR="./compliance-results"
 
 def error(msg):
     sys.stderr.write(msg + "\n")
@@ -291,7 +291,7 @@ def parse():
                         help='directory where yoga\'s output is located, default is ' + INPUT_DIR, default=INPUT_DIR)
     parser.add_argument('-d', '--output-dir', type=str, dest='outdir', 
                         help='directory for reports, default is ' + OUTPUT_DIR, default=OUTPUT_DIR)
-
+   
     args = parser.parse_args()
     global VERBOSE
     VERBOSE=args.verbose
@@ -303,8 +303,11 @@ def main():
 
     verbose("verbose: " + str(args.verbose))
     verbose("mode:    " + str(args.format))
-
+    
     packages = read_yoga_dir(args.yoga_dir)
+
+    if not os.path.exists(args.outdir):
+        os.makedirs(args.outdir)
 
     fmt_functions=fmt_funs()
     
