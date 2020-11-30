@@ -26,7 +26,7 @@ ALL_FORMAT_FILES=$(PNG_FILES) $(JPG_FILES) $(PDF_FILES) $(HELP_FILES)
 %.html:%.md
 	pandoc -o $@ $<
 
-: ../bin/yoda  ../bin/yoga  ../bin/yocr
+$(HELP_FILES): 
 	../bin/yoda -h > yoda.txt
 	../bin/yoga -h > yoga.txt
 	../bin/yocr -h > yocr.txt
