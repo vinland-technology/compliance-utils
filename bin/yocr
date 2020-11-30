@@ -209,53 +209,53 @@ def flict_exit_code_to_str(exit_code):
 def write_html_package(package):
 
     #print("write: " + str(package))
-    res =       "    <div class=\"rTableRow\">\n"
-    res = res + "      <div class=\"rTableCell\">" + read_from_json(package, 'name') + "</div>\n"
-    res = res + "      <div class=\"rTableCell\">" + str(read_from_json(package, 'version')) + "</div>\n"
-    res = res + "      <div class=\"rTableCell\">" + str(read_from_json(package, 'license')) + "</div>\n"
-    res = res + "      <div class=\"rTableCell\">" + flict_exit_code_to_str(read_from_json(package, 'flictExitCode')) + "</div>\n"
-    res = res + "      <div class=\"rTableCell\">" + str(outbound_license(package)) + "</div>\n"
-    res = res + "      <div class=\"rTableCell\">" + str(read_from_json_bool(package, 'copyrightLicenseFile')) + "</div>\n"
-    res = res + "      <div class=\"rTableCell\">" + str(read_from_json_bool(package, 'sourceCodeFile')) + " </div>\n"
+    res =       "    <div class=\"complianceTableRow\">\n"
+    res = res + "      <div class=\"complianceTableCell\">" + read_from_json(package, 'name') + "</div>\n"
+    res = res + "      <div class=\"complianceTableCell\">" + str(read_from_json(package, 'version')) + "</div>\n"
+    res = res + "      <div class=\"complianceTableCell\">" + str(read_from_json(package, 'license')) + "</div>\n"
+    res = res + "      <div class=\"complianceTableCell\">" + flict_exit_code_to_str(read_from_json(package, 'flictExitCode')) + "</div>\n"
+    res = res + "      <div class=\"complianceTableCell\">" + str(outbound_license(package)) + "</div>\n"
+    res = res + "      <div class=\"complianceTableCell\">" + str(read_from_json_bool(package, 'copyrightLicenseFile')) + "</div>\n"
+    res = res + "      <div class=\"complianceTableCell\">" + str(read_from_json_bool(package, 'sourceCodeFile')) + " </div>\n"
     res = res + "    </div>\n"
     return res
               
-def write_html(outdir, packages):
+def write_html(packages):
     res = ""
-    res = res +  "<html>"
-    res = res +  "  <head> "
-    res = res +  "    <link rel=\"stylesheet\" href=\"yocto-compliance.css\">"
-    res = res +  "  </head>"
-    res = res +  "  <body>"
-    res = res +  "  <h1>Yocto build compliance</h1>"
-    res = res +  "  <h2>Summary</h2>"
-    res = res +  "  <h3>${#PACKAGES[@]} packages</h3>"
-    res = res +  "  <ul>"
-    res = res +  "    <li>${MISSING_FILE} with missing report (unsupported license, only contains script, text, configuration)</li>"    
-    res = res +  "  </ul>"
-    res = res +  "<h2>Packages</h2>"
-    res = res +  "  <div class=\"rTable\">"
-    res = res +  "    <div class=\"rTableRow\">"
-    res = res +  "      <div class=\"rTableHead\"><strong>Package</strong></div>"
-    res = res +  "      <div class=\"rTableHead\"><strong>Version</strong></div>"
-    res = res +  "      <div class=\"rTableHead\"><strong>License</strong></div>"
-    res = res +  "      <div class=\"rTableHead\"><strong>Compatible</strong></div>"
-    res = res +  "      <div class=\"rTableHead\"><strong>Outbound</strong></div>"
-    res = res +  "      <div class=\"rTableHead\"><strong>Copyright & License</strong></div>"
-    res = res +  "      <div class=\"rTableHead\"><strong>Source code</strong></div>"
-    res = res +  "    </div>"
+    res = res +  "<html lang=\"en-US\">\n"
+    res = res +  "  <head> \n"
+    res = res +  "    <link rel=\"stylesheet\" href=\"yocto-compliance.css\">\n"
+    res = res +  "  </head>\n"
+    res = res +  "  <body>\n"
+    res = res +  "  <h1>Yocto build compliance</h1>\n"
+    res = res +  "  <h2>Summary</h2>\n"
+    res = res +  "  <h3>${#PACKAGES[@]} packages</h3>\n"
+    res = res +  "  <ul>\n"
+    res = res +  "    <li>${MISSING_FILE} with missing report (unsupported license, only contains script, text, configuration)</li>\n"    
+    res = res +  "  </ul>\n"
+    res = res +  "<h2>Packages</h2>\n"
+    res = res +  "  <div class=\"complianceTable\">\n"
+    res = res +  "    <div class=\"complianceTableRow\">\n"
+    res = res +  "      <div class=\"complianceTableHead\"><strong>Package</strong></div>\n"
+    res = res +  "      <div class=\"complianceTableHead\"><strong>Version</strong></div>\n"
+    res = res +  "      <div class=\"complianceTableHead\"><strong>License</strong></div>\n"
+    res = res +  "      <div class=\"complianceTableHead\"><strong>Compatible</strong></div>\n"
+    res = res +  "      <div class=\"complianceTableHead\"><strong>Outbound</strong></div>\n"
+    res = res +  "      <div class=\"complianceTableHead\"><strong>Copyright & License</strong></div>\n"
+    res = res +  "      <div class=\"complianceTableHead\"><strong>Source code</strong></div>\n"
+    res = res +  "    </div>\n"
     
     for pkg in packages:
         #print(str(packages[pkg]))
         res = res + write_html_package(packages[pkg])
 
-    res = res +  "  </div>"
-    res = res +  "</table>"
-    res = res +  "</body></html>"
+    res = res +  "  </div>\n"
+    res = res +  "</table>\n"
+    res = res +  "</body></html>\n"
 
     return res
               
-def write_json(outdir, packages):
+def write_json(packages):
     return json.dumps(packages)
     
 
@@ -300,7 +300,7 @@ def parse():
 
 def main():
     args = parse()
-
+    #TODO: find css:  print( os.path.dirname(os.path.realpath(__file__))+"/../var/yocto-compliance.css" )
     verbose("verbose: " + str(args.verbose))
     verbose("mode:    " + str(args.format))
 
@@ -309,7 +309,7 @@ def main():
     fmt_functions=fmt_funs()
     
     for fmt in args.format.split(":"):
-        print(fmt_functions[fmt.lower()](args.outdir, packages))
+        open(args.outdir + "/compliance-result." + fmt.lower(), "w").write(fmt_functions[fmt.lower()](packages))
         
 
 if __name__ == '__main__':
