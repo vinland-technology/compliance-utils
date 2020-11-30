@@ -775,7 +775,7 @@ def parse():
                             type=str,
                             dest='managed_imagepackage',
                             help='imagepackage to handle')
-    parser.add_argument('-aa', '--imagepackages-packages',
+    parser.add_argument('-ia', '--imagepackages-packages',
                             action='store_true',
                             dest='imagepackage_packages',
                             help='handle all packages as found via imagepackage list')
