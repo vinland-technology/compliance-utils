@@ -138,11 +138,12 @@ def print_tree(package, outdir):
     package_license=package['license']
     for file in packageFiles:
       package_map={}
-      package_map['name']=file['file']
+      #verbose("Looking at: " + str(file))
       package_map['package']=package_name
-      package_map['license']=file['license']
       dependencies=[]
       if "valid" not in file or file['valid']==True:
+        package_map['license']=file['license']
+        package_map['name']=file['file']
         verbose("dep: " + str(file['file']))
         package_map['subPackage']=file['subPackage']
         for dep in file['dependencies']:
@@ -150,10 +151,11 @@ def print_tree(package, outdir):
         package_map['dependencies']=dependencies
         package_map['valid']=True
       else:
-        package_map['valid']=False
-        pass
+        verbose("Ignoring... : " + str(file))
+        continue
       component_map={}
       component_map['component']=package_map
+
       
       save_tree_to_file(component_map, outdir, package_name, file['file'])
 
