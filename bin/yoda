@@ -462,6 +462,8 @@ def package_file_to_exportpackage(pkg_file, indent):
     exportpackage['subPackage']=sub_pkg
     package=SUB_PKG_TO_PACKAGE_MAP[sub_pkg]
     exportpackage['package']=package
+    sub_pkg_path = sub_package_to_path(BUILD_DIR, sub_pkg)
+    exportpackage['version']=sub_pkg_to_version_short(package, sub_pkg_path, sub_pkg)
     exportpackage['license']=license_for_sub_pkg(pkg_file, bin_file)
     exportpackage['dependencies']=deps_deps
     return exportpackage
