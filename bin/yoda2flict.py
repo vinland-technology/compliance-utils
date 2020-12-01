@@ -140,18 +140,17 @@ def print_tree(package, outdir):
       package_map={}
       package_map['name']=file['file']
       package_map['package']=package_name
-      package_map['subPackage']=file['subPackage']
       package_map['license']=file['license']
       dependencies=[]
-      verbose("file for JSON:::::: " + package['package'] + "/" + package['package'] + "_" + str(file['file']) + ".json")
       if "valid" not in file or file['valid']==True:
-        #actual = file['package']
-        #dep_map=merge_deps(pile_of_deps(file), dep_map)
         verbose("dep: " + str(file['file']))
+        package_map['subPackage']=file['subPackage']
         for dep in file['dependencies']:
           dependencies.append(dep_tree(dep))
         package_map['dependencies']=dependencies
+        package_map['valid']=True
       else:
+        package_map['valid']=False
         pass
       component_map={}
       component_map['component']=package_map
