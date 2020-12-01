@@ -139,27 +139,37 @@ create_json()
 #
 split_package_json()
 {
-    inform2 "Splitting component file"
+    inform2n "Splitting component file"
     PKG_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-component.json
-    SUB_PKG_BASE=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-component
-    LAST_INDEX=$(jq ".componentFiles | keys | .[]"  $PKG_JSON | tail -1)
-    JSON_FILES=""
-    for i in $(seq 0 $LAST_INDEX)
-    do
-        VALID=$(jq ".componentFiles[$i].component.valid" $PKG_JSON )
-        NAME=$(jq ".componentFiles[$i].component.name" $PKG_JSON | sed 's,\",,g')
-        inform3n "$NAME: "
-        if [ "$VALID" != "false" ]
-        then
-            SUB_PKG_JSON=$SUB_PKG_BASE-$NAME.json
-            #echo "$i  $NAME $SUB_PKG_JSON  ($VALID)"
-            jq ".components[$i]"   $PKG_JSON > $SUB_PKG_JSON
-            JSON_FILES="$JSON_FILES $SUB_PKG_JSON"
-            echo OK
-        else
-            echo "invalid, ingored"
-        fi
-    done
+    yoda2flict.py -of tree -od ${PERMANENT_OUT_DIR} ${PKG_JSON}
+    if [ $? -ne 0 ]
+    then
+        echo "yoda2flict.py -of tree -od ${PERMANENT_OUT_DIR} ${PKG_JSON} failed"
+        return
+    else
+        echo "OK"
+    fi
+    FLICT_JSON_FILES=$(find ${PERMANENT_OUT_DIR}/${PACKAGE} -name "*-tree-flict.json")
+
+#    SUB_PKG_BASE=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-component
+#    LAST_INDEX=$(jq ".packageFiles | keys | .[]"  $PKG_JSON | tail -1)
+#    JSON_FILES=""
+#    for i in $(seq 0 $LAST_INDEX)
+#    do
+#        VALID=$(jq ".packageFiles[$i].component.valid" $PKG_JSON )
+#        NAME=$(jq ".packageFiles[$i].file" $PKG_JSON | sed 's,\",,g')
+#        inform3n "$NAME: "
+#        if [ "$VALID" != "false" ]
+#        then
+#            SUB_PKG_JSON=$SUB_PKG_BASE-$NAME.json
+#            #echo "$i  $NAME $SUB_PKG_JSON  ($VALID)"
+#            jq ".packageFiles[$i]"   $PKG_JSON > $SUB_PKG_JSON
+#            JSON_FILES="$JSON_FILES $SUB_PKG_JSON"
+#            echo OK
+#        else
+#            echo "invalid, ingored"
+#        fi
+#    done
 }
 
 #
@@ -199,16 +209,18 @@ create_flict_json()
         return
     fi
 
-    FLICT_COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-component-flict.json
-    yoda2flict.py ${COMPONENT_JSON} > ${FLICT_COMPONENT_JSON} 
+    # This is how yoda2flict.py names the put
+    FLICT_COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-pile-flict.json
+    yoda2flict.py -od ${PERMANENT_OUT_DIR} ${COMPONENT_JSON}
     if [ $? -ne 0 ]
     then
-        echo "yoda2flict.sh ${COMPONENT_JSON} > ${FLICT_COMPONENT_JSON}  failed"
+        echo "yoda2flict.py -od ${PERMANENT_OUT_DIR}  ${COMPONENT_JSON} failed"
         return
     else
         echo "OK"
         FLICT_JSON_FILES="$FLICT_COMPONENT_JSON $FLICT_JSON_FILES"
     fi
+    #echo "$FLICT_JSON_FILES"; exit 12
 }
 
 
@@ -232,9 +244,9 @@ create_graphs_helper()
 
 create_graphs()
 {
-    inform2 "Creating dot and graph files"
+    inform2 "Creating dot and graph files ($JSON_FILES)"
     RES=OK
-    for jf in $FLICT_JSON_FILES
+    for jf in $FLICT_JSON_FILES $JSON_FILES
     do
         jf_short=$(basename $jf)
         inform3n "$jf_short: "
@@ -308,7 +320,7 @@ dirty_hacks_done_dirt_cheap()
         inform3n "$(basename $jf): "
         #printf " * %-${FILE_FMT_LEN}s %s" "$(basename $jf):"
         mv ${jf} ${jf}.tmp
-        cat $jf.tmp |
+        cat ${jf}.tmp |
             sed \
                 -e 's,BSD-2,BSD-3,g' \
                 -e 's,BSD-4,BSD-3,g' \
@@ -321,6 +333,7 @@ dirty_hacks_done_dirt_cheap()
         else
             echo "OK"
         fi
+        rm -f ${jf}.tmp
     done
 }
 
@@ -376,14 +389,16 @@ collect_source_code()
     local FAILED_DIRS
     inform2 "Collecting source code"
     VERSION_SHORT_TRIMMED=$(echo ${VERSION_SHORT} | sed 's,[0-9]*_,,g')
-    local TRY_DIRS="${BUILD_DIR}/${PACKAGE}/${VERSION}/archiver-work  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}   ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-src   ${BUILD_DIR}/${PACKAGE}/${VERSION}/git   ${BUILD_DIR}/${PACKAGE}/packages-split/${PACAKAGE}-src/"
+    local TRY_DIRS="${BUILD_DIR}/${PACKAGE}/${VERSION}/archiver-work  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}   ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-src   ${BUILD_DIR}/${PACKAGE}/${VERSION}/git ${BUILD_DIR}/${PACKAGE}/packages-split/${PACAKAGE}-src/ "
     RES=Fail
     inform3n "Finding src directory: "
     for dir in $TRY_DIRS
     do
+        #echo "TRYING DIR: $dir"
         pushd ${dir}  >/dev/null 2>&1
         RET=$?
-        if [ $RET -eq 0 ]
+        NR_FILES=$(ls -1 | wc -l)
+        if [ $RET -eq 0 ] && [ $NR_FILES -gt 0 ]
         then
             : #echo "found a place: $dir"
             RES=OK
@@ -533,10 +548,10 @@ per_package()
 #    check_if_closed
 
     create_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+    FLICT_JSON_FILES=""
     split_package_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     verify_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
 
-    FLICT_JSON_FILES=""
     create_flict_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     
     create_graphs "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
@@ -906,10 +921,10 @@ do
     fi
 done 2>>${ERR_FILE} | tee -a ${LOG_FILE} 
 
-if [ "$WANTED_PACKAGE" = "" ] 
-then
-    create_top_page  | tee -a ${LOG_FILE} 
-fi
+#if [ "$WANTED_PACKAGE" = "" ] 
+#then
+#    create_top_page  | tee -a ${LOG_FILE} 
+#fi
 
 echo done
 #set -o pipefail
