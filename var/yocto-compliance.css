@@ -1,0 +1,26 @@
+.complianceTable {
+    display: block;
+    width: 100%;
+}
+.complianceTableHeading, .complianceTableBody, .complianceTableFoot, .complianceTableRow{
+    clear: both;
+}
+.complianceTableHead, .complianceTableFoot{
+    background-color: #DDD;
+    font-weight: bold;
+}
+.complianceTableCell, .complianceTableHead {
+    border: 1px solid #999999;
+    float: left;
+    height: 17px;
+    overflow: hidden;
+    padding: 1px 1%;
+    width: 10%;
+}
+
+ul {
+    list-style: none;
+}
+ol {
+    list-style: none;
+}
