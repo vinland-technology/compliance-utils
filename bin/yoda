@@ -45,7 +45,9 @@ DEFAULT_IMAGE="core-image-minimal-qemux86-64"
 DEFAULT_MACHINE="qemux86-64"
 DEFAULT_DIST_DIR="core2-64-poky-linux"
 DEFAULT_DATE="20201024110850"
-DEFAULT_BUILD_DIR="./tmp/work/"
+DEFAULT_BUILD_DIR="tmp/work/"
+# EXPERIMENTAL below
+BUILD_DIR_ALL="all-poky-linux"
 DEFAULT_META_TOP_DIR="../"
 DEFAULT_OUTPUT_FORMAT="JSON"
 
@@ -124,29 +126,30 @@ def build_license_cache():
                 SUB_PKG_TO_LICENSE[package]=p_license
     
 
-def build_cache(build_dir, libc):
+def build_cache(libc):
     global SUB_PKG_TO_LICENSE
     global PACKAGE_TO_LICENSE
     build_license_cache()
-    dir=build_dir + "/*/*/packages-split/"
-    verbose(" build cache for: " + dir + "\n")
-    for file in glob.glob(dir+"/**/"):
-        #print("file: " + file)
-        if search ("/src/", file):
-            continue
-        if  file.endswith("-lic/"):
-            #print("discard: " + file)
-            continue
-        short_file=str(file).replace(build_dir+"/", "")
-        package=short_file.split(os.sep)[0]
-        key = os.path.basename(os.path.normpath(file))
-        #verbose("package: " + package + " <=== " + key)
-        #verbose("store:   " + key + "=>" + package )
-        SUB_PKG_TO_PACKAGE_MAP[key]=package
-        SUB_PKG_TO_PATH[key]=file
-        SUB_PKG_PATH_TO_SUB_PKG[file]=key
-        #verbose("store:   " + key + "=>" + file )
-        #PACKAGE_TO_LICENSE[package]=SUB_PKG_TO_LICENSE[]
+    for dir_ in (BUILD_DIR, BUILD_DIR_ALL):
+        dir = dir_ + "/*/*/packages-split/"
+        verbose(" build cache for: " + dir + "\n")
+        for file in glob.glob(dir+"/**/"):
+            #print("file: " + file)
+            if search ("/src/", file):
+                continue
+            if  file.endswith("-lic/"):
+                #print("discard: " + file)
+                continue
+            short_file=str(file).replace(dir_+"/", "")
+            package=short_file.split(os.sep)[0]
+            key = os.path.basename(os.path.normpath(file))
+            #verbose("package: " + package + " <=== " + key)
+            verbose("store:   " + key + "=> \"" + package + "\" from " + file)
+            SUB_PKG_TO_PACKAGE_MAP[key]=package
+            SUB_PKG_TO_PATH[key]=file
+            SUB_PKG_PATH_TO_SUB_PKG[file]=key
+            #verbose("store:   " + key + "=>" + file )
+            #PACKAGE_TO_LICENSE[package]=SUB_PKG_TO_LICENSE[]
 
     if libc:
         global GLIBC_EXCLUDES
@@ -172,40 +175,45 @@ def build_cache(build_dir, libc):
 #    return None
 
 
-def sub_package_to_path(build_dir, sub_pkg):
-    if sub_pkg in SUB_PKG_TO_PATH:
-        return SUB_PKG_TO_PATH[sub_pkg]
-    dir=build_dir + "/*/*/packages-split/"
-    sub_pkg_reg_exp=lib_to_regexp(sub_pkg)
-    for file_path in glob.glob(dir + sub_pkg_reg_exp, recursive=True):
-        if search ("/src/", file_path):
-            continue
-        #verbose("search: \"" + sub_pkg_reg_exp +"$\"" +  "\"" + file_path + "\"\n")
-        if search(sub_pkg_reg_exp+"$", file_path):
-            if search("packages-split/*" + sub_pkg_reg_exp + "[ ]*$", file_path):
-                SUB_PKG_TO_PATH[sub_pkg]=file_path
-                return file_path
+def sub_package_to_path(sub_pkg):
+    for dir_ in (BUILD_DIR, BUILD_DIR_ALL):
+        if sub_pkg in SUB_PKG_TO_PATH:
+            return SUB_PKG_TO_PATH[sub_pkg]
+        dir = dir_ + "/*/*/packages-split/"
+        sub_pkg_reg_exp=lib_to_regexp(sub_pkg)
+        for file_path in glob.glob(dir + sub_pkg_reg_exp, recursive=True):
+            if search ("/src/", file_path):
+                continue
+            #verbose("search: \"" + sub_pkg_reg_exp +"$\"" +  "\"" + file_path + "\"\n")
+            if search(sub_pkg_reg_exp+"$", file_path):
+                if search("packages-split/*" + sub_pkg_reg_exp + "[ ]*$", file_path):
+                    SUB_PKG_TO_PATH[sub_pkg]=file_path
+                    return file_path
     return None
 
 
 
-def imagepackage_to_sub_package(build_dir, imagepackage):
+def imagepackage_to_sub_package(imagepackage):
 #    print("arty: " + imagepackage)
-    file=build_dir + "/*/*/*/runtime-reverse/" + imagepackage
-    for file_path in glob.glob(file, recursive=True):
-        if os.path.islink(file_path):
-            followed_link = os.readlink(file_path)
-            sub_package = os.path.basename(followed_link)
-            return sub_package
+    for dir in (BUILD_DIR, BUILD_DIR_ALL):
+        file = dir + "/*/*/*/runtime-reverse/" + imagepackage
+        verbose("Looking for sub package using file: " + file)
+        for file_path in glob.glob(file, recursive=True):
+            if os.path.islink(file_path):
+                followed_link = os.readlink(file_path)
+                sub_package = os.path.basename(followed_link)
+                verbose("  * found: " + sub_package)
+                return sub_package
+
         
 def package_license(package):
-    file=BUILD_DIR + "/*/*/" + package + ".spec"
-    for file_path in glob.glob(file, recursive=True):
-        with open(file_path) as f:
-            for line in f.readlines():
-                if "License" in line:
-                    return line.split(":")[1].rstrip().replace("\"","").replace("\n","")
-                
+    for dir in (BUILD_DIR, BUILD_DIR_ALL):
+        file=BUILD_DIR + "/*/*/" + package + ".spec"
+        for file_path in glob.glob(file, recursive=True):
+            with open(file_path) as f:
+                for line in f.readlines():
+                    if "License" in line:
+                        return line.split(":")[1].rstrip().replace("\"","").replace("\n","")
     return "unknown"
 
 def image_imagepackages(image_file):
@@ -293,8 +301,9 @@ def file_type(file):
         return FileType.DIRECTORY
 
 #
-# if a bin (e.g. libpthread.so.0) is NOT a file we need to fall back
-# to checking the link and from that get the file name
+# if a bin (e.g. libpthread.so.0) is NOT a file (but a link?)
+#   we need to fall back
+#   to checking the link and from that get the file name
 #
 def find_bin_link_worker_helper(bin_name, search_dir):
     FILES=[]
@@ -462,7 +471,7 @@ def package_file_to_exportpackage(pkg_file, indent):
     exportpackage['subPackage']=sub_pkg
     package=SUB_PKG_TO_PACKAGE_MAP[sub_pkg]
     exportpackage['package']=package
-    sub_pkg_path = sub_package_to_path(BUILD_DIR, sub_pkg)
+    sub_pkg_path = sub_package_to_path(sub_pkg)
     exportpackage['version']=sub_pkg_to_version_short(package, sub_pkg_path, sub_pkg)
     exportpackage['license']=license_for_sub_pkg(pkg_file, bin_file)
     exportpackage['dependencies']=deps_deps
@@ -547,7 +556,7 @@ def sub_package_to_exportpackage_helper(sub_pkg):
     # sub_pkg=cairo-gobject
     #verbose("imagepackage_to_exportpackage_helper " + str(sub_pkg))
 
-    sub_pkg_path = sub_package_to_path(BUILD_DIR, sub_pkg)
+    sub_pkg_path = sub_package_to_path(sub_pkg)
     if sub_pkg_path is None:
         error("Failed to find sub-package-path for: " + sub_pkg)
         exportpackages=[]
@@ -610,7 +619,7 @@ def package_to_exportpackage(package, sub_pkg):
         try:
             exportpackage_files.extend(sub_package_to_exportpackage_helper(sp))
             if version == None:
-                sub_pkg_path = sub_package_to_path(BUILD_DIR, sp)
+                sub_pkg_path = sub_package_to_path(sp)
                 version=sub_pkg_to_version_short(package, sub_pkg_path, sp)
         except Exception as e:
             error("Could not create exportpackage from: " + str(sp))
@@ -622,7 +631,7 @@ def package_to_exportpackage(package, sub_pkg):
     return exportpackages_map
 
 def imagepackage_to_exportpackage(imagepackage):
-    sub_pkg = imagepackage_to_sub_package(BUILD_DIR, imagepackage)
+    sub_pkg = imagepackage_to_sub_package(imagepackage)
     if sub_pkg == None:
         error("Failed to find sub-package for: " + imagepackage)
         return None
@@ -665,7 +674,7 @@ def print_imagepackages_as_txt(imagepackages):
 
 
 def sub_pkg_to_version(package, sub_pkg_path, sub_pkg):
-    return str(sub_pkg_path).replace(BUILD_DIR, "").replace("packages-split/" + sub_pkg, "").replace(package,"").replace("/","")
+    return str(sub_pkg_path).replace(BUILD_DIR, "").replace(BUILD_DIR_ALL, "").replace("packages-split/" + sub_pkg, "").replace(package,"").replace("/","")
 
 def sub_pkg_to_version_short(package, sub_pkg_path, sub_pkg):
     return re.sub(r"-r[0-9]","", sub_pkg_to_version(package, sub_pkg_path, sub_pkg))
@@ -679,7 +688,7 @@ def image_to_imagepackages(image_file):
     imagepackages = image_imagepackages(image_file)
     for imagepackage in imagepackages:
         #verbose(".")
-        sub_pkg = imagepackage_to_sub_package(BUILD_DIR, imagepackage)
+        sub_pkg = imagepackage_to_sub_package(imagepackage)
         if sub_pkg == None:
             error("Failed to find sub-package for: " + imagepackage)
             imagepackages_map['imagepackages'].append({
@@ -688,7 +697,7 @@ def image_to_imagepackages(image_file):
                 'cause': "Can't find sub-package for abstract package " + imagepackage
             })
             continue
-        sub_pkg_path = sub_package_to_path(BUILD_DIR, sub_pkg)
+        sub_pkg_path = sub_package_to_path(sub_pkg)
         #        package = sub_pkg_to_package(BUILD_DIR, sub_pkg)
         if sub_pkg_path is None:
             error("Failed to find sub-package-path for: " + imagepackage + " " + sub_pkg)
@@ -702,6 +711,7 @@ def image_to_imagepackages(image_file):
             #verbose("package_version: " + package_version_dir + "  ===>  " + package_version + "\n")
             #verbose("arg 1: " + BUILD_DIR + "\n")
             #verbose("arg 2: " + sub_pkg + "\n")
+            verbose("-----------------------------------------package to store: " + package + " from " + sub_pkg)
             imagepackages_map['imagepackages'].append({
                 'imagepackage': imagepackage,
                 'package': package,
@@ -819,6 +829,9 @@ def parse():
     global BUILD_DIR
     BUILD_DIR=str(args.build_dir) + DIST_DIR
 
+    global BUILD_DIR_ALL
+    BUILD_DIR_ALL=str(args.build_dir) + "all-poky-linux"
+
     global META_TOP_DIR
     META_TOP_DIR=str(args.meta_top_dir)
     
@@ -832,7 +845,7 @@ def parse():
     
 def main():
     args = parse()
-    build_cache(BUILD_DIR, args.includelibc)
+    build_cache(args.includelibc)
 
     verbose("verbose: " + str(args.verbose) + "\n")
     verbose("mode:    " + str(args.mode) + "\n")
