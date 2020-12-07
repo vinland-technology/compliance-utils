@@ -75,7 +75,7 @@ def read_flict_report(package, directory):
 def read_package_info(package, directory):
     
     flict_json = directory + "/" + package + "-pile-flict.json"
-    print("reading: " + flict_json)
+    verbose("reading: " + flict_json)
     try:
         map={}
         with open(flict_json) as fp:
