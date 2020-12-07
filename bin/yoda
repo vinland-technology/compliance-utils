@@ -830,7 +830,7 @@ def parse():
     BUILD_DIR=str(args.build_dir) + DIST_DIR
 
     global BUILD_DIR_ALL
-    BUILD_DIR_ALL=str(args.build_dir) + "all-poky-linux"
+    BUILD_DIR_ALL=str(args.build_dir) + "qemux86_64-poky-linux"
 
     global META_TOP_DIR
     META_TOP_DIR=str(args.meta_top_dir)
