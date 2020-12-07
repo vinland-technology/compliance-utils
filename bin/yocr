@@ -78,6 +78,7 @@ def read_package_info(package, directory):
         map={}
         with open(flict_json) as fp:
              json_data=json.load(fp)
+             fp.close()
              return json_data
     except Exception as e:
         print("exception: " + str(e))
@@ -88,6 +89,7 @@ def copyright_and_license_file_present(package, version, directory):
     cop_lic_file=directory + "/" + package + "-" + str(version) + "-lic-cop.zip"
     try:
         with open(cop_lic_file) as fp:
+            fp.close()
             return cop_lic_file
     except:
         pass
@@ -98,6 +100,7 @@ def source_code_file_present(package, version, directory):
     cop_lic_file=directory + "/" + package + "-" + str(version) + "-src.zip"
     try:
         with open(cop_lic_file) as fp:
+            fp.close()
             return cop_lic_file
     except:
         pass
@@ -160,6 +163,7 @@ def read_package_dir(package, directory):
     version=read_from_json(component, 'version')
     map['version']=version
     #print("v: " + str(map['version']))
+    #print("m: " + str(map))
     #print("l: " + str(map['declaredLicense']))
     #print("")
     #print("")
@@ -176,7 +180,6 @@ def read_package_dir(package, directory):
     map['sourceCodeFile']=source_code_file_present(package, version, directory)
     
     return map
-
 
 def read_yoga_dir(directory):
     dir = directory + "/*"
@@ -212,7 +215,7 @@ def write_html_package(package):
     res =       "    <div class=\"complianceTableRow\">\n"
     res = res + "      <div class=\"complianceTableCell\">" + read_from_json(package, 'name') + "</div>\n"
     res = res + "      <div class=\"complianceTableCell\">" + str(read_from_json(package, 'version')) + "</div>\n"
-    res = res + "      <div class=\"complianceTableCell\">" + str(read_from_json(package, 'license')) + "</div>\n"
+    res = res + "      <div class=\"complianceTableCell\">" + str(read_from_json(package, 'declaredLicense')) + "</div>\n"
     res = res + "      <div class=\"complianceTableCell\">" + flict_exit_code_to_str(read_from_json(package, 'flictExitCode')) + "</div>\n"
     res = res + "      <div class=\"complianceTableCell\">" + str(outbound_license(package)) + "</div>\n"
     res = res + "      <div class=\"complianceTableCell\">" + str(read_from_json_bool(package, 'copyrightLicenseFile')) + "</div>\n"

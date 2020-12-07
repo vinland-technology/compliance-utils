@@ -62,6 +62,7 @@ def pile_of_deps(package):
     return dep_map
   comp['name']=package['package']
   comp['license']=package['license']
+  comp['version']=package['version']
   comp['dependencies']=[]
   dep_map[comp['name']]=comp
   #print("map: " + str(dep_map))
@@ -124,6 +125,7 @@ def dep_tree(package):
     dep_map['name']=package['package']
     dep_map['license']=package['license']
     dep_map['component']=package['file']
+    dep_map['version']=package['version']
     #    dep_map['version']=package['version']
     dependencies=[]
     for dep in package['dependencies']:
@@ -136,28 +138,29 @@ def print_tree(package, outdir):
     packageFiles = package["packageFiles"]
     package_name=package['package']
     package_license=package['license']
+    package_version=package['version']
     for file in packageFiles:
-      package_map={}
-      #verbose("Looking at: " + str(file))
-      package_map['package']=package_name
-      dependencies=[]
       if "valid" not in file or file['valid']==True:
-        package_map['license']=file['license']
-        package_map['name']=file['file']
-        verbose("dep: " + str(file['file']))
-        package_map['subPackage']=file['subPackage']
-        for dep in file['dependencies']:
-          dependencies.append(dep_tree(dep))
-        package_map['dependencies']=dependencies
-        package_map['valid']=True
-      else:
-        verbose("Ignoring... : " + str(file))
-        continue
-      component_map={}
-      component_map['component']=package_map
-
+          verbose("file for JSON:::::: " + package['package'] + "/" + package['package'] + "_" + str(file['file']) + ".json")
+          package_map={}
+          package_map['name']=file['file']
+          package_map['package']=package_name
+          package_map['subPackage']=file['subPackage']
+          package_map['license']=file['license']
+          package_map['version']=file['version']
+          dependencies=[]
+          #actual = file['package']
+          #dep_map=merge_deps(pile_of_deps(file), dep_map)
+          verbose("dep: " + str(file['file']))
+          for dep in file['dependencies']:
+              dependencies.append(dep_tree(dep))
+          else:
+              pass
+          package_map['dependencies']=dependencies
+          component_map={}
+          component_map['component']=package_map
       
-      save_tree_to_file(component_map, outdir, package_name, file['file'])
+  save_tree_to_file(component_map, outdir, package_name, file['file'])
 
 def parse():
 
