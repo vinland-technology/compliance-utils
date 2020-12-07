@@ -73,14 +73,14 @@ def read_flict_report(package, directory):
     return None
     
 def read_package_info(package, directory):
-    flict_json = directory + "/" + package + "-component-flict-fixed.json"
+    flict_json = directory + "/" + package + "-pile-flict-fixed.json"
     try:
         map={}
         with open(flict_json) as fp:
              json_data=json.load(fp)
              return json_data
     except Exception as e:
-        #print("exception: " + str(e))
+        print("exception: " + str(e))
         pass
     return None
 
@@ -285,8 +285,11 @@ def parse():
         )
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='output verbose information to stderr', default=False)
-    parser.add_argument('-f', '--format', type=str,
-                        help='output result in specified format(s) separated by colon, default is ' + OUTPUT_FORMAT, default=OUTPUT_FORMAT)
+    parser.add_argument('-f', '--format',
+                            type=str,
+                            nargs="+",
+                            help='output result in specified format(s) separated by colon, default is ' + OUTPUT_FORMAT,
+                            default=OUTPUT_FORMAT)
     parser.add_argument('-yd', '--yoga-dir', type=str, dest='yoga_dir', 
                         help='directory where yoga\'s output is located, default is ' + INPUT_DIR, default=INPUT_DIR)
     parser.add_argument('-d', '--output-dir', type=str, dest='outdir', 
@@ -311,7 +314,7 @@ def main():
 
     fmt_functions=fmt_funs()
     
-    for fmt in args.format.split(":"):
+    for fmt in args.format:
         open(args.outdir + "/compliance-result." + fmt.lower(), "w").write(fmt_functions[fmt.lower()](packages))
         
 
