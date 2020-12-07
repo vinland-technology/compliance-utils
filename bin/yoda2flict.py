@@ -160,7 +160,7 @@ def print_tree(package, outdir):
           component_map={}
           component_map['component']=package_map
       
-          save_tree_to_file(component_map, outdir, package_name, file['file'])
+  save_tree_to_file(component_map, outdir, package_name, file['file'])
 
 def parse():
 

@@ -754,7 +754,7 @@ def parse():
     parser.add_argument('-lf', '--list-formats',
                             action='store_true',
                             dest='listformats',
-                            help='output result in specified format',
+                            help='list supported formats',
                             default=False)
     parser.add_argument('-m', '--machine',
                             type=str,
@@ -812,7 +812,7 @@ def parse():
 
     if args.listformats:
         print("Supported output formats: JSON and txt")
-        exit(11)
+        exit(0)
 
     global DIST_DIR
     DIST_DIR=str(args.distdir)

@@ -39,7 +39,7 @@ OUTPUT_LICENSE="\"Public domain\""
 OUTPUT_FORMATS="\n    JSON\n    html"
 OUTPUT_FORMAT="JSON"
 OUTPUT_DIR="./yocr-output"
-INPUT_DIR="./yoga-output"
+INPUT_DIR="./compliance-results"
 
 def error(msg):
     sys.stderr.write(msg + "\n")
@@ -73,9 +73,7 @@ def read_flict_report(package, directory):
     return None
     
 def read_package_info(package, directory):
-    
-    flict_json = directory + "/" + package + "-pile-flict.json"
-    verbose("reading: " + flict_json)
+    flict_json = directory + "/" + package + "-pile-flict-fixed.json"
     try:
         map={}
         with open(flict_json) as fp:
@@ -83,7 +81,7 @@ def read_package_info(package, directory):
              fp.close()
              return json_data
     except Exception as e:
-        #print("exception: " + str(e))
+        print("exception: " + str(e))
         pass
     return None
 
@@ -290,13 +288,16 @@ def parse():
         )
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='output verbose information to stderr', default=False)
-    parser.add_argument('-f', '--format', type=str,
-                        help='output result in specified format(s) separated by colon, default is ' + OUTPUT_FORMAT, default=OUTPUT_FORMAT)
+    parser.add_argument('-f', '--format',
+                            type=str,
+                            nargs="+",
+                            help='output result in specified format(s) separated by colon, default is ' + OUTPUT_FORMAT,
+                            default=OUTPUT_FORMAT)
     parser.add_argument('-yd', '--yoga-dir', type=str, dest='yoga_dir', 
                         help='directory where yoga\'s output is located, default is ' + INPUT_DIR, default=INPUT_DIR)
     parser.add_argument('-d', '--output-dir', type=str, dest='outdir', 
                         help='directory for reports, default is ' + OUTPUT_DIR, default=OUTPUT_DIR)
-
+   
     args = parser.parse_args()
     global VERBOSE
     VERBOSE=args.verbose
@@ -308,12 +309,15 @@ def main():
     #TODO: find css:  print( os.path.dirname(os.path.realpath(__file__))+"/../var/yocto-compliance.css" )
     verbose("verbose: " + str(args.verbose))
     verbose("mode:    " + str(args.format))
-
+    
     packages = read_yoga_dir(args.yoga_dir)
+
+    if not os.path.exists(args.outdir):
+        os.makedirs(args.outdir)
 
     fmt_functions=fmt_funs()
     
-    for fmt in args.format.split(":"):
+    for fmt in args.format:
         open(args.outdir + "/compliance-result." + fmt.lower(), "w").write(fmt_functions[fmt.lower()](packages))
         
 
