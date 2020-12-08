@@ -23,11 +23,12 @@ def package_to_dot(package):
     dependencies = package["dependencies"]
     dep_lines = set()
     for dep in dependencies:
-      dep_name = dep["name"]
-      dep_lic  = dep["license"]
-      dep_string = "\"" + name + " (" + lic + ")\" ->" + "\"" + dep_name + " (" + dep_lic + ")\""
-      dep_lines.add(dep_string)
-      dep_lines.update(package_to_dot(dep))
+      if "valid" not in dep or dep['valid']:
+          dep_name = dep["name"]
+          dep_lic  = dep["license"]
+          dep_string = "\"" + name + " (" + lic + ")\" ->" + "\"" + dep_name + " (" + dep_lic + ")\""
+          dep_lines.add(dep_string)
+          dep_lines.update(package_to_dot(dep))
     return dep_lines
 
 def main(inpath):

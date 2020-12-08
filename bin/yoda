@@ -43,11 +43,9 @@ OUTPUT_DIR="./yocr-output"
 
 DEFAULT_IMAGE="core-image-minimal-qemux86-64"
 DEFAULT_MACHINE="qemux86-64"
-DEFAULT_DIST_DIR="core2-64-poky-linux"
+DEFAULT_BUILD_DIRS="tmp/work/core2-64-poky-linux tmp/work/all-poky-linux tmp/work/qemux86_64-poky-linux"
 DEFAULT_DATE="20201024110850"
-DEFAULT_BUILD_DIR="tmp/work/"
 # EXPERIMENTAL below
-BUILD_DIR_ALL="all-poky-linux"
 DEFAULT_META_TOP_DIR="../"
 DEFAULT_OUTPUT_FORMAT="JSON"
 
@@ -94,6 +92,8 @@ STOP_TIME=0
 
 VERBOSE=False
 
+BUILD_DIRS=[]
+
 def error(msg):
     sys.stderr.write(msg + "\n")
 
@@ -130,7 +130,7 @@ def build_cache(libc):
     global SUB_PKG_TO_LICENSE
     global PACKAGE_TO_LICENSE
     build_license_cache()
-    for dir_ in (BUILD_DIR, BUILD_DIR_ALL):
+    for dir_ in BUILD_DIRS:
         dir = dir_ + "/*/*/packages-split/"
         verbose(" build cache for: " + dir + "\n")
         for file in glob.glob(dir+"/**/"):
@@ -176,7 +176,7 @@ def build_cache(libc):
 
 
 def sub_package_to_path(sub_pkg):
-    for dir_ in (BUILD_DIR, BUILD_DIR_ALL):
+    for dir_ in BUILD_DIRS:
         if sub_pkg in SUB_PKG_TO_PATH:
             return SUB_PKG_TO_PATH[sub_pkg]
         dir = dir_ + "/*/*/packages-split/"
@@ -194,8 +194,10 @@ def sub_package_to_path(sub_pkg):
 
 
 def imagepackage_to_sub_package(imagepackage):
-#    print("arty: " + imagepackage)
-    for dir in (BUILD_DIR, BUILD_DIR_ALL):
+    if imagepackage == None:
+        return None
+    #    print("arty: " + imagepackage)
+    for dir in BUILD_DIRS:
         file = dir + "/*/*/*/runtime-reverse/" + imagepackage
         verbose("Looking for sub package using file: " + file)
         for file_path in glob.glob(file, recursive=True):
@@ -207,8 +209,8 @@ def imagepackage_to_sub_package(imagepackage):
 
         
 def package_license(package):
-    for dir in (BUILD_DIR, BUILD_DIR_ALL):
-        file=BUILD_DIR + "/*/*/" + package + ".spec"
+    for dir in BUILD_DIRS:
+        file = dir + "/*/*/" + package + ".spec"
         for file_path in glob.glob(file, recursive=True):
             with open(file_path) as f:
                 for line in f.readlines():
@@ -243,10 +245,9 @@ def producer_info():
     producer_map={}
     yocto_map= {
         'machine': MACHINE,
-        'distDir': DIST_DIR,
         'image': IMAGE,
         'imageManifest': IMG_MF,
-        'buildDir': BUILD_DIR,
+        'buildDirs': BUILD_DIRS,
         'metaTopDir': META_TOP_DIR,
     }
     date_map = {
@@ -308,36 +309,38 @@ def file_type(file):
 def find_bin_link_worker_helper(bin_name, search_dir):
     FILES=[]
     #verbose("searching for link in: " + BUILD_DIR + "/*/*/packages-split/*" + search_dir + "/" + bin_name + "*")
-    for f in glob.glob(BUILD_DIR + "/*/*/packages-split/*" + search_dir + "/" + bin_name + "*" , recursive=True):
+    for dir in BUILD_DIRS:
+        for f in glob.glob(dir + "/*/*/packages-split/*" + search_dir + "/" + bin_name + "*" , recursive=True):
         #verbose("  found: " + f)
-        if os.path.islink(f):
-            dirname=os.path.dirname(f)
-            #verbose("    found: " + f + " is link")
-            #verbose("    found: " + f + " has dir " + dirname)
-            #verbose("    reading link")
-            bin_file=os.path.join(dirname, os.readlink(f))
-            #verbose("    found: " + bin_file + " aint't that kinda sweet")
-            #verbose("    reading type of " + bin_file)
-            ftype = file_type(bin_file)
-            #verbose("    type: " + str(ftype))
-            if ftype == FileType.ELF_LIBRARY or ftype == FileType.ELF_PROGRAM: 
-                FILES.append(bin_file)
-            else:
-                pass
+            if os.path.islink(f):
+                dirname=os.path.dirname(f)
+                #verbose("    found: " + f + " is link")
+                #verbose("    found: " + f + " has dir " + dirname)
+                #verbose("    reading link")
+                bin_file=os.path.join(dirname, os.readlink(f))
+                #verbose("    found: " + bin_file + " aint't that kinda sweet")
+                #verbose("    reading type of " + bin_file)
+                ftype = file_type(bin_file)
+                #verbose("    type: " + str(ftype))
+                if ftype == FileType.ELF_LIBRARY or ftype == FileType.ELF_PROGRAM: 
+                    FILES.append(bin_file)
+                else:
+                    pass
     return FILES
 
 def find_bin_file_worker_helper(bin_name, search_dir):
     FILES=[]
     #verbose("searching for file in: " + BUILD_DIR + "/*/*/packages-split/*" + search_dir + "/" + bin_name)
-    for f in glob.glob(BUILD_DIR + "/*/*/packages-split/*" + search_dir + "/" + bin_name + "*" , recursive=True):
+    for dir in BUILD_DIRS:
+        for f in glob.glob(dir + "/*/*/packages-split/*" + search_dir + "/" + bin_name + "*" , recursive=True):
         #print("f: " +str(f))
-        if os.path.isfile(f) and not os.path.islink(f) and not ".debug" in f:
-            ftype = file_type(f)
-            #print("f: " + str(f) + " " + str(ftype))
-            if ftype == FileType.ELF_LIBRARY or ftype == FileType.ELF_PROGRAM: 
-                FILES.append(f)
-            else:
-                pass
+            if os.path.isfile(f) and not os.path.islink(f) and not ".debug" in f:
+                ftype = file_type(f)
+                #print("f: " + str(f) + " " + str(ftype))
+                if ftype == FileType.ELF_LIBRARY or ftype == FileType.ELF_PROGRAM: 
+                    FILES.append(f)
+                else:
+                    pass
     return FILES
 
 
@@ -405,24 +408,26 @@ def dependencies(elf_file):
 def setup_glibc_excludes():
     global GLIBC_EXCLUDES
     #print("GLIBC GLIBC")
-    for f in glob.glob(BUILD_DIR+"/glibc/*/image/lib/**", recursive=True):
-        lib=os.path.basename(f)
-        if ".so" in lib:
-            GLIBC_EXCLUDES.append(lib)
+    for dir in BUILD_DIRS:
+        for f in glob.glob(dir+"/glibc/*/image/lib/**", recursive=True):
+            lib=os.path.basename(f)
+            if ".so" in lib:
+                GLIBC_EXCLUDES.append(lib)
             
 def license_for_sub_pkg(pkg_file, bin_file):
     global SUB_PKG_TO_LICENSE
     #verbose("license_for_pkg(" + pkg_file + ", " + bin_file + ")")
     #verbose(" * manifest: " + LICENSE_MANIFEST)
     # Try getting from cache
-    path=""
-    paths=bin_file.replace(BUILD_DIR,"").split("/")
-    if len(paths) >= 5:
-        path=paths[4]
-        if path in SUB_PKG_TO_LICENSE:
-            lic=SUB_PKG_TO_LICENSE[path].rstrip().replace("\"","").replace("\n","")
-            #verbose(" * cached license:     " + lic + " for " + path)
-            return lic
+    for dir in BUILD_DIRS:
+        path=""
+        paths=bin_file.replace(dir,"").split("/")
+        if len(paths) >= 5:
+            path=paths[4]
+            if path in SUB_PKG_TO_LICENSE:
+                lic=SUB_PKG_TO_LICENSE[path].rstrip().replace("\"","").replace("\n","")
+                #verbose(" * cached license:     " + lic + " for " + path)
+                return lic
 
     # Try getting from bb file
     pkg=paths[1]
@@ -483,10 +488,16 @@ def short_name_for_sub_pkg_path(sub_pkg_path):
     return SUB_PKG_PATH_TO_SUB_PKG[sub_pkg_path]
     
 def package_for_bin_file(bin_file):
-    return bin_file.replace(BUILD_DIR, "").split("/")[1]
+    bin_file_ret=bin_file
+    for dir in BUILD_DIRS:
+        bin_file_ret = bin_file_ret.replace(dir, "")
+    return bin_file_ret.split("/")[1]
 
 def sub_package_for_bin_file(bin_file):
-    return bin_file.replace(BUILD_DIR, "").split("/")[4]
+    bin_file_ret=bin_file
+    for dir in BUILD_DIRS:
+        bin_file_ret = bin_file_ret.replace(dir, "")
+    return bin_file_ret.split("/")[4]
 
 def path_for_sub_pkg(sub_pkg):
     if not sub_pkg in SUB_PKG_TO_PATH:
@@ -605,12 +616,13 @@ def package_to_exportpackage(package, sub_pkg):
     if sub_pkg != None:
         sub_pkgs = sub_pkg.split(":")
     else:
-        dir=BUILD_DIR + "/" + package + "/*/packages-split/*"
-        for f in glob.glob(dir, recursive=False):
-            if "shlibdeps" in f or package+"-staticdev" in f or package+"-dev" in f or package+"-dbg" in f or package+"-lic" in f or package+"-src" in f:
-                pass
-            else:
-                sub_pkgs.append(os.path.basename(f))
+        for dir_ in BUILD_DIRS:
+            dir = dir_ + "/" + package + "/*/packages-split/*"
+            for f in glob.glob(dir, recursive=False):
+                if "shlibdeps" in f or package+"-staticdev" in f or package+"-dev" in f or package+"-dbg" in f or package+"-lic" in f or package+"-src" in f:
+                    pass
+                else:
+                    sub_pkgs.append(os.path.basename(f))
 
     exportpackages_map={}
     exportpackage_files=[]
@@ -633,7 +645,7 @@ def package_to_exportpackage(package, sub_pkg):
 def imagepackage_to_exportpackage(imagepackage):
     sub_pkg = imagepackage_to_sub_package(imagepackage)
     if sub_pkg == None:
-        error("Failed to find sub-package for: " + imagepackage)
+        error("Failed to find sub-package for: " + str(imagepackage))
         return None
 
     exportpackages_map={}
@@ -674,7 +686,10 @@ def print_imagepackages_as_txt(imagepackages):
 
 
 def sub_pkg_to_version(package, sub_pkg_path, sub_pkg):
-    return str(sub_pkg_path).replace(BUILD_DIR, "").replace(BUILD_DIR_ALL, "").replace("packages-split/" + sub_pkg, "").replace(package,"").replace("/","")
+    ret=sub_pkg_path
+    for dir in BUILD_DIRS:
+        ret = ret.replace(dir, "")
+    return ret.replace("packages-split/" + sub_pkg, "").replace(package,"").replace("/","")
 
 def sub_pkg_to_version_short(package, sub_pkg_path, sub_pkg):
     return re.sub(r"-r[0-9]","", sub_pkg_to_version(package, sub_pkg_path, sub_pkg))
@@ -741,7 +756,7 @@ def parse():
         formatter_class=RawTextHelpFormatter
     )
     parser.add_argument('mode', type=str,
-                            help='list or nada',
+                            help='list or exportpackage',
                             default='list')
     parser.add_argument('-v', '--verbose',
                             action='store_true',
@@ -760,11 +775,12 @@ def parse():
                             type=str,
                             help='machine of Yocto build, default is ' + DEFAULT_MACHINE,
                             default=DEFAULT_MACHINE)
-    parser.add_argument('-dd', '--dist-dir',
-                            dest='distdir',
-                            type=str,
-                            help='distribution directory, default is ' + DEFAULT_DIST_DIR,
-                            default=DEFAULT_DIST_DIR)
+    parser.add_argument('-bd', '--build-directories',
+                        dest='builddirs',
+                        type=str,
+                        nargs="+",
+                        help='distribution directories, default is ' + str(DEFAULT_BUILD_DIRS),
+                        default=DEFAULT_BUILD_DIRS)
     parser.add_argument('-i', '--image',
                             type=str,
                             help='image, default is ' + DEFAULT_IMAGE,
@@ -773,17 +789,12 @@ def parse():
                             type=str,
                             help='date of build, default is ' + DEFAULT_DATE,
                             default=DEFAULT_DATE)
-    parser.add_argument('-bd', '--build-dir',
-                            type=str,
-                            dest="build_dir",
-                            help='date of build, default is ' + DEFAULT_BUILD_DIR,
-                            default=DEFAULT_BUILD_DIR)
     parser.add_argument('-mtd', '--meta-top-dir',
                             type=str,
                             dest='meta_top_dir',
                             help='directory containing for meta directories, default is ' + DEFAULT_META_TOP_DIR,
                             default=DEFAULT_META_TOP_DIR)
-    parser.add_argument('-a', '--imagepackage',
+    parser.add_argument('-ip', '--imagepackage',
                             type=str,
                             dest='managed_imagepackage',
                             help='imagepackage to handle')
@@ -814,9 +825,6 @@ def parse():
         print("Supported output formats: JSON and txt")
         exit(0)
 
-    global DIST_DIR
-    DIST_DIR=str(args.distdir)
-
     global MACHINE
     MACHINE=str(args.machine)
 
@@ -825,12 +833,6 @@ def parse():
 
     global IMG_MF
     IMG_MF="tmp/deploy/images/" + MACHINE + "/" + IMAGE + ".manifest"
-
-    global BUILD_DIR
-    BUILD_DIR=str(args.build_dir) + DIST_DIR
-
-    global BUILD_DIR_ALL
-    BUILD_DIR_ALL=str(args.build_dir) + "all-poky-linux"
 
     global META_TOP_DIR
     META_TOP_DIR=str(args.meta_top_dir)
@@ -841,6 +843,9 @@ def parse():
     global LICENSE_MANIFEST
     LICENSE_MANIFEST="tmp/deploy/licenses/" + IMAGE + "-" + DATE + "/license.manifest"
 
+    global BUILD_DIRS
+    BUILD_DIRS=args.builddirs
+    
     return args
     
 def main():
