@@ -52,9 +52,6 @@ find_dd()
 
 declare -A options
 
-find_machine
-exit 0
-
 MACHINE=$(find_machine)
 
 DATE=$(find_date $MACHINE $IMAGE)
