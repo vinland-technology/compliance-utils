@@ -122,15 +122,19 @@ def print_pile(package, outdir):
 
 def dep_tree(package):
     dep_map={}
-    dep_map['name']=package['package']
-    dep_map['license']=package['license']
-    dep_map['component']=package['file']
-    dep_map['version']=package['version']
-    #    dep_map['version']=package['version']
-    dependencies=[]
-    for dep in package['dependencies']:
-      dependencies.append(dep_tree(dep))
-    dep_map['dependencies']=dependencies
+    dep_map['name']="popopol"+package['package']
+    if not "valid" in package or package['valid']:
+        dep_map['component']=package['file']
+        dep_map['version']=package['version']
+        dep_map['license']=package['license']
+        #    dep_map['version']=package['version']
+        dep_map['valid']=True
+        dependencies=[]
+        for dep in package['dependencies']:
+            dependencies.append(dep_tree(dep))
+        dep_map['dependencies']=dependencies
+    else:
+        dep_map['valid']=False
     return dep_map
 
 
@@ -140,7 +144,7 @@ def print_tree(package, outdir):
     package_license=package['license']
     package_version=package['version']
     for file in packageFiles:
-      if "valid" not in file or file['valid']==True:
+      if "valid" not in file or file['valid']:
           verbose("file for JSON:::::: " + package['package'] + "/" + package['package'] + "_" + str(file['file']) + ".json")
           package_map={}
           package_map['name']=file['file']
@@ -160,7 +164,7 @@ def print_tree(package, outdir):
           component_map={}
           component_map['component']=package_map
       
-  save_tree_to_file(component_map, outdir, package_name, file['file'])
+          save_tree_to_file(component_map, outdir, package_name, file['file'])
 
 def parse():
 
