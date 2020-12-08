@@ -1,19 +1,17 @@
 #!/bin/bash
 
-
-
 IMAGE=$1
 
 if [ "$IMAGE" = "" ]
 then
     echo "Missing image name... Please try: "
-    echo $0 apricot-image-ui
+    echo $0 core-image-minimal
     exit 1
 fi
 
 find_machine()
 {
-    grep MACHINE conf/local.conf | cut -d "=" -f 2 | sed 's,[ \"]*,,g'
+    grep MACHINE conf/local.conf | grep -v "^#" | cut -d "=" -f 2 | sed 's,[ \"]*,,g'
 }
 
 find_date()
@@ -56,7 +54,18 @@ declare -A options
 
 MACHINE=$(find_machine)
 
-DATE=$(find_date $MACHINE $IMAGE)
+if [ $DATE = "" ]
+then
+    DATE=$(find_date $MACHINE $IMAGE)
+    if [ $(echo $DATE | wc -w) -ne 1 ]
+    then
+	echo "Can't find one (and only one) date" >&2
+	echo "Found: $DATE" >&2
+	echo "Use the environment variable DATE to mark which date you want to use"
+	echo ".... bailing out!" >&2
+	exit 1
+    fi
+fi
 
 MTD=$(find_mtd)
 
