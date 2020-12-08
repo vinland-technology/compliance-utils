@@ -20,12 +20,27 @@ OUTPUT_LICENSE="public domain"
 
 # TODO: use jq with raw option to get rid of "
 
+# yoga -d 20201204180707  -mtd ../sources -m britz -dd tmp/work/all-mbient-linux tmp/work/armv8a-mbient-linux tmp/work/britz-mbient-linux  -i apricot-image-ui-britz
+
+OUT_DIR=compliance-results/
+
+
 while [ "$1" != "" ]
 do
     case "$1" in
-        "--build-dir" | "-bd")
-            BUILD_DIR="$2"
+        "--build-dirs" | "-bd")
+            BUILD_DIRS="$BUILD_DIRS $2"
             shift
+	    while [ "$2" != "" ]
+	    do
+		if [[ "$2" == -* ]]
+		then
+		    break
+		else
+		    BUILD_DIRS="$BUILD_DIRS $2"
+		    shift
+		fi
+	    done
             ;;
         "--image" | "-i")
             IMAGE="$2"
@@ -57,6 +72,7 @@ do
             LIST_IMAGEPACKAGES="true"
             ;;
         *)
+	    echo assume pkg $1
             # assume package
             if [ "$PACKAGE" = "" ]
             then
@@ -66,10 +82,6 @@ do
     shift
 done
 
-if [ "$OUT_DIR" = "" ]
-then
-    OUT_DIR=compliance-results/
-fi
 
 LOG_FILE=${OUT_DIR}/$(basename $0).log
 ERR_FILE=${OUT_DIR}/$(basename $0).err
@@ -120,7 +132,7 @@ create_json()
     local COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-component.json
     if [ ! -f ${COMPONENT_JSON} ]
     then
-#        echo "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} component"
+	#echo "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage"
         yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage  > ${COMPONENT_JSON}
         if [ $? -ne 0 ]
         then
@@ -255,7 +267,7 @@ create_graphs()
         flict-to-dot.py $jf > $DOT_FILE
         if [ $? -ne 0 ]
         then
-            echo "Fail (flict-to-dot.py $jf > ${GRAPH_OUT_DIR}/$(basename $jf).json)"
+            echo "Fail (flict-to-dot.py $jf > $DOT_FILE)"
             RES=Fail
         else
             echo -n "OK ("
@@ -388,7 +400,7 @@ package_name_no_trailing_version()
 
 libx_src_dir()
 {
-    local BUILD_DIR=$1
+    local BUILD_DIR="$1"
     local PACKAGE=$2
     local VERSION=$3
     local VERSION_SHORT_TRIMMED=$4
@@ -398,7 +410,7 @@ libx_src_dir()
 
 gstreamer_src_dir()
 {
-    local BUILD_DIR=$1
+    local BUILD_DIR="$1"
     local PACKAGE=$2
     local VERSION=$3
     local VERSION_SHORT_TRIMMED=$4
@@ -422,8 +434,14 @@ collect_source_code()
 
     GST_DIR=$(gstreamer_src_dir  ${BUILD_DIR} ${PACKAGE} ${VERSION} ${VERSION_SHORT_TRIMMED})
     #    libx_src_dir ${BUILD_DIR} ${PACKAGE} ${VERSION} ${VERSION_SHORT_TRIMMED}
+
+    local TRY_DIRS=""
+    for BUILD_DIR in $BUILD_DIRS
+    do
+	TRY_DIRS="$TRY_DIRS ${BUILD_DIR}/${PACKAGE}/${VERSION}/archiver-work  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}   ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-src   ${BUILD_DIR}/${PACKAGE}/${VERSION}/git ${BUILD_DIR}/${PACKAGE}/packages-split/${PACAKAGE}-src/  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}/source ${LIBX_FIXES_DIR} ${NO_TRAILING_DIR} ${GST_DIR}"
+    done
     
-    local TRY_DIRS="${BUILD_DIR}/${PACKAGE}/${VERSION}/archiver-work  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}   ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-src   ${BUILD_DIR}/${PACKAGE}/${VERSION}/git ${BUILD_DIR}/${PACKAGE}/packages-split/${PACAKAGE}-src/  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}/source ${LIBX_FIXES_DIR} ${NO_TRAILING_DIR} ${GST_DIR}"
+    
     RES=Fail
     inform3n "Finding src directory: "
     for dir in $TRY_DIRS
@@ -468,67 +486,83 @@ collect_license_copyright_information()
 {
     inform2 "Collecting copyright and license information" 
 
-    COP_LIC_DIR=${BUILD_DIR}/${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/
-    inform3n "Entering license directory: " 
-    pushd ${COP_LIC_DIR}  >/dev/null 2>&1
-    if [ $? -ne 0 ]
-    then
-        echo "Fail (pushd ${COP_LIC_DIR})"
-        popd
-        return
-    fi
-    echo "OK"
-    sync
-    
-    ZIP_FILE=${PERMANENT_OUT_DIR}/${PACKAGE}/${PACKAGE}-${VERSION_SHORT}-lic-cop.zip
-    inform3n "Creating zip file: "
-    zip -r ${ZIP_FILE} .  > /dev/null 2>&1
-    if [ $? -ne 0 ]
-    then
-        echo "Fail (zip -r ${ZIP_FILE})"
-    else
-        echo "OK"
-    fi
+    for BUILD_DIR in $BUILD_DIRS
+    do
+	for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "license-destdir/${PACKAGE}"
+	do
+	    COP_LIC_DIR=${BUILD_DIR}/$sub_dir
+	    if [ -d ${COP_LIC_DIR} ]
+	    then
+		inform3n "Trying $COP_LIC_DIR: " 
+		pushd ${COP_LIC_DIR} >/dev/null 2>&1
+		if [ $? -ne 0 ]
+		then
+		    echo "Fail (pushd ${COP_LIC_DIR})"
+		    popd
+		    return
+		fi
+		echo "OK"
+		sync
+		
+		ZIP_FILE=${PERMANENT_OUT_DIR}/${PACKAGE}/${PACKAGE}-${VERSION_SHORT}-lic-cop.zip
+		inform3n "Creating zip file: "
+		zip -r ${ZIP_FILE} .  > /dev/null 2>&1
+		if [ $? -ne 0 ]
+		then
+		    echo "Fail (zip -r ${ZIP_FILE})"
+		else
+		    echo "OK"
+		fi
+	    fi
+	done
+    done
     popd  >/dev/null 2>&1
 }
 
 
 check_if_closed()
 {
-    LICENSES=$(grep "License:" ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}.spec | sed 's,License:,,g' | tr '[A-Z]' '[a-z]')
-    declare -A LICENSE_MAP
-    for lic in $LICENSES
+    for BUILD_DIR in $BUILD_DIRS
     do
-        LICENSE_MAP[$lic]="exists"
+	if [ -f ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}.spec ]
+	then
+	    LICENSES=$(grep "License:" ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}.spec | sed 's,License:,,g' | tr '[A-Z]' '[a-z]')
+	    declare -A LICENSE_MAP
+	    for lic in $LICENSES
+	    do
+		LICENSE_MAP[$lic]="exists"
+	    done
+	    LIC_CNT=${#LICENSE_MAP[@]}
+	    
+	    case $LIC_CNT in
+		"0")
+		    echo "Panic in Detroit. No license found in ${PACKAGE}/${VERSION}/${PACKAGE}.spec"
+		    exit 1
+		    ;;
+		"1")
+		    CLOSED=$(echo ${!LICENSE_MAP[@]} | grep -i closed | wc -l)
+		    if [ $CLOSED -eq 0 ]
+		    then
+			echo "foss"
+		    else
+			echo "closed"
+		    fi
+		    ;;
+		*)
+		    CLOSED=$(echo ${!LICENSE_MAP[@]} | grep -i closed | wc -l)
+		    #            echo "too many licenses??? (${!LICENSE_MAP[@]})"
+		    if [ $CLOSED -eq 0 ]
+		    then
+			echo "foss"
+		    else
+			echo "mix"
+			#                echo "mixed licenses: ${!LICENSE_MAP[@]}" 1>&2
+		    fi
+		    ;;
+	    esac
+	fi
+	return
     done
-    LIC_CNT=${#LICENSE_MAP[@]}
-
-    case $LIC_CNT in
-        "0")
-            echo "Panic in Detroit. No license found in ${PACKAGE}/${VERSION}/${PACKAGE}.spec"
-            exit 1
-            ;;
-        "1")
-            CLOSED=$(echo ${!LICENSE_MAP[@]} | grep -i closed | wc -l)
-            if [ $CLOSED -eq 0 ]
-            then
-                echo "foss"
-            else
-                echo "closed"
-            fi
-            ;;
-        *)
-            CLOSED=$(echo ${!LICENSE_MAP[@]} | grep -i closed | wc -l)
-#            echo "too many licenses??? (${!LICENSE_MAP[@]})"
-            if [ $CLOSED -eq 0 ]
-            then
-                echo "foss"
-            else
-                echo "mix"
-#                echo "mixed licenses: ${!LICENSE_MAP[@]}" 1>&2
-            fi
-            ;;
-    esac
 }
 
 per_package()
@@ -681,12 +715,7 @@ license_from_type()
 
 
 
-YBTF_ARGS=" $VERBOSE -d $DATE  -m $MACHINE  -i $IMAGE -dd $DIST_DIR  -mtd ${META_TOP_DIR} "
-
-if [ -z ${BUILD_DIR} ]
-then
-    BUILD_DIR=./tmp/work/$DIST_DIR
-fi
+YBTF_ARGS=" $VERBOSE -d $DATE  -m $MACHINE  -i $IMAGE -bd ${BUILD_DIRS}  -mtd ${META_TOP_DIR} "
 
 
 FILE_FMT_LEN=70
@@ -758,8 +787,6 @@ error()
 # MAIN
 #
 
-#VERSION=$(ls ${BUILD_DIR}/${PACKAGE}/ | head -1)
-#VERSION_SHORT=$(ls ${BUILD_DIR}/${PACKAGE}/ | head -1 | sed 's,\-r[0-9]*,,g')
 PERMANENT_OUT_DIR=$(pwd)/${OUT_DIR}
 LOG_FILE=${PERMANENT_OUT_DIR}/$(basename $0 | sed 's,\.sh,\.log,g')
 
