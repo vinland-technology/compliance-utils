@@ -101,6 +101,19 @@ exit_code_to_text()
     fi
 }
 
+really_create_ipkg_json()
+{
+    yoda ${YBTF_ARGS} list > ${IMAGEPACKAGES_JSON}
+    if [ $? -eq 0 ]
+    then
+        echo "OK"
+    else
+        echo "Fail"
+	#rm  ${IMAGEPACKAGES_JSON}
+        exit 1
+    fi
+}
+
 #
 # Create imagepackage JSON
 #
@@ -109,14 +122,12 @@ create_imagepackage_json()
     inform0n "Creating imagepackages file ${IMAGEPACKAGES_JSON}: "
     if [ ! -f ${IMAGEPACKAGES_JSON} ]
     then
-        yoda ${YBTF_ARGS} list > ${IMAGEPACKAGES_JSON}
-        if [ $? -eq 0 ]
-        then
-            echo "OK"
-        else
-            echo "Fail"
-            return
-        fi
+	really_create_ipkg_json
+    elif [ ! -z ${IMAGEPACKAGES_JSON} ]	 
+    then
+	echo "File exists but is empty. Recreating it."
+	inform0n "Creating imagepackages file ${IMAGEPACKAGES_JSON}: "
+	really_create_ipkg_json
     else
         echo "OK (using existing)"
     fi
