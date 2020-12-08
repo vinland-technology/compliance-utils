@@ -115,6 +115,7 @@ create_imagepackage_json()
             echo "OK"
         else
             echo "Fail"
+            rm ${IMAGEPACKAGES_JSON}
             exit 1
         fi
     else
