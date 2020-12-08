@@ -11,7 +11,7 @@ fi
 
 find_machine()
 {
-    grep MACHINE conf/local.conf | cut -d "=" -f 2 | sed 's,[ \"]*,,g'
+    grep MACHINE conf/local.conf | grep -v "^#" | cut -d "=" -f 2 | sed 's,[ \"]*,,g'
 }
 
 find_date()
@@ -51,6 +51,9 @@ find_dd()
 }
 
 declare -A options
+
+find_machine
+exit 0
 
 MACHINE=$(find_machine)
 
