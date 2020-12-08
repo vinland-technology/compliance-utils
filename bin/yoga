@@ -789,7 +789,7 @@ error()
 #
 
 PERMANENT_OUT_DIR=$(pwd)/${OUT_DIR}
-LOG_FILE=${PERMANENT_OUT_DIR}/$(basename $0 | sed 's,\.sh,\.log,g')
+LOG_FILE=${PERMANENT_OUT_DIR}/$(basename $0 | sed 's,\.sh,\.log,g').log
 
 # This is needed for what ever we do
 create_imagepackage_json 2>${ERR_FILE}
