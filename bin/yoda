@@ -43,7 +43,7 @@ OUTPUT_DIR="./yocr-output"
 
 DEFAULT_IMAGE="core-image-minimal-qemux86-64"
 DEFAULT_MACHINE="qemux86-64"
-DEFAULT_DIST_DIRS="tmp/work/core2-64-poky-linux tmp/work/all-poky-linux tmp/work/qemux86_64-poky-linux"
+DEFAULT_BUILD_DIRS="tmp/work/core2-64-poky-linux tmp/work/all-poky-linux tmp/work/qemux86_64-poky-linux"
 DEFAULT_DATE="20201024110850"
 # EXPERIMENTAL below
 DEFAULT_META_TOP_DIR="../"
@@ -775,12 +775,12 @@ def parse():
                             type=str,
                             help='machine of Yocto build, default is ' + DEFAULT_MACHINE,
                             default=DEFAULT_MACHINE)
-    parser.add_argument('-dd', '--dist-directories',
-                        dest='distdirs',
+    parser.add_argument('-bd', '--build-directories',
+                        dest='builddirs',
                         type=str,
                         nargs="+",
-                        help='distribution directories, default is ' + str(DEFAULT_DIST_DIRS),
-                        default=DEFAULT_DIST_DIRS)
+                        help='distribution directories, default is ' + str(DEFAULT_BUILD_DIRS),
+                        default=DEFAULT_BUILD_DIRS)
     parser.add_argument('-i', '--image',
                             type=str,
                             help='image, default is ' + DEFAULT_IMAGE,
@@ -844,7 +844,7 @@ def parse():
     LICENSE_MANIFEST="tmp/deploy/licenses/" + IMAGE + "-" + DATE + "/license.manifest"
 
     global BUILD_DIRS
-    BUILD_DIRS=args.distdirs
+    BUILD_DIRS=args.builddirs
     
     return args
     
