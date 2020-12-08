@@ -1,13 +1,11 @@
 #!/bin/bash
 
-
-
 IMAGE=$1
 
 if [ "$IMAGE" = "" ]
 then
     echo "Missing image name... Please try: "
-    echo $0 apricot-image-ui
+    echo $0 core-image-minimal
     exit 1
 fi
 
