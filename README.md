@@ -1,4 +1,4 @@
-# compliance-utils
+# Compliance Utils
 
 Misc small utils in your every day compliance work
 
