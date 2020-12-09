@@ -32,8 +32,10 @@ def to_sed(translations):
       if ( t_spdx != "" ):
         print(pipe + " sed -e 's," + t_value + "\\([ |&\\\"]\\)," + t_spdx + "\\1,g' ", end="")
       first=False
+
 #
-# needs a rewrite - overly complicated due to Henrik's lack of Pythonian skills
+# TODO: update_license needs a rewrite
+#       - overly complicated due to Henrik's lack of Pythonian skills
 # 
 def update_license(translations, license_expr):
     license_list = license_expr.split()
