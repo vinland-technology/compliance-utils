@@ -191,7 +191,6 @@ split_package_json()
 verify_json()
 {
     inform2 "Verifying JSON files for $PACKAGE"
-    ERR_CNT=0
     for jf in $JSON_FILES
     do
         #    echo " * $jf"
@@ -489,9 +488,11 @@ collect_license_copyright_information()
 
     for BUILD_DIR in $BUILD_DIRS
     do
+        inform3n "${BUILD_DIR}" 
 	for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "license-destdir/${PACKAGE}"
 	do
 	    COP_LIC_DIR=${BUILD_DIR}/$sub_dir
+            inform3n "  ${COP_LIC_DIR}" 
 	    if [ -d ${COP_LIC_DIR} ]
 	    then
 		inform3n "Trying $COP_LIC_DIR: " 
@@ -586,22 +587,22 @@ per_package()
     echo "not done, continuing"
     sync
     
-    inform2n "Checking if package already has been marked closed source: "
-    CLOSED_PLACEHOLDER=${PERMANENT_OUT_DIR}/${PACKAGE}/${PACKAGE}-${VERSION_SHORT}-closed-source.placeholder
-    if [ -f ${CLOSED_PLACEHOLDER} ]
-    then
-        echo "${PACKAGE} marked as closed source, ignoring"
-        return
-    fi
-    echo "FOSS or mix, continuing"
-    sync
+#    inform2n "Checking if package already has been marked closed source: "
+#    CLOSED_PLACEHOLDER=${PERMANENT_OUT_DIR}/${PACKAGE}/${PACKAGE}-${VERSION_SHORT}-closed-source.placeholder
+#    if [ -f ${CLOSED_PLACEHOLDER} ]
+#    then
+#        echo "${PACKAGE} marked as closed source, ignoring"
+#        return
+#    fi
+#    echo "FOSS or mix, continuing"
+#    sync
 
     inform2n "Getting license type: "    
     LICENSE_INFO=$(check_if_closed)
     #echo "LICENSE_INFO: $LICENSE_INFO"
     case $LICENSE_INFO in
         "closed")
-            echo "closed license, ignoring $PACKAGE"
+            echo "closed license"
             touch ${CLOSED_PLACEHOLDER}
             return
             ;;
