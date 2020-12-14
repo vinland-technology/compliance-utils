@@ -101,6 +101,19 @@ exit_code_to_text()
     fi
 }
 
+really_create_ipkg_json()
+{
+    yoda ${YBTF_ARGS} list > ${IMAGEPACKAGES_JSON}
+    if [ $? -eq 0 ]
+    then
+        echo "OK"
+    else
+        echo "Fail"
+	#rm  ${IMAGEPACKAGES_JSON}
+        exit 1
+    fi
+}
+
 #
 # Create imagepackage JSON
 #
@@ -109,15 +122,12 @@ create_imagepackage_json()
     inform0n "Creating imagepackages file ${IMAGEPACKAGES_JSON}: "
     if [ ! -f ${IMAGEPACKAGES_JSON} ]
     then
-        yoda ${YBTF_ARGS} list > ${IMAGEPACKAGES_JSON}
-        if [ $? -eq 0 ]
-        then
-            echo "OK"
-        else
-            echo "Fail"
-            rm ${IMAGEPACKAGES_JSON}
-            exit 1
-        fi
+	really_create_ipkg_json
+    elif [ ! -z ${IMAGEPACKAGES_JSON} ]	 
+    then
+	echo "File exists but is empty. Recreating it."
+	inform0n "Creating imagepackages file ${IMAGEPACKAGES_JSON}: "
+	really_create_ipkg_json
     else
         echo "OK (using existing)"
     fi
@@ -526,9 +536,10 @@ check_if_closed()
 {
     for BUILD_DIR in $BUILD_DIRS
     do
-	if [ -f ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}.spec ]
+	SPEC_FILE=${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}.spec
+	if [ -f ${SPEC_FILE} ]
 	then
-	    LICENSES=$(grep "License:" ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}.spec | sed 's,License:,,g' | tr '[A-Z]' '[a-z]')
+	    LICENSES=$(grep "License:" ${SPEC_FILE} | sed 's,License:,,g' | tr '[A-Z]' '[a-z]')
 	    declare -A LICENSE_MAP
 	    for lic in $LICENSES
 	    do
@@ -538,8 +549,7 @@ check_if_closed()
 	    
 	    case $LIC_CNT in
 		"0")
-		    echo "Panic in Detroit. No license found in ${PACKAGE}/${VERSION}/${PACKAGE}.spec"
-		    exit 1
+		    echo "No license found in ${PACKAGE}/${VERSION}/${PACKAGE}.spec"
 		    ;;
 		"1")
 		    CLOSED=$(echo ${!LICENSE_MAP[@]} | grep -i closed | wc -l)
@@ -562,8 +572,8 @@ check_if_closed()
 		    fi
 		    ;;
 	    esac
+	    return
 	fi
-	return
     done
 }
 
@@ -599,6 +609,7 @@ per_package()
 
     inform2n "Getting license type: "    
     LICENSE_INFO=$(check_if_closed)
+    
     #echo "LICENSE_INFO: $LICENSE_INFO"
     case $LICENSE_INFO in
         "closed")
@@ -612,11 +623,12 @@ per_package()
         "foss")
             echo "FOSS licenses only, continuing"
             ;;
+        "")
+            echo "unknown"
+            ;;
     esac
     sync
-
-#    check_if_closed
-
+    
     create_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     FLICT_JSON_FILES=""
     split_package_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 

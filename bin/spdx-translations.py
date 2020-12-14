@@ -33,6 +33,10 @@ def to_sed(translations):
         print(pipe + " sed -e 's," + t_value + "\\([ |&\\\"]\\)," + t_spdx + "\\1,g' ", end="")
       first=False
 
+#
+# TODO: update_license needs a rewrite
+#       - overly complicated due to Henrik's lack of Pythonian skills
+# 
 def update_license(translations, license_expr):
     license_list = license_expr.split()
     for i, d in enumerate(translations):
