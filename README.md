@@ -38,41 +38,20 @@ report can be created for humans (html) and computers (JSON).
 
 ## Misc tricks
 
+### List licenses
+
 If you want a list of the licenses (discarding ```&``` and ```|```) in
 the image built with Yocto you can use the following command, after
 having run yoga.
 
 ```
-$ for j in $(find compliance-results/ -name "*tree-flict.json"); do jq .component.license $j; done  | sed -e 's,",,g' -e "s,[&|\(\) ],\n,g" | grep -v "^[ ]*$" |  sort | uniq -c | sort -rnk1
-     59 MIT
-     43 GPLv2+
-     43 BSD
-     36 LGPLv2.1+
-     36 LGPLv2.1
-     36 LGPLv2+
-     30 GPLv2
-     27 PD
-     27 MIT-style
-     20 GPLv3+
-     16 LGPLv2
-     15 BSD-3-Clause
-     14 Artistic-1.0
-     12 LGPLv3+
-     10 AFL-2.1
-      6 LGPLv2.0+
-      6 LGPL-2.1+
-      3 openssl
-      3 ICU
-      3 BSD-4-Clause
-      2 MPL-1.1
-      2 GPL-3.0-with-GCC-exception
-      2 bzip2-1.0.6
-      1 Zlib
-      1 Libpng
-      1 LGPLv3
-      1 GPLv2.0+
-      1 FreeType
-      1 BSD-2-Clause
+$ for f in $(find compliance-results/*/*-component.json -prune ); do jq .license $f; done | sed 's, ,,g' | sort | uniq -c | sort -rnk1
+```
+
+### List licenses and their packages
+
+```
+unset LIC_MAP; declare -A LIC_MAP; for f in $(find compliance-results/*/*-component.json -prune ); do PKG=$(jq '.package' $f); LIC=$(jq '.license' $f | sed -e 's,[|&\"()], ,g'); for lic in $LIC; do echo "ADD $lic $PKG"; LIC_MAP[$lic]="${LIC_MAP[$lic]} $PKG"; done ; done ; echo "----------------"; for i in "${!LIC_MAP[@]}"; do   echo -n "$i:";   echo "${LIC_MAP[$i]}"; done | sort
 ```
 
 ## dependencies.sh
