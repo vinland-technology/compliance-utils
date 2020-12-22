@@ -122,7 +122,7 @@ def print_pile(package, outdir):
 
 def dep_tree(package):
     dep_map={}
-    dep_map['name']="popopol"+package['package']
+    dep_map['name']=package['package']
     if not "valid" in package or package['valid']:
         dep_map['component']=package['file']
         dep_map['version']=package['version']

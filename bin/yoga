@@ -201,7 +201,6 @@ split_package_json()
 verify_json()
 {
     inform2 "Verifying JSON files for $PACKAGE"
-    ERR_CNT=0
     for jf in $JSON_FILES
     do
         #    echo " * $jf"
@@ -504,6 +503,7 @@ collect_license_copyright_information()
 	do
 	    inform3 "    COP_LIC_DIR: $COP_LIC_DIR"
 	    COP_LIC_DIR=${BUILD_DIR}/$sub_dir
+            inform3n "  ${COP_LIC_DIR}" 
 	    if [ -d ${COP_LIC_DIR} ]
 	    then
 		inform3n "Trying $COP_LIC_DIR: " 
@@ -599,15 +599,15 @@ per_package()
     echo "not done, continuing"
     sync
     
-    inform2n "Checking if package already has been marked closed source: "
-    CLOSED_PLACEHOLDER=${PERMANENT_OUT_DIR}/${PACKAGE}/${PACKAGE}-${VERSION_SHORT}-closed-source.placeholder
-    if [ -f ${CLOSED_PLACEHOLDER} ]
-    then
-        echo "${PACKAGE} marked as closed source, ignoring"
-        return
-    fi
-    echo "FOSS or mix, continuing"
-    sync
+#    inform2n "Checking if package already has been marked closed source: "
+#    CLOSED_PLACEHOLDER=${PERMANENT_OUT_DIR}/${PACKAGE}/${PACKAGE}-${VERSION_SHORT}-closed-source.placeholder
+#    if [ -f ${CLOSED_PLACEHOLDER} ]
+#    then
+#        echo "${PACKAGE} marked as closed source, ignoring"
+#        return
+#    fi
+#    echo "FOSS or mix, continuing"
+#    sync
 
     inform2n "Getting license type: "    
     LICENSE_INFO=$(check_if_closed)
@@ -615,7 +615,7 @@ per_package()
     #echo "LICENSE_INFO: $LICENSE_INFO"
     case $LICENSE_INFO in
         "closed")
-            echo "closed license, ignoring $PACKAGE"
+            echo "closed license"
             touch ${CLOSED_PLACEHOLDER}
             return
             ;;
@@ -804,7 +804,7 @@ error()
 #
 
 PERMANENT_OUT_DIR=$(pwd)/${OUT_DIR}
-LOG_FILE=${PERMANENT_OUT_DIR}/$(basename $0 | sed 's,\.sh,\.log,g')
+LOG_FILE=${PERMANENT_OUT_DIR}/$(basename $0 | sed 's,\.sh,\.log,g').log
 
 # This is needed for what ever we do
 create_imagepackage_json 2>${ERR_FILE}

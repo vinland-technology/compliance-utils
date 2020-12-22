@@ -1,7 +1,6 @@
-# compliance-utils
+# Compliance Utils
 
 Misc small utils in your every day compliance work
-
 
 ## Yocto related tools
 
@@ -12,6 +11,9 @@ yoda analyses various files produced during a Yocto build and produces either:
 * a list of packages that is put in to the image built
 
 * a file containing information about packages 
+
+This tool is used by *yoda*, which probably is the tool you should
+look into.
 
 ### yoga
 
@@ -34,6 +36,23 @@ For each package in this files:
 yocr creates a report summarising the compliance result from yocr. The
 report can be created for humans (html) and computers (JSON).
 
+## Misc tricks
+
+### List licenses
+
+If you want a list of the licenses (discarding ```&``` and ```|```) in
+the image built with Yocto you can use the following command, after
+having run yoga.
+
+```
+$ for f in $(find compliance-results/*/*-component.json -prune ); do jq .license $f; done | sed 's, ,,g' | sort | uniq -c | sort -rnk1
+```
+
+### List licenses and their packages
+
+```
+unset LIC_MAP; declare -A LIC_MAP; for f in $(find compliance-results/*/*-component.json -prune ); do PKG=$(jq '.package' $f); LIC=$(jq '.license' $f | sed -e 's,[|&\"()], ,g'); for lic in $LIC; do echo "ADD $lic $PKG"; LIC_MAP[$lic]="${LIC_MAP[$lic]} $PKG"; done ; done ; echo "----------------"; for i in "${!LIC_MAP[@]}"; do   echo -n "$i:";   echo "${LIC_MAP[$i]}"; done | sort
+```
 
 ## dependencies.sh
 

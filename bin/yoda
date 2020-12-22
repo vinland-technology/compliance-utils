@@ -694,6 +694,11 @@ def sub_pkg_to_version(package, sub_pkg_path, sub_pkg):
 def sub_pkg_to_version_short(package, sub_pkg_path, sub_pkg):
     return re.sub(r"-r[0-9]","", sub_pkg_to_version(package, sub_pkg_path, sub_pkg))
 
+def image_to_licensemap(image_file):
+    imagepackages = image_license_packages(image_file)
+    for imagepackage in imagepackages:
+        print(" * " + str(imagepackage))
+
 def image_to_imagepackages(image_file):
     imagepackages_map = {}
     imagepackages_map['imagepackages']=[]
@@ -755,9 +760,6 @@ def parse():
         epilog=epilog,
         formatter_class=RawTextHelpFormatter
     )
-    parser.add_argument('mode', type=str,
-                            help='list or exportpackage',
-                            default='list')
     parser.add_argument('-v', '--verbose',
                             action='store_true',
                             help='output verbose information to stderr',
