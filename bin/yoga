@@ -123,7 +123,7 @@ create_imagepackage_json()
     if [ ! -f ${IMAGEPACKAGES_JSON} ]
     then
 	really_create_ipkg_json
-    elif [ ! -z ${IMAGEPACKAGES_JSON} ]	 
+    elif [ ! -s ${IMAGEPACKAGES_JSON} ]	 
     then
 	echo "File exists but is empty. Recreating it."
 	inform0n "Creating imagepackages file ${IMAGEPACKAGES_JSON}: "
@@ -498,14 +498,14 @@ collect_license_copyright_information()
 
     for BUILD_DIR in $BUILD_DIRS
     do
-        inform3n "${BUILD_DIR}" 
+        #inform3n "${BUILD_DIR}" 
 	for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "license-destdir/${PACKAGE}"
 	do
 	    COP_LIC_DIR=${BUILD_DIR}/$sub_dir
-            inform3n "  ${COP_LIC_DIR}" 
+            #inform3n "  ${COP_LIC_DIR}" 
 	    if [ -d ${COP_LIC_DIR} ]
 	    then
-		inform3n "Trying $COP_LIC_DIR: " 
+		#inform3n "Trying $COP_LIC_DIR: " 
 		pushd ${COP_LIC_DIR} >/dev/null 2>&1
 		if [ $? -ne 0 ]
 		then
@@ -513,7 +513,7 @@ collect_license_copyright_information()
 		    popd
 		    return
 		fi
-		echo "OK"
+		#echo "OK"
 		sync
 		
 		ZIP_FILE=${PERMANENT_OUT_DIR}/${PACKAGE}/${PACKAGE}-${VERSION_SHORT}-lic-cop.zip
@@ -615,7 +615,6 @@ per_package()
         "closed")
             echo "closed license"
             touch ${CLOSED_PLACEHOLDER}
-            return
             ;;
         "mix")
             echo "mixed licenses, continuing"
@@ -642,9 +641,12 @@ per_package()
     dirty_hacks_done_dirt_cheap "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     verified_fixed_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     check_license_compliance "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-    collect_source_code "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-    collect_license_copyright_information "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-
+    
+    if [ "$LICENSE_INFO" != "closed" ]
+    then
+        collect_source_code "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+        collect_license_copyright_information "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+    fi
     touch ${DONE_PLACEHOLDER}
 }
 
