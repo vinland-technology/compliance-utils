@@ -123,7 +123,7 @@ create_imagepackage_json()
     if [ ! -f ${IMAGEPACKAGES_JSON} ]
     then
 	really_create_ipkg_json
-    elif [ ! -z ${IMAGEPACKAGES_JSON} ]	 
+    elif [ ! -s ${IMAGEPACKAGES_JSON} ]	 
     then
 	echo "File exists but is empty. Recreating it."
 	inform0n "Creating imagepackages file ${IMAGEPACKAGES_JSON}: "
@@ -499,8 +499,10 @@ collect_license_copyright_information()
 
     for BUILD_DIR in $BUILD_DIRS
     do
-	for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "license-destdir/${PACKAGE}"
+	inform3 "BUILD_DIR: $BUILD_DIR" 
+	for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "${PACKAGE}/${VERSION}/license-destdir/${PACKAGE}"
 	do
+	    inform3 "    COP_LIC_DIR: $COP_LIC_DIR"
 	    COP_LIC_DIR=${BUILD_DIR}/$sub_dir
 	    if [ -d ${COP_LIC_DIR} ]
 	    then
@@ -524,6 +526,7 @@ collect_license_copyright_information()
 		else
 		    echo "OK"
 		fi
+		return
 	    fi
 	done
     done
