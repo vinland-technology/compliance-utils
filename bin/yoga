@@ -123,7 +123,7 @@ create_imagepackage_json()
     if [ ! -f ${IMAGEPACKAGES_JSON} ]
     then
 	really_create_ipkg_json
-    elif [ ! -s ${IMAGEPACKAGES_JSON} ]	 
+    elif [ ! -z ${IMAGEPACKAGES_JSON} ]	 
     then
 	echo "File exists but is empty. Recreating it."
 	inform0n "Creating imagepackages file ${IMAGEPACKAGES_JSON}: "
@@ -140,7 +140,7 @@ create_imagepackage_json()
 create_json()
 {
     inform2n "Creating component JSON: "
-    local COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-component.json
+    local COMPONENT_JSON=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-component.json
     if [ ! -f ${COMPONENT_JSON} ]
     then
 	#echo "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage"
@@ -163,7 +163,7 @@ create_json()
 split_package_json()
 {
     inform2n "Splitting component file"
-    PKG_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-component.json
+    PKG_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/${PACKAGE}-component.json
     yoda2flict.py -of tree -od ${PERMANENT_OUT_DIR} ${PKG_JSON}
     if [ $? -ne 0 ]
     then
@@ -172,7 +172,7 @@ split_package_json()
     else
         echo "OK"
     fi
-    FLICT_JSON_FILES=$(find ${PERMANENT_OUT_DIR}/${PACKAGE} -name "*-tree-flict.json")
+    FLICT_JSON_FILES=$(find ${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION} -name "*-tree-flict.json")
 
 #    SUB_PKG_BASE=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-component
 #    LAST_INDEX=$(jq ".packageFiles | keys | .[]"  $PKG_JSON | tail -1)
@@ -224,7 +224,7 @@ verify_json()
 create_flict_json()
 {
     inform2n "Creating flict component JSON: "
-    local COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-component.json
+    local COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/${PACKAGE}-component.json
     if [ ! -f ${COMPONENT_JSON} ]
     then
         echo "Could not find $COMPONENT_JSON (for $PACKAGE)"
@@ -232,7 +232,7 @@ create_flict_json()
     fi
 
     # This is how yoda2flict.py names the put
-    FLICT_COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${PACKAGE}-pile-flict.json
+    FLICT_COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/${PACKAGE}-pile-flict.json
     yoda2flict.py -od ${PERMANENT_OUT_DIR} ${COMPONENT_JSON}
     if [ $? -ne 0 ]
     then
@@ -313,7 +313,7 @@ fix_license_expressions()
         jf_short=$(basename $jf)
         inform3n "$jf_short"
         SPDX_TRANSLATION_FILE=./spdx-translation.json
-        FIXED_JSON=${PERMANENT_OUT_DIR}/${PACKAGE}/$(basename $(echo $jf | sed 's,\.json,-fixed\.json,g'))
+        FIXED_JSON=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/$(basename $(echo $jf | sed 's,\.json,-fixed\.json,g'))
         spdx-translations.py ${SPDX_TRANSLATION_FILE} $jf > $FIXED_JSON
         #echo "spdx-translations.py ${SPDX_TRANSLATION_FILE} $jf > $FIXED_JSON"
         #fix_json $FIXED_JSON "$SED_EXPR"  > $FIXED_JSON
@@ -389,8 +389,8 @@ check_license_compliance()
     for jf in  $JSON_FIXED_FILES
     do
         inform3n "$(basename $jf) "
-        JSON_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/$PACKAGE-compliance-report.json
-        TXT_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/$PACKAGE-compliance.txt
+        JSON_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$PACKAGE-compliance-report.json
+        TXT_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$PACKAGE-compliance.txt
         #printf " * %-${FILE_FMT_LEN}s " "$(basename $jf):"
         set -o pipefail
         ~/.local/bin/flict --json -c $jf | tail -1 | jq '.' > ${JSON_REPORT}
@@ -476,7 +476,7 @@ collect_source_code()
         return
     fi
 
-    ZIP_FILE=${PERMANENT_OUT_DIR}/${PACKAGE}/${PACKAGE}-${VERSION_SHORT}-src.zip
+    ZIP_FILE=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}-src.zip
     inform3n "Creating zip file: "
     zip -r  ${ZIP_FILE} .  >/dev/null 2>&1
     if [ $? -ne 0 ]
@@ -498,14 +498,14 @@ collect_license_copyright_information()
 
     for BUILD_DIR in $BUILD_DIRS
     do
-        #inform3n "${BUILD_DIR}" 
+        inform3n "${BUILD_DIR}" 
 	for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "license-destdir/${PACKAGE}"
 	do
 	    COP_LIC_DIR=${BUILD_DIR}/$sub_dir
-            #inform3n "  ${COP_LIC_DIR}" 
+            inform3n "  ${COP_LIC_DIR}" 
 	    if [ -d ${COP_LIC_DIR} ]
 	    then
-		#inform3n "Trying $COP_LIC_DIR: " 
+		inform3n "Trying $COP_LIC_DIR: " 
 		pushd ${COP_LIC_DIR} >/dev/null 2>&1
 		if [ $? -ne 0 ]
 		then
@@ -513,10 +513,10 @@ collect_license_copyright_information()
 		    popd
 		    return
 		fi
-		#echo "OK"
+		echo "OK"
 		sync
 		
-		ZIP_FILE=${PERMANENT_OUT_DIR}/${PACKAGE}/${PACKAGE}-${VERSION_SHORT}-lic-cop.zip
+		ZIP_FILE=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}-lic-cop.zip
 		inform3n "Creating zip file: "
 		zip -r ${ZIP_FILE} .  > /dev/null 2>&1
 		if [ $? -ne 0 ]
@@ -588,7 +588,7 @@ per_package()
     mkdir -p $GRAPH_OUT_DIR
 
     inform2n "Checking if package already done: "
-    DONE_PLACEHOLDER=${PERMANENT_OUT_DIR}/${PACKAGE}/${PACKAGE}-${VERSION_SHORT}-done.placeholder
+    DONE_PLACEHOLDER=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}-done.placeholder
     if [ -f ${DONE_PLACEHOLDER} ]
     then
         echo " done ($(basename $DONE_PLACEHOLDER) already present)"
@@ -615,6 +615,7 @@ per_package()
         "closed")
             echo "closed license"
             touch ${CLOSED_PLACEHOLDER}
+            return
             ;;
         "mix")
             echo "mixed licenses, continuing"
@@ -641,12 +642,9 @@ per_package()
     dirty_hacks_done_dirt_cheap "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     verified_fixed_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     check_license_compliance "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-    
-    if [ "$LICENSE_INFO" != "closed" ]
-    then
-        collect_source_code "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-        collect_license_copyright_information "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-    fi
+    collect_source_code "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+    collect_license_copyright_information "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+
     touch ${DONE_PLACEHOLDER}
 }
 
