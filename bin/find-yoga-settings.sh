@@ -54,7 +54,7 @@ declare -A options
 
 MACHINE=$(find_machine)
 
-if [ $DATE = "" ]
+if [ "$DATE" = "" ]
 then
     DATE=$(find_date $MACHINE $IMAGE)
     if [ $(echo $DATE | wc -w) -ne 1 ]
