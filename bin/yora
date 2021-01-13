@@ -1,0 +1,172 @@
+#!/usr/bin/python3
+
+import os.path
+import os
+import getpass
+from datetime import date
+import sys
+import glob
+from re import search
+import re 
+import collections
+import json
+import subprocess
+
+DATE_FMT='%Y-%m-%d'
+
+COMPLIANCE_RESULTS="./compliance-results"
+
+def info():
+    print("# License analysis of a Yocto")
+    print("")
+    print("This is an analysis of the report produced by yoda after a Yocto build")
+    print("")
+
+def meta():
+    uname=os.uname()
+    os_name = uname.sysname
+    os_release = uname.release
+    os_version = uname.version
+    machine = uname.machine
+    host = uname.nodename
+    user = getpass.getuser()
+    date_str = date.today().strftime(DATE_FMT)
+    print("# Meta information")
+    print("")
+    print("**Date**: " + date_str )
+    print("")
+    print("**Host**: " + host)
+    print("")
+    print("**OS**: " + os_name + " " + os_release + " (" + str(os_version) + ")")
+    print("")
+    print("**Machine**: " + machine)
+    print("")
+
+def read_json(file):
+    with open(file) as fp:
+        json_data = json.load(fp)
+        fp.close()
+        return json_data
+
+def remove_license_operators(license_expressions):
+    le = license_expressions
+    le = le.replace("and","").replace("AND","").replace("&","")
+    le = le.replace("or","").replace("OR","").replace("|","")
+    le = le.replace("with","").replace("WITH","")
+    le = le.replace("\"", "").replace("'", "")
+    return le
+    
+def mini_clean_license(license_expressions):
+    le = license_expressions
+    le = le.strip("(")
+    le = le.strip(")")
+    return le
+
+def escape_pipe(license_expressions):
+    return license_expressions.replace("|", "\|")
+
+def license_freuquency():
+    print("## Licenses in usage order")
+    print("")
+
+    # Collect all license expressions
+    licenses=[]
+    for file_path in glob.glob(COMPLIANCE_RESULTS + "/*/*-pile-flict.json", recursive=True):
+        json_data = read_json(file_path)
+        comp=json_data['component']
+        package=comp['name']
+        license_expr=comp['license']
+        license_expr_clean=mini_clean_license(license_expr)
+        licenses.append(license_expr)
+
+    stat = collections.Counter(licenses)
+    print("~~~")
+    for lic, cnt in stat.most_common():
+        print(str(cnt) + " " + lic)
+    print("~~~")
+    
+    
+    
+def individual_license_package():
+    print("## Licenses and packages using them")
+    print("")
+
+    # collect all packages per individual license (not per license expression)
+    i_licenses={}
+    for file_path in glob.glob(COMPLIANCE_RESULTS + "/*/*-pile-flict.json", recursive=True):
+        #print(" * " + file_path)
+        json_data = read_json(file_path)
+        #print(" * " + json.dumps(json_data))
+        comp=json_data['component']
+        package=comp['name']
+        license_expr=comp['license']
+        #print("expr: \"" + license_expr + "\" => " + remove_license_operators(license_expr), file=sys.stderr)
+        for license in remove_license_operators(license_expr).split(" "):
+            license = mini_clean_license(license)
+            #print("license: \"" + license + "\"", file=sys.stderr)
+            if license == "":
+                pass
+            elif license in i_licenses:
+                i_licenses[license] = i_licenses[license] + ":" + package
+            else:
+                i_licenses[license] = package
+                
+    # Sort the map (via list)
+    licenses = list(i_licenses)
+    licenses.sort()
+    
+    # Loop through the map via the sorted keys
+    for license in licenses:
+        print("### " + license)
+        print("")
+        for pkg in i_licenses[license].split(":"):
+            print(pkg + " ", end="")
+        print("")
+        print("")
+    
+def package_license():
+    print("## Packages and their licenses")
+    print("")
+    print("|Package                        | License             |")
+    print("|-------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|")
+
+    pkg_lic=[]
+    for file_path in glob.glob(COMPLIANCE_RESULTS + "/*/*-pile-flict.json", recursive=True):
+        json_data = read_json(file_path)
+        comp=json_data['component']
+        package=comp['name']
+        license_expr=comp['license']
+        row = str("| " + package + " | " + mini_clean_license(escape_pipe(license_expr)) + " | ")
+        pkg_lic.append(row)
+        #print(row, file=sys.stderr)
+
+    #print(": " + str(pkg_lic))
+    pkg_lic.sort()
+    #print(": " + str(pkg_lic))
+
+    for row in pkg_lic:
+        print(row)
+    print("")
+    
+def analyse_license():
+
+    print("# License analysis")
+    print("")
+    
+    license_freuquency()    
+
+    individual_license_package()    
+
+    package_license()
+    
+    
+def create_markdown():
+    
+    info()
+    
+    analyse_license()
+
+    meta()
+    
+create_markdown()
+

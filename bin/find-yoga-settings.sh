@@ -61,6 +61,8 @@ then
     then
 	echo "Can't find one (and only one) date" >&2
 	echo "Found: $DATE" >&2
+        echo ""
+        echo "Check out: tmp/deploy/licenses/"
 	echo "Use the environment variable DATE to mark which date you want to use"
 	echo ".... bailing out!" >&2
 	exit 1
