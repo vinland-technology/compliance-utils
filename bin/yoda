@@ -760,6 +760,8 @@ def parse():
         epilog=epilog,
         formatter_class=RawTextHelpFormatter
     )
+    parser.add_argument('mode', type=str,
+                        help='list or nada', default='list')
     parser.add_argument('-v', '--verbose',
                             action='store_true',
                             help='output verbose information to stderr',
