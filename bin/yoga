@@ -20,6 +20,7 @@ OUTPUT_LICENSE="public domain"
 
 SPDX_TRANSLATION_FILE=./spdx-translation.json
 DEFAULT_YOGA_CONFIG=yoga.conf
+COMPATIBILITY_CHECK=true
 
 # yoga -d 20201204180707  -mtd ../sources -m britz -dd tmp/work/all-mbient-linux tmp/work/armv8a-mbient-linux tmp/work/britz-mbient-linux  -i apricot-image-ui-britz
 
@@ -124,6 +125,9 @@ do
             YOGA_CONFIG="$2"
             read_config "${YOGA_CONFIG}"
             ;;
+        "--no-compatibility-checks" | "-ncc")
+            COMPATIBILITY_CHECK=false
+            ;;
         *)
 	    echo assume pkg $1
             # assume package
@@ -143,15 +147,13 @@ then
     read_config "${DEFAULT_YOGA_CONFIG}"
 fi
 
-
 LOG_FILE=${OUT_DIR}/$(basename $0).log
 ERR_FILE=${OUT_DIR}/$(basename $0).err
 mkdir -p $OUT_DIR
 
 
-IMAGEPACKAGES_JSON=${OUT_DIR}/imagepackage-list.json
 
-
+IMAGEPACKAGES_JSON=${OUT_DIR}/imagepackage-${IMAGE}-${DATE}.json
 
 exit_code_to_text()
 {
@@ -935,11 +937,6 @@ check_config()
 	exit 1
     fi
 
-    if [ ! -x flict ]
-    then
-	error "Missing flict (FOSS License Compatibility Tool)"
-	echo 
-    fi
     
 }
 
