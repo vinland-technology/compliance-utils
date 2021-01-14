@@ -68,11 +68,11 @@ read_config()
     source "${CFG}"
 
     # If variable was set before reding conf, reuse prior value
-    DATE=$(prefer_first_var        "$SAVE_DATE"           "$DATE")
-    MACHINE=$(prefer_first_var     "$SAVE_MACHINE"       "$MACHINE")
-    IMAGE=$(prefer_first_var       "$SAVE_IMAGE"         "$IMAGE")
-    BUILD_DIRS=$(prefer_first_var  "$SAVE_BUILD_DIRS"    "${BUILD_DIRS}")
-    META_TOP_DIR=$(prefer_first_var"$SAVE_META_TOP_DIR"  "${META_TOP_DIR}")
+    DATE=$(prefer_first_var         "$SAVE_DATE"           "$DATE")
+    MACHINE=$(prefer_first_var      "$SAVE_MACHINE"       "$MACHINE")
+    IMAGE=$(prefer_first_var        "$SAVE_IMAGE"         "$IMAGE")
+    BUILD_DIRS=$(prefer_first_var   "$SAVE_BUILD_DIRS"    "${BUILD_DIRS}")
+    META_TOP_DIR=$(prefer_first_var "$SAVE_META_TOP_DIR"  "${META_TOP_DIR}")
 }
 
 
