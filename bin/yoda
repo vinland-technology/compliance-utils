@@ -38,7 +38,7 @@ PROGRAM_LICENSE="GPL-3.0-or-larer"
 PROGRAM_AUTHOR="Henrik Sandklef"
 PROGRAM_SEE_ALSO="yoga (yoda's generic aggregator)\n  yocr (yoga's compliance reporter)\n  flict (FOSS License Compatibility Tool)"
 
-OUTPUT_LICENSE="public domain"
+OUTPUT_LICENSE="MIT"
 OUTPUT_DIR="./yocr-output"
 
 DEFAULT_IMAGE="core-image-minimal-qemux86-64"
