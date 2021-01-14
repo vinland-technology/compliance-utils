@@ -31,6 +31,11 @@ error()
     echo "$*" 1>&2
 }
 
+errorn()
+{
+    echo -n "$*" 1>&2
+}
+
 prefer_first_var()
 {
     if [ "$1" != "" ]
@@ -877,7 +882,25 @@ check_env_var()
     NAME=$1
     VALUE=$2
 
-    
+    if [ "$VALUE" = "" ]
+    then
+        error ""
+        errorn "Variable $NAME is not set."
+        MYNAME="${BASH_SOURCE[0]}"
+        MYDIR="$(dirname "${MYNAME}")"
+        REAL_DIR="$(realpath $MYDIR)"
+        if [ "$NAME" = "IMAGE" ]
+        then
+            error " Try setting at least the image name and we will try to help you."
+        elif [ "${IMAGE}" != "" ]
+        then
+            error "Trying the following command: "
+            error ""
+            error "${REAL_DIR}/find-yoga-settings.sh \"${IMAGE}\""
+        fi
+        exit 5
+    fi
+        
 }
 
 output_config()
@@ -921,11 +944,11 @@ output_config()
 check_config()
 {
     
-    check_env_var $DATE
-    check_env_var $MACHINE
-    check_env_var $IMAGE
-    check_env_var ${BUILD_DIRS}
-    check_env_var ${META_TOP_DIR}
+    check_env_var IMAGE        $IMAGE
+    check_env_var DATE         $DATE
+    check_env_var MACHINE      $MACHINE
+    check_env_var BUILD_DIRS   ${BUILD_DIRS}
+    check_env_var META_TOP_DIR ${META_TOP_DIR}
 
     # If no config file, create one from the settings we have
     if [ "${YOGA_CONFIG}" = "" ]
@@ -935,7 +958,7 @@ check_config()
             output_config > "${DEFAULT_YOGA_CONFIG}"
         fi
     fi
-    
+
     # SPDX translation file
     if [ "${SPDX_TRANSLATION_FILE}" != "" ] && [ ! -f ${SPDX_TRANSLATION_FILE} ]
     then
