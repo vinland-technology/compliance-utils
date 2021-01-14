@@ -18,6 +18,9 @@ LICENSE="GPL-3.0-or-later"
 OUTPUT_LICENSE="public domain"
 
 
+SPDX_TRANSLATION_FILE=./spdx-translation.json
+
+
 # TODO: use jq with raw option to get rid of "
 
 # yoga -d 20201204180707  -mtd ../sources -m britz -dd tmp/work/all-mbient-linux tmp/work/armv8a-mbient-linux tmp/work/britz-mbient-linux  -i apricot-image-ui-britz
@@ -48,6 +51,10 @@ do
             ;;
         "--meta-top-dir" | "-mtd")
             META_TOP_DIR="$2"
+            shift
+            ;;
+        "--license-translation-file" | "-ltf")
+            SPDX_TRANSLATION_FILE="$2"
             shift
             ;;
         "--dist-dir" | "-dd")
@@ -306,6 +313,13 @@ fix_json()
 fix_license_expressions()
 {
     inform2 "Fixing license expressions in JSON files"
+    if [ "${SPDX_TRANSLATION_FILE}" = "" ] 
+    then
+        inform3n "Ignoring since no SPDX translation file provided"	
+	JSON_FIXED_FILES="${FLICT_COMPONENT_JSON}"
+        echo "OK"
+	return 
+    fi
     JSON_FIXED_FILES=""
     RES=OK
     for jf in ${FLICT_COMPONENT_JSON}
@@ -314,6 +328,7 @@ fix_license_expressions()
         inform3n "$jf_short"
         SPDX_TRANSLATION_FILE=./spdx-translation.json
         FIXED_JSON=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/$(basename $(echo $jf | sed 's,\.json,-fixed\.json,g'))
+        #FIXED_JSON=${PERMANENT_OUT_DIR}/${PACKAGE}/$(basename $(echo $jf | sed 's,\.json,-fixed\.json,g'))
         spdx-translations.py ${SPDX_TRANSLATION_FILE} $jf > $FIXED_JSON
         #echo "spdx-translations.py ${SPDX_TRANSLATION_FILE} $jf > $FIXED_JSON"
         #fix_json $FIXED_JSON "$SED_EXPR"  > $FIXED_JSON
@@ -498,9 +513,12 @@ collect_license_copyright_information()
 
     for BUILD_DIR in $BUILD_DIRS
     do
-        inform3n "${BUILD_DIR}" 
-	for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "license-destdir/${PACKAGE}"
+	#inform3 "BUILD_DIR: $BUILD_DIR" 
+        #inform3n "${BUILD_DIR}" 
+	#for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "license-destdir/${PACKAGE}"
+	for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "${PACKAGE}/${VERSION}/license-destdir/${PACKAGE}"
 	do
+	    inform3 "    COP_LIC_DIR: $COP_LIC_DIR"
 	    COP_LIC_DIR=${BUILD_DIR}/$sub_dir
             inform3n "  ${COP_LIC_DIR}" 
 	    if [ -d ${COP_LIC_DIR} ]
@@ -525,6 +543,7 @@ collect_license_copyright_information()
 		else
 		    echo "OK"
 		fi
+		return
 	    fi
 	done
     done
@@ -793,13 +812,30 @@ error()
 
 
 
+check_config()
+{
+    # SPDX translation file
+    if [ "${SPDX_TRANSLATION_FILE}" != "" ] && [ ! -f ${SPDX_TRANSLATION_FILE} ]
+    then
+	error "Missing license translation file \"${SPDX_TRANSLATION_FILE}\""
+	exit 1
+    fi
 
+    if [ ! -x flict ]
+    then
+	error "Missing flict (FOSS License Compatibility Tool)"
+	echo 
+    fi
+    
+}
 
 
 
 #
 # MAIN
 #
+
+check_config
 
 PERMANENT_OUT_DIR=$(pwd)/${OUT_DIR}
 LOG_FILE=${PERMANENT_OUT_DIR}/$(basename $0 | sed 's,\.sh,\.log,g').log
