@@ -19,13 +19,55 @@ OUTPUT_LICENSE="public domain"
 
 
 SPDX_TRANSLATION_FILE=./spdx-translation.json
-
-
-# TODO: use jq with raw option to get rid of "
+DEFAULT_YOGA_CONFIG=yoga.conf
 
 # yoga -d 20201204180707  -mtd ../sources -m britz -dd tmp/work/all-mbient-linux tmp/work/armv8a-mbient-linux tmp/work/britz-mbient-linux  -i apricot-image-ui-britz
 
 OUT_DIR=compliance-results/
+
+error()
+{
+    echo "$*" 1>&2
+}
+
+prefer_first_var()
+{
+    if [ "$1" != "" ]
+    then
+        echo "$1"
+    else
+        echo "$2"
+    fi
+}
+
+read_config()
+{
+    CFG="$1"
+
+    if [ ! -f "${CFG}" ]
+    then
+        error "Can't find configuration file: \"$CFG\""
+        exit 1
+    fi
+
+    # Store current variables
+    SAVE_DATE="$DATE"
+    SAVE_MACHINE="$MACHINE"
+    SAVE_IMAGE="$IMAGE"
+    SAVE_BUILD_DIRS="${BUILD_DIRS}"
+    SAVE_META_TOP_DIR="${META_TOP_DIR}"
+
+    # Read variables from conf file
+    error "Reading configurations from \"${DEFAULT_YOGA_CONFIG}\""
+    source "${CFG}"
+
+    # If variable was set before reding conf, reuse prior value
+    DATE=$(prefer_first_var        "$SAVE_DATE"           "$DATE")
+    MACHINE=$(prefer_first_var     "$SAVE_MACHINE"       "$MACHINE")
+    IMAGE=$(prefer_first_var       "$SAVE_IMAGE"         "$IMAGE")
+    BUILD_DIRS=$(prefer_first_var  "$SAVE_BUILD_DIRS"    "${BUILD_DIRS}")
+    META_TOP_DIR=$(prefer_first_var"$SAVE_META_TOP_DIR"  "${META_TOP_DIR}")
+}
 
 
 while [ "$1" != "" ]
@@ -78,6 +120,10 @@ do
         "--list-imagepackages" | "-la")
             LIST_IMAGEPACKAGES="true"
             ;;
+        "--config" | "-c")
+            YOGA_CONFIG="$2"
+            read_config "${YOGA_CONFIG}"
+            ;;
         *)
 	    echo assume pkg $1
             # assume package
@@ -89,6 +135,14 @@ do
     shift
 done
 
+if [ "${YOGA_CONFIG}" != "" ]
+then
+    read_config "${YOGA_CONFIG}"
+elif [ -f "${DEFAULT_YOGA_CONFIG}" ]
+then
+    read_config "${DEFAULT_YOGA_CONFIG}"
+fi
+
 
 LOG_FILE=${OUT_DIR}/$(basename $0).log
 ERR_FILE=${OUT_DIR}/$(basename $0).err
@@ -96,6 +150,7 @@ mkdir -p $OUT_DIR
 
 
 IMAGEPACKAGES_JSON=${OUT_DIR}/imagepackage-list.json
+
 
 
 exit_code_to_text()
@@ -152,9 +207,12 @@ create_json()
     then
 	#echo "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage"
         yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage  > ${COMPONENT_JSON}
-        if [ $? -ne 0 ]
+        RET=$?
+        echo "RETURNED: $RET"
+        which yoda
+        if [ $RET -ne 0 ]
         then
-            inform0 "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} component failed"
+            inform0 "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage      failed"
             return
         fi
         echo "OK"
@@ -171,10 +229,10 @@ split_package_json()
 {
     inform2n "Splitting component file"
     PKG_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/${PACKAGE}-component.json
-    yoda2flict.py -of tree -od ${PERMANENT_OUT_DIR} ${PKG_JSON}
+    yoda2flict.py -of tree -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION} ${PKG_JSON}
     if [ $? -ne 0 ]
     then
-        echo "yoda2flict.py -of tree -od ${PERMANENT_OUT_DIR} ${PKG_JSON} failed"
+        echo "yoda2flict.py -of tree -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION} ${PKG_JSON} failed"
         return
     else
         echo "OK"
@@ -240,10 +298,10 @@ create_flict_json()
 
     # This is how yoda2flict.py names the put
     FLICT_COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/${PACKAGE}-pile-flict.json
-    yoda2flict.py -od ${PERMANENT_OUT_DIR} ${COMPONENT_JSON}
+    yoda2flict.py -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/ ${COMPONENT_JSON}
     if [ $? -ne 0 ]
     then
-        echo "yoda2flict.py -od ${PERMANENT_OUT_DIR}  ${COMPONENT_JSON} failed"
+        echo "yoda2flict.py -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/  ${COMPONENT_JSON} failed"
         return
     else
         echo "OK"
@@ -329,7 +387,7 @@ fix_license_expressions()
         SPDX_TRANSLATION_FILE=./spdx-translation.json
         FIXED_JSON=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/$(basename $(echo $jf | sed 's,\.json,-fixed\.json,g'))
         #FIXED_JSON=${PERMANENT_OUT_DIR}/${PACKAGE}/$(basename $(echo $jf | sed 's,\.json,-fixed\.json,g'))
-        spdx-translations.py ${SPDX_TRANSLATION_FILE} $jf > $FIXED_JSON
+        spdx-translations.py -stf ${SPDX_TRANSLATION_FILE} -p $jf > $FIXED_JSON
         #echo "spdx-translations.py ${SPDX_TRANSLATION_FILE} $jf > $FIXED_JSON"
         #fix_json $FIXED_JSON "$SED_EXPR"  > $FIXED_JSON
         RET=$?
@@ -518,9 +576,9 @@ collect_license_copyright_information()
 	#for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "license-destdir/${PACKAGE}"
 	for sub_dir in "${PACKAGE}/${VERSION}/packages-split/${PACKAGE}-lic/usr/share/licenses/${PACKAGE}/" "${PACKAGE}/${VERSION}/license-destdir/${PACKAGE}"
 	do
-	    inform3 "    COP_LIC_DIR: $COP_LIC_DIR"
+	    #inform3 "    COP_LIC_DIR: $COP_LIC_DIR"
 	    COP_LIC_DIR=${BUILD_DIR}/$sub_dir
-            inform3n "  ${COP_LIC_DIR}" 
+            inform3 "  ${COP_LIC_DIR}" 
 	    if [ -d ${COP_LIC_DIR} ]
 	    then
 		inform3n "Trying $COP_LIC_DIR: " 
@@ -603,7 +661,7 @@ per_package()
     local VERSION=$3
     local VERSION_SHORT=$4
     
-    GRAPH_OUT_DIR=${PERMANENT_OUT_DIR}/$PACKAGE/graphs
+    GRAPH_OUT_DIR=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/graphs
     mkdir -p $GRAPH_OUT_DIR
 
     inform2n "Checking if package already done: "
@@ -805,15 +863,71 @@ inform3n()
     sync
 }
 
-error()
+
+check_env_var()
 {
-    echo "$*" 1>&2
+    NAME=$1
+    VALUE=$2
+
+    
 }
 
-
+output_config()
+{
+    echo "#####################################################"
+    echo "#"
+    echo "# Automatically created onfiguration file for Yoga"
+    echo "#"
+    echo "# License:  MIT"
+    echo "#"
+    echo "# Created:  $(date)"
+    echo "# OS:       $(uname -a)"
+    echo "# Host:     $(hostname)"
+    echo "# User:     $(whoami)"
+    echo "#"
+    echo "#"
+    echo "# Yoga"
+    echo "#   project page: https://github.com/vinland-technology/compliance-utils/"
+    echo "#   bug report:   https://github.com/vinland-technology/compliance-utils/issues"
+    echo "#"
+    echo "#####################################################"
+    echo ""
+    echo "# DATE - build date"
+    echo "DATE=\"$DATE\""
+    echo ""
+    echo "# MACHINE - machine this image was built for"
+    echo "MACHINE=\"$MACHINE\""
+    echo ""
+    echo "# IMAGE - name of the image"
+    echo "IMAGE=\"$IMAGE\""
+    echo ""
+    echo "# BUILD_DIRS - list of directories where the build results are stored"
+    echo "BUILD_DIRS=\"${BUILD_DIRS}\""
+    echo ""
+    echo "# META_TOP_DIR - top directory for the meta files (e.g recipes/bb)"
+    echo "META_TOP_DIR=\"${META_TOP_DIR}\""
+    echo
+    echo
+}
 
 check_config()
 {
+    
+    check_env_var $DATE
+    check_env_var $MACHINE
+    check_env_var $IMAGE
+    check_env_var ${BUILD_DIRS}
+    check_env_var ${META_TOP_DIR}
+
+    # If no config file, create one from the settings we have
+    if [ "${YOGA_CONFIG}" = "" ]
+    then
+        if [ ! -f "${DEFAULT_YOGA_CONFIG}" ]
+        then
+            output_config > "${DEFAULT_YOGA_CONFIG}"
+        fi
+    fi
+    
     # SPDX translation file
     if [ "${SPDX_TRANSLATION_FILE}" != "" ] && [ ! -f ${SPDX_TRANSLATION_FILE} ]
     then
@@ -837,6 +951,9 @@ check_config()
 
 check_config
 
+exit
+
+
 PERMANENT_OUT_DIR=$(pwd)/${OUT_DIR}
 LOG_FILE=${PERMANENT_OUT_DIR}/$(basename $0 | sed 's,\.sh,\.log,g').log
 
@@ -846,6 +963,7 @@ create_imagepackage_json 2>${ERR_FILE}
 if [ "$LIST_IMAGEPACKAGES" = "true" ]
 then
     echo "Listing imagepackage"
+    # TODO: use jq's raw option
     jq '.imagepackages[].name' ${IMAGEPACKAGES_JSON} | sed 's,\",,g' | sort
     exit $?
 fi
@@ -856,6 +974,7 @@ declare -A PACKAGES
 declare -A VERSIONS
 declare -A VERSIONS_SHORT
 inform0n "Extracting information about packages (in imagepackage list): "
+# TODO: use jq's raw option
 for line in $(jq '.imagepackages[] | "\(.package):\(.subPackage):\(.valid):\(.name):\(.packageVersion):\(.packageVersionDir)"' ${IMAGEPACKAGES_JSON} | sed 's,\",,g' | sort)
 do
     VALID=$(echo $line | cut -d : -f 3)
@@ -898,9 +1017,10 @@ do
         inform1 "$PACKAGE / $SP_COUNT sub packages"
         PACKAGE_ARGS=" -p $PACKAGE -sp $SUB_PACKAGES "
         #    echo "$VERSION | $VERSION_SHORT"
-        VERSION=${VERSIONS[$PACKAGE]}
+        export VERSION=${VERSIONS[$PACKAGE]}
         VERSION_SHORT=${VERSIONS_SHORT[$PACKAGE]}
-        per_package "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+        per_package "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT"
+        exit
     fi
 done 2>>${ERR_FILE} | tee -a ${LOG_FILE} 
 
