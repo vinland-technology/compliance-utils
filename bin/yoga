@@ -460,20 +460,26 @@ verified_fixed_json()
 #
 check_license_compliance()
 {
-    inform2 "Checking license compliance (flict)"
-    for jf in  $JSON_FIXED_FILES
-    do
-        inform3n "$(basename $jf) "
-        JSON_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$PACKAGE-compliance-report.json
-        TXT_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$PACKAGE-compliance.txt
-        #printf " * %-${FILE_FMT_LEN}s " "$(basename $jf):"
-        set -o pipefail
-        ~/.local/bin/flict --json -c $jf | tail -1 | jq '.' > ${JSON_REPORT}
-#        echo ~/.local/bin/flict --json -c $jf #| tail -1 | jq '.' > ${JSON_REPORT}
-        RET=$?
-        echo "$RET" > $TXT_REPORT
-        flict_exit_code_to_string $RET
-    done
+    inform2n "Checking license compliance (flict)"
+    if [ "${COMPATIBILITY_CHECK}" != "false" ]
+    then
+        echo
+        for jf in  $JSON_FIXED_FILES
+        do
+            inform3n "$(basename $jf) "
+            JSON_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$PACKAGE-compliance-report.json
+            TXT_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$PACKAGE-compliance.txt
+            #printf " * %-${FILE_FMT_LEN}s " "$(basename $jf):"
+            set -o pipefail
+            ~/.local/bin/flict --json -c $jf | tail -1 | jq '.' > ${JSON_REPORT}
+            #        echo ~/.local/bin/flict --json -c $jf #| tail -1 | jq '.' > ${JSON_REPORT}
+            RET=$?
+            echo "$RET" > $TXT_REPORT
+            flict_exit_code_to_string $RET
+        done
+    else
+        echo "PASS, ignored by user request"
+    fi
 }
 
 
@@ -720,7 +726,7 @@ per_package()
     fix_license_expressions "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     dirty_hacks_done_dirt_cheap "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     verified_fixed_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-    check_license_compliance "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+    check_license_compliance "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT"
     collect_source_code "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     collect_license_copyright_information "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
 
@@ -937,6 +943,12 @@ check_config()
 	exit 1
     fi
 
+    if [ ! -x flict ] && [ "${COMPATIBILITY_CHECK}" != "false" ]
+    then
+	error "Missing flict (FOSS License Compatibility Tool)"
+	error "Either install flict or use the option: --no-compatibility-checks"
+        exit 2
+    fi
     
 }
 
@@ -947,8 +959,6 @@ check_config()
 #
 
 check_config
-
-exit
 
 
 PERMANENT_OUT_DIR=$(pwd)/${OUT_DIR}
@@ -1017,7 +1027,6 @@ do
         export VERSION=${VERSIONS[$PACKAGE]}
         VERSION_SHORT=${VERSIONS_SHORT[$PACKAGE]}
         per_package "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT"
-        exit
     fi
 done 2>>${ERR_FILE} | tee -a ${LOG_FILE} 
 
