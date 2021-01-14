@@ -241,8 +241,7 @@ def program_info():
         'result-license': OUTPUT_LICENSE
     }
 
-def producer_info():
-    producer_map={}
+def yocto_info():
     yocto_map= {
         'date': DATE,
         'machine': MACHINE,
@@ -251,12 +250,22 @@ def producer_info():
         'buildDirs': BUILD_DIRS,
         'metaTopDir': META_TOP_DIR,
     }
+    return yocto_map
+
+def today():
+    return date.today().strftime(DATE_FMT)
+
+def today_info():
     date_map = {
-        'date': date.today().strftime(DATE_FMT)
+        'date': today()
     }
+    
+
+def producer_info():
+    producer_map={}
     producer_map['tool']=program_info()
-    producer_map['yocto']=yocto_map
-    producer_map['date']=date_map
+    producer_map['yocto']=yocto_info()
+    producer_map['date']=today_info()
     return producer_map
 
 def flict_info():
@@ -888,8 +897,8 @@ def main():
                 imagepackages_list.append([imagepackage_map])
                 continue
             imagepackages_map={}
-            imagepackages_map['meta']=program_info()
-            imagepackages_map['producer-info']=producer_info()
+            #imagepackages_map['meta']=program_info()
+            imagepackages_map['meta_information']=producer_info()
             imagepackages_map['imagepackages']=imagepackages_list
             
             print(json.dumps(imagepackages_map))
