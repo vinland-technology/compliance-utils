@@ -244,6 +244,7 @@ def program_info():
 def producer_info():
     producer_map={}
     yocto_map= {
+        'date': DATE,
         'machine': MACHINE,
         'image': IMAGE,
         'imageManifest': IMG_MF,
