@@ -215,12 +215,11 @@ create_json()
 	#echo "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage"
         yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage  > ${COMPONENT_JSON}
         RET=$?
-        echo "RETURNED: $RET"
-        which yoda
-        if [ $RET -ne 0 ]
+        if [ $RET -ne 0 ] || [ ! -s  "${COMPONENT_JSON}" ]  
         then
+            rm "${COMPONENT_JSON}"
             inform0 "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage      failed"
-            return
+            return 1
         fi
         echo "OK"
     else
@@ -524,24 +523,25 @@ collect_source_code()
     inform2 "Collecting source code"
     VERSION_SHORT_TRIMMED=$(echo ${VERSION_SHORT} | sed 's,[0-9]*_,,g')
 
-    LIBX_FIXES_DIR=$(libx_src_dir ${BUILD_DIR} ${PACKAGE} ${VERSION} ${VERSION_SHORT_TRIMMED})
-    
-    NO_TRAILING_DIR=${BUILD_DIR}/${PACKAGE}/${VERSION}/$(package_name_no_trailing_version $PACKAGE)-${VERSION_SHORT_TRIMMED}
 
-    GST_DIR=$(gstreamer_src_dir  ${BUILD_DIR} ${PACKAGE} ${VERSION} ${VERSION_SHORT_TRIMMED})
     #    libx_src_dir ${BUILD_DIR} ${PACKAGE} ${VERSION} ${VERSION_SHORT_TRIMMED}
 
     local TRY_DIRS=""
     for BUILD_DIR in $BUILD_DIRS
     do
-	TRY_DIRS="$TRY_DIRS ${BUILD_DIR}/${PACKAGE}/${VERSION}/archiver-work  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}   ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-src   ${BUILD_DIR}/${PACKAGE}/${VERSION}/git ${BUILD_DIR}/${PACKAGE}/packages-split/${PACAKAGE}-src/  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}/source ${LIBX_FIXES_DIR} ${NO_TRAILING_DIR} ${GST_DIR}"
+        NO_TRAILING_DIR=${BUILD_DIR}/${PACKAGE}/${VERSION}/$(package_name_no_trailing_version $PACKAGE)-${VERSION_SHORT_TRIMMED}
+        LIBX_FIXES_DIR=$(libx_src_dir ${BUILD_DIR} ${PACKAGE} ${VERSION} ${VERSION_SHORT_TRIMMED})
+        GST_DIR =$(gstreamer_src_dir  ${BUILD_DIR} ${PACKAGE} ${VERSION} ${VERSION_SHORT_TRIMMED})
+        
+	TRY_DIRS="$TRY_DIRS ${BUILD_DIR}/${PACKAGE}/${VERSION}/archiver-work  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}   ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-src   ${BUILD_DIR}/${PACKAGE}/${VERSION}/git ${BUILD_DIR}/${PACKAGE}/packages-split/${PACAKAGE}-src/  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT_TRIMMED}  ${BUILD_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}/source ${LIBX_FIXES_DIR} ${NO_TRAILING_DIR} ${GST_DIR} "
     done
-    
+
     
     RES=Fail
     inform3n "Finding src directory: "
     for dir in $TRY_DIRS
     do
+        #echo
         #echo "TRYING DIR: $dir"
         pushd ${dir}  >/dev/null 2>&1
         RET=$?
@@ -555,23 +555,67 @@ collect_source_code()
             popd  >/dev/null 2>&1
         fi
     done
-    echo "$RES"
-    sync
-    if [ "$RES" != "OK" ]
+    if [ "$RES" = "OK" ]
     then
-        return
+        echo "$RES"
+        sync
+        
+        ZIP_FILE=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}-src.zip
+        inform3n "Creating zip file: "
+        zip -r  ${ZIP_FILE} .  >/dev/null 2>&1
+        RET=0
+        if [ $? -ne 0 ]
+        then
+            echo "Fail (zip -r ${ZIP_FILE} .)"
+            RET=1
+        else
+            echo "OK"
+        fi
+        popd  >/dev/null 2>&1
+        return $RET
     fi
 
-    ZIP_FILE=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}-src.zip
-    inform3n "Creating zip file: "
-    zip -r  ${ZIP_FILE} .  >/dev/null 2>&1
-    if [ $? -ne 0 ]
-    then
-        echo "Fail (zip -r ${ZIP_FILE} .)"
-    else
-        echo "OK"
-    fi
-    popd  >/dev/null 2>&1
+
+    # Trying root build dirs
+    for BUILD_DIR in $BUILD_DIRS
+    do
+        
+        dir="${BUILD_DIR}/${PACKAGE}/${VERSION}/"
+        #echo "testing ... $dir"
+        
+        pushd ${dir}  >/dev/null 2>&1
+        RET=$?
+        NR_FILES=$(ls -1 | wc -l)
+        if [ $RET -eq 0 ] && [ $NR_FILES -gt 0 ]
+        then
+            echo "OK"
+            sync
+            ZIP_FILE=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-${VERSION_SHORT}-src.zip
+            inform3n "Creating zip file ($(pwd)): "
+            # TODO: refine -x
+            zip -r  ${ZIP_FILE} -x recipe-sysroot/\* -x recipe-sysroot/\*   . >/dev/null 2>&1
+            echo "Created ${ZIP_FILE}: $?"
+            RET=0
+            if [ $? -ne 0 ]
+            then
+                echo "Fail (zip -r ${ZIP_FILE} .)"
+                RET=1
+            else
+                echo "OK"
+            fi
+            popd  >/dev/null 2>&1
+            sync
+            return $RET
+            
+        else
+            popd  >/dev/null 2>&1
+        fi
+        
+    done
+
+    echo "Fail"
+    sync
+    return 1
 }
 
 
@@ -591,7 +635,7 @@ collect_license_copyright_information()
 	do
 	    #inform3 "    COP_LIC_DIR: $COP_LIC_DIR"
 	    COP_LIC_DIR=${BUILD_DIR}/$sub_dir
-            inform3 "  ${COP_LIC_DIR}" 
+            #inform3 "  ${COP_LIC_DIR}" 
 	    if [ -d ${COP_LIC_DIR} ]
 	    then
 		inform3n "Trying $COP_LIC_DIR: " 
@@ -611,10 +655,13 @@ collect_license_copyright_information()
 		if [ $? -ne 0 ]
 		then
 		    echo "Fail (zip -r ${ZIP_FILE})"
+                    RET=1
 		else
 		    echo "OK"
+                    RET=0
 		fi
-		return
+                popd  >/dev/null 2>&1
+		return $RET
 	    fi
 	done
     done
@@ -719,7 +766,9 @@ per_package()
     esac
     sync
     
-    create_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+    create_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT"
+    if [ $? -ne 0 ]; then error "Could not create component file for $PACKAGE"; exit 4; fi
+        
     FLICT_JSON_FILES=""
     split_package_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     verify_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
@@ -732,9 +781,16 @@ per_package()
     dirty_hacks_done_dirt_cheap "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     verified_fixed_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     check_license_compliance "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT"
-    collect_source_code "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-    collect_license_copyright_information "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
 
+    if [ "$LICENSE_INFO" = "foss" ];
+    then
+        collect_source_code "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+        if [ $? -ne 0 ]; then error "Could not collect source code for $PACKAGE"; exit 4; fi
+        
+        collect_license_copyright_information "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+        if [ $? -ne 0 ]; then error "Could not collect license and (c) information for $PACKAGE"; exit 4; fi
+    fi
+    
     touch ${DONE_PLACEHOLDER}
 }
 
