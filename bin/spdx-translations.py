@@ -114,7 +114,7 @@ def update_license(translations, license_expr):
     license_string=""
     for l in license_list:
         license_string = license_string + l + " "
-    return license_string
+    return license_string.replace("|","or").replace("&","and")
 
 def update_packages(translations, dependencies):
     updates_deps=[]
