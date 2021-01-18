@@ -192,7 +192,7 @@ create_imagepackage_json()
     if [ ! -f ${IMAGEPACKAGES_JSON} ]
     then
 	really_create_ipkg_json
-    elif [ ! -z ${IMAGEPACKAGES_JSON} ]	 
+    elif [ ! -s ${IMAGEPACKAGES_JSON} ]	 
     then
 	echo "File exists but is empty. Recreating it."
 	inform0n "Creating imagepackages file ${IMAGEPACKAGES_JSON}: "
