@@ -88,37 +88,50 @@ def save_to_file(json_data, dir_name, file_name):
   f.close()
   verbose("Created file: " + file_path)
 
-def save_pile_to_file(json_data, outdir, package_name):
-    dir_name = outdir + "/" + package_name
+def save_pile_to_file(json_data, outdir, package_name, package_version):
+    dir_name = outdir 
     file_name = package_name + "-pile-flict.json"
     save_to_file(json_data, dir_name, file_name)
   
-def save_tree_to_file(json_data, outdir, package_name, package_file):
-    dir_name = outdir + "/" + package_name
+def save_tree_to_file(json_data, outdir, package_name, package_file, package_version):
+    dir_name = outdir 
     file_name = package_name + "_" + package_file + "-tree-flict.json"
     save_to_file(json_data, dir_name, file_name)
-  
+
+def license_list_to_expression(license_list):
+    license_expression=""
+    for le in license_list:
+        if license_expression == "":
+            license_expression=le
+        else:
+            license_expression=license_expression + " and " + le
+    return license_expression
+
 def print_pile(package, outdir):
     packageFiles = package["packageFiles"]
     dep_map={}
     pile = {}
+    package_files_license=set()
     for file in packageFiles:
       #print("file: " + str(file))
       if "valid" not in file or file['valid']==True:
         #actual = file['package']
         dep_map=merge_deps(pile_of_deps(file), dep_map)
+        package_files_license.add(file['license'])
+        print("license: " + file['license'])
       else:
         pass
     package_map={}
     package_map['name']=package['package']
-    package_map['license']=package['license']
+    package_map['top_project_license']=package['license']
+    package_map['license']=license_list_to_expression(package_files_license)
     package_map['version']=package['version']
     package_map['dependencies']=dep_map_to_list(dep_map)
     top_map={}
     # TODO: sync with flict (should be "package")
     top_map['component']=package_map
     verbose("Saving to " + outdir + ", " + package['package'])
-    save_pile_to_file(top_map, outdir, package['package'])
+    save_pile_to_file(top_map, outdir, package['package'], package['version'] )
 
 def dep_tree(package):
     dep_map={}
@@ -164,7 +177,7 @@ def print_tree(package, outdir):
           component_map={}
           component_map['component']=package_map
       
-          save_tree_to_file(component_map, outdir, package_name, file['file'])
+          save_tree_to_file(component_map, outdir, package_name, file['file'], file['version'],)
 
 def parse():
 
