@@ -118,7 +118,7 @@ def print_pile(package, outdir):
         #actual = file['package']
         dep_map=merge_deps(pile_of_deps(file), dep_map)
         package_files_license.add(file['license'])
-        print("license: " + file['license'])
+        #print("license: " + file['license'])
       else:
         pass
     package_map={}
