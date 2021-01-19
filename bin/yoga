@@ -101,7 +101,7 @@ do
             META_TOP_DIR="$2"
             shift
             ;;
-        "--license-translation-file" | "-ltf")
+        "--translation-file" | "-tf")
             SPDX_TRANSLATION_FILE="$2"
             shift
             ;;
@@ -129,6 +129,10 @@ do
         "--config" | "-c")
             YOGA_CONFIG="$2"
             read_config "${YOGA_CONFIG}"
+            ;;
+        "--polict-file" | "-pf")
+            POLICY_FILE="$2"
+            shift
             ;;
         "--no-compatibility-checks" | "-ncc")
             COMPATIBILITY_CHECK=false
@@ -374,7 +378,7 @@ fix_json()
 #
 # Fixing license expressions
 #
-fix_license_expressions()
+_obsoleted_fix_license_expressions()
 {
     inform2 "Fixing license expressions in JSON files"
     if [ "${SPDX_TRANSLATION_FILE}" = "" ] 
@@ -412,7 +416,7 @@ fix_license_expressions()
 #
 # Dirty hacks done dirt cheap
 #
-dirty_hacks_done_dirt_cheap()
+_obsolete_dirty_hacks_done_dirt_cheap()
 {
     inform2 "---===  DIRTY HACK (temporary)  ===---"
     inform2 "Fixing license expressions in a dirty way"
@@ -465,20 +469,39 @@ verified_fixed_json()
 check_license_compliance()
 {
     inform2n "Checking license compliance (flict)"
+    sleep 2
+    echo
     if [ "${COMPATIBILITY_CHECK}" != "false" ]
     then
-        echo
-        for jf in  $JSON_FIXED_FILES
+        #for jf in $FLICT_JSON_FILES
+        for jf in $(find ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION} -name "$PACKAGE-pile-flict.json")
         do
             inform3n "$(basename $jf) "
-            JSON_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$PACKAGE-compliance-report.json
-            TXT_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$PACKAGE-compliance.txt
-            #printf " * %-${FILE_FMT_LEN}s " "$(basename $jf):"
-            set -o pipefail
-            flict --json -c $jf | tail -1 | jq '.' > ${JSON_REPORT}
-            #        echo ~/.local/bin/flict --json -c $jf #| tail -1 | jq '.' > ${JSON_REPORT}
-            RET=$?
-            echo "$RET" > $TXT_REPORT
+            JF_NAME=$(basename $jf| sed 's,\.json,,g')
+            JSON_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$JF_NAME-compliance-report.json
+            JSON_POLICY_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$JF_NAME-policy-report.json
+            JSON_ERR=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$JF_NAME-compliance-report.err
+            JSON_POLICY_ERR=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$JF_NAME-policy-report.err
+            TXT_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$JF_NAME-compliance.txt
+
+            flict -tf "${SPDX_TRANSLATION_FILE}" --json -c $jf > ${JSON_REPORT} 2> ${JSON_ERR}
+            if [ ! -f ${JSON_REPORT} ] || [ ! -s ${JSON_REPORT} ]
+            then
+                echo "Failed creating compliance report (flict -tf "${SPDX_TRANSLATION_FILE}" --json -c $jf  > ${JSON_REPORT} 2> ${JSON_ERR})"
+                echo "look at $JSON_ERR for more details"
+                continue
+            fi
+            
+            flict -crf ${JSON_REPORT} -lpf ${POLICY_FILE}  > ${JSON_POLICY_REPORT} 2>${JSON_POLICY_ERR}
+            if [ ! -f ${JSON_POLICY_REPORT} ] || [ ! -s ${JSON_POLICY_REPORT} ]
+            then
+                echo "Failed creating policy report (flict -crf ${JSON_REPORT} -lpf ${POLICY_FILE}  > ${JSON_POLICY_REPORT} 2>${JSON_POLICY_ERR})"
+                echo "look at $JSON_POLICY_ERR for more details"
+                continue
+            fi
+            
+            jq ".policy_outbounds.policy_result" ${JSON_POLICY_REPORT} > $TXT_REPORT
+            
             flict_exit_code_to_string $RET
         done
     else
@@ -515,6 +538,8 @@ gstreamer_src_dir()
 
 #
 # Collect source code
+#
+# - complimenting the download dir as well as the source dir found in the tmp/work folders
 #
 collect_source_code()
 {
@@ -777,9 +802,9 @@ per_package()
     
     create_graphs "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
 
-    fix_license_expressions "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-    dirty_hacks_done_dirt_cheap "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-    verified_fixed_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+    #fix_license_expressions "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+    #dirty_hacks_done_dirt_cheap "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+    #verified_fixed_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
     check_license_compliance "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT"
 
     if [ "$LICENSE_INFO" = "foss" ];
@@ -993,6 +1018,22 @@ output_config()
     echo ""
     echo "# META_TOP_DIR - top directory for the meta files (e.g recipes/bb)"
     echo "META_TOP_DIR=\"${META_TOP_DIR}\""
+    echo ""
+    echo "# SPDX_TRANSLATION_FILE  - file with license translations"
+    if [ "${SPDX_TRANSLATION_FILE}" = "" ]
+    then
+        echo "#SPDX_TRANSLATION_FILE=fill in your translation file name here"
+    else    
+        echo "SPDX_TRANSLATION_FILE=${SPDX_TRANSLATION_FILE}"
+    fi
+    echo ""
+    echo "# POLICY_FILE  - file with license policy"
+    if [ "${POLICY_FILE}" = "" ]
+    then
+        echo "#POLICY_FILE=fill in your policy file name here"
+    else    
+        echo "POLICY_FILE=${POLICY_FILE}"
+    fi
     echo
     echo
 }
