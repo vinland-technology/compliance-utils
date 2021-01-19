@@ -88,12 +88,12 @@ def save_to_file(json_data, dir_name, file_name):
   f.close()
   verbose("Created file: " + file_path)
 
-def save_pile_to_file(json_data, outdir, package_name, package_version):
+def save_pile_to_file(json_data, outdir, package_name):
     dir_name = outdir 
     file_name = package_name + "-pile-flict.json"
     save_to_file(json_data, dir_name, file_name)
   
-def save_tree_to_file(json_data, outdir, package_name, package_file, package_version):
+def save_tree_to_file(json_data, outdir, package_name, package_file):
     dir_name = outdir 
     file_name = package_name + "_" + package_file + "-tree-flict.json"
     save_to_file(json_data, dir_name, file_name)
@@ -131,7 +131,7 @@ def print_pile(package, outdir):
     # TODO: sync with flict (should be "package")
     top_map['component']=package_map
     verbose("Saving to " + outdir + ", " + package['package'])
-    save_pile_to_file(top_map, outdir, package['package'], package['version'] )
+    save_pile_to_file(top_map, outdir, package['package'])
 
 def dep_tree(package):
     dep_map={}
@@ -177,7 +177,7 @@ def print_tree(package, outdir):
           component_map={}
           component_map['component']=package_map
       
-          save_tree_to_file(component_map, outdir, package_name, file['file'], file['version'],)
+          save_tree_to_file(component_map, outdir, package_name, file['file'])
 
 def parse():
 
