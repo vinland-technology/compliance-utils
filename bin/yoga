@@ -492,8 +492,9 @@ check_license_compliance()
                 echo "Failed creating compliance report (flict -tf "${SPDX_TRANSLATION_FILE}" --json -c $jf  > ${JSON_REPORT} 2> ${JSON_ERR})"
                 echo "look at $JSON_ERR for more details"
                 continue
+            else
+                echo "OK"
             fi
-            echo "OK"
             
             inform3n "policy report for $(basename $jf): "
             flict -crf ${JSON_REPORT} -lpf ${POLICY_FILE}  > ${JSON_POLICY_REPORT} 2>${JSON_POLICY_ERR}
@@ -503,11 +504,12 @@ check_license_compliance()
                 echo "Failed creating policy report (flict -crf ${JSON_REPORT} -lpf ${POLICY_FILE}  > ${JSON_POLICY_REPORT} 2>${JSON_POLICY_ERR})"
                 echo "look at $JSON_POLICY_ERR for more details"
                 continue
+            else
+                echo "OK"
             fi
-            echo "OK"
             
+            inform3n "compliance status for $(basename $jf): "
             jq ".policy_outbounds.policy_result" ${JSON_POLICY_REPORT} > $TXT_REPORT
-            
             flict_exit_code_to_string $RET
         done
     else
