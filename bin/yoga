@@ -476,7 +476,7 @@ check_license_compliance()
         #for jf in $FLICT_JSON_FILES
         for jf in $(find ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION} -name "$PACKAGE-pile-flict.json")
         do
-            inform3n "$(basename $jf) "
+            inform3n "compliance report for $(basename $jf): "
             JF_NAME=$(basename $jf| sed 's,\.json,,g')
             JSON_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$JF_NAME-compliance-report.json
             JSON_POLICY_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$JF_NAME-policy-report.json
@@ -485,20 +485,26 @@ check_license_compliance()
             TXT_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$JF_NAME-compliance.txt
 
             flict -tf "${SPDX_TRANSLATION_FILE}" --json -c $jf > ${JSON_REPORT} 2> ${JSON_ERR}
-            if [ ! -f ${JSON_REPORT} ] || [ ! -s ${JSON_REPORT} ]
+            RET=$?
+            if [ ! -f ${JSON_REPORT} ] || [ ! -s ${JSON_REPORT} ] || [ $RET -gt 2 ]
             then
+                echo "Failed"
                 echo "Failed creating compliance report (flict -tf "${SPDX_TRANSLATION_FILE}" --json -c $jf  > ${JSON_REPORT} 2> ${JSON_ERR})"
                 echo "look at $JSON_ERR for more details"
                 continue
             fi
+            echo "OK"
             
+            inform3n "policy report for $(basename $jf): "
             flict -crf ${JSON_REPORT} -lpf ${POLICY_FILE}  > ${JSON_POLICY_REPORT} 2>${JSON_POLICY_ERR}
             if [ ! -f ${JSON_POLICY_REPORT} ] || [ ! -s ${JSON_POLICY_REPORT} ]
             then
+                echo "Failed"
                 echo "Failed creating policy report (flict -crf ${JSON_REPORT} -lpf ${POLICY_FILE}  > ${JSON_POLICY_REPORT} 2>${JSON_POLICY_ERR})"
                 echo "look at $JSON_POLICY_ERR for more details"
                 continue
             fi
+            echo "OK"
             
             jq ".policy_outbounds.policy_result" ${JSON_POLICY_REPORT} > $TXT_REPORT
             
