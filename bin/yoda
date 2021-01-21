@@ -44,7 +44,6 @@ OUTPUT_DIR="./yocr-output"
 DEFAULT_IMAGE="core-image-minimal-qemux86-64"
 DEFAULT_MACHINE="qemux86-64"
 DEFAULT_BUILD_DIRS="tmp/work/core2-64-poky-linux tmp/work/all-poky-linux tmp/work/qemux86_64-poky-linux"
-DEFAULT_DATE="20201024110850"
 # EXPERIMENTAL below
 DEFAULT_META_TOP_DIR="../"
 DEFAULT_OUTPUT_FORMAT="JSON"
@@ -801,8 +800,7 @@ def parse():
                             default=DEFAULT_IMAGE)
     parser.add_argument('-d', '--date',
                             type=str,
-                            help='date of build, default is ' + DEFAULT_DATE,
-                            default=DEFAULT_DATE)
+                            help='date of build')
     parser.add_argument('-mtd', '--meta-top-dir',
                             type=str,
                             dest='meta_top_dir',
