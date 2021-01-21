@@ -908,9 +908,6 @@ license_from_type()
 
 
 
-YBTF_ARGS=" $VERBOSE -d $DATE  -m $MACHINE  -i $IMAGE -bd ${BUILD_DIRS}  -mtd ${META_TOP_DIR} "
-
-
 FILE_FMT_LEN=70
 FILE_FMT_INDENT1_LEN=$(( $FILE_FMT_LEN - 3 ))
 FILE_FMT_INDENT2_LEN=$(( $FILE_FMT_LEN - 6 ))
@@ -1048,13 +1045,14 @@ output_config()
 
 check_config()
 {
-    
     check_env_var IMAGE        $IMAGE
     check_env_var DATE         $DATE
     check_env_var MACHINE      $MACHINE
     check_env_var BUILD_DIRS   ${BUILD_DIRS}
     check_env_var META_TOP_DIR ${META_TOP_DIR}
 
+    #TODO: add checks to see if the variables point to something useful?
+    
     # If no config file, create one from the settings we have
     if [ "${YOGA_CONFIG}" = "" ]
     then
@@ -1082,16 +1080,30 @@ check_config()
             exit 2
         fi
     fi
+
+
     
 }
 
-
+find_manifest_date()
+{
+    find tmp/deploy/licenses/${IMAGE}*/ -name "license.manifest" | sort | tail -1 | sed 's,/license\.manifest,,g' | xargs basename | tr '-' '\n' | tail -1
+}
 
 #
 # MAIN
 #
 
+if [ "$DATE" = "" ]
+then
+    DATE=$(find_manifest_date)
+fi
+
 check_config
+
+YBTF_ARGS=" $VERBOSE -d $DATE  -m $MACHINE  -i $IMAGE -bd ${BUILD_DIRS}  -mtd ${META_TOP_DIR} "
+#echo "YBTF_ARGS: $YBTF_ARGS"
+
 
 
 PERMANENT_OUT_DIR=$(pwd)/${OUT_DIR}
