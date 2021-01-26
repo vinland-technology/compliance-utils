@@ -126,6 +126,9 @@ do
         "--list-imagepackages" | "-la")
             LIST_IMAGEPACKAGES="true"
             ;;
+        "--pack-source-code" | "-psc")
+            PACK_SOURCE="true"
+            ;;
         "--config" | "-c")
             YOGA_CONFIG="$2"
             read_config "${YOGA_CONFIG}"
@@ -817,8 +820,11 @@ per_package()
 
     if [ "$LICENSE_INFO" = "foss" ];
     then
-        collect_source_code "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
-        if [ $? -ne 0 ]; then error "Could not collect source code for $PACKAGE"; exit 4; fi
+        if [ "$PACK_SOURCE" == "true" ]
+        then
+            collect_source_code "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
+            if [ $? -ne 0 ]; then error "Could not collect source code for $PACKAGE"; exit 4; fi
+        fi
         
         collect_license_copyright_information "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT" 
         if [ $? -ne 0 ]; then error "Could not collect license and (c) information for $PACKAGE"; exit 4; fi
