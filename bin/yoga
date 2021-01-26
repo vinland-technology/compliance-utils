@@ -26,6 +26,11 @@ COMPATIBILITY_CHECK=true
 
 OUT_DIR=compliance-results/
 
+MYNAME="${BASH_SOURCE[0]}"
+MYDIR="$(dirname "${MYNAME}")"
+REAL_DIR="$(realpath $MYDIR)"
+
+
 error()
 {
     echo "$*" 1>&2
@@ -76,10 +81,110 @@ read_config()
 }
 
 
+usage()
+{
+    echo "NAME"
+    echo ""
+    echo "    ${MYNAME} - scan a yocto build to extract license compliance information"
+    echo ""
+    echo
+    echo "SYNOPSIS"
+    echo "    ${MYNAME} [OPTION]"
+    echo ""
+    echo ""
+    echo "DESCRIPTION"
+    echo ""
+    echo "    Extracts information from a Yocto build and stores the resulting data in"
+    echo "    JSON files in the output directory. A license compatibility check is"
+    echo "    performed either with or without a license policy"
+    echo ""
+    echo ""
+    echo "OPTIONS"
+    echo ""
+    echo "    -bd, --build-dir DIR"
+    echo "          Adds DIR to list of directories where to look for built files."
+    echo "          This option can, and most likely will, be used multiple times"
+    echo
+    echo "    -i, --image IMAGE"
+    echo "          Sets the image to analyse to IMAGE"
+    echo
+    echo "    -mtd, --meta-top-dir DIR"
+    echo "          Look for meta files (e.g. recipes) to DIR."
+    echo
+    echo "    -tf, --spdx-translation-file FILE"
+    echo "          Use FILE to translate between non SPDX to SPDX license expressions."
+    echo
+    echo "    -dd, --dist-dir DIR"
+    echo "          Set the directory of the dist to DIR"
+    echo
+    echo "    -m, --machine MACHINE"
+    echo "          Set the machine used when building."
+    echo
+    echo "    -d, --date DATE"
+    echo "          Set the DATE used when bulding, defaults to using the latest"
+    echo
+    echo "    -tf, --spdx-translation-file FILE"
+    echo "          Use FILE to translate between non SPDX to SPDX license expressions."
+    echo
+    echo "    -v, --verbose"
+    echo "          Output verbose information"
+    echo
+    echo "    -od, --out-dir DIR"
+    echo "          Specify output directoy, defaults to $OUT_DIR"
+    echo
+    echo "    -la, --list-imagepackages"
+    echo "          List avilable imagepackages"
+    echo
+    echo "    -ps, --pack-source-code"
+    echo "          Tried to find source code, not using download or "
+    echo "          the compliance dir provided by Yocto"
+    echo
+    echo "    -h, --help"
+    echo "          Prints this help text"
+    echo
+    echo "    -c, --config FILE"
+    echo "          Read configuarion file FILE. By default yoga reads yoga.conf "
+    echo "          in current working directory"
+    echo
+    echo "    -pf, --policy-file FILE"
+    echo "          Use polify file FILE."
+    echo
+    echo "    -ncc, --no-compatibility-checks"
+    echo "          DO not perform compatibility checks (using flict)"
+    
+    echo
+    echo "AUTHOR"
+    echo ""
+    echo "    Written by Henrik Sandklef"
+    echo
+    echo
+    echo "COPYRIGHT"
+    echo ""
+    echo "    Copyright (c) 2021 Henrik Sandklef"
+    echo "    License GPLv3+: GNU GPL  version  3  or  later <https://gnu.org/licenses/gpl.html>."
+    echo "    This  is  free  software: you are free to change and redistribute it.  "
+    echo "    There is NO WARRANTY, to the extent permitted by law."
+    echo
+    echo
+    echo "REPORTING BUGS"
+    echo ""
+    echo "    Create an issue at https://github.com/vinland-technology/compliance-utils"
+    echo
+    echo
+    echo "SEEL ALSO"
+    echo ""
+    echo "    flict (link), scancode"
+    echo
+    echo
+    
+}
+
+HAS_ARGS=false
 while [ "$1" != "" ]
 do
+    HAS_ARGS=true
     case "$1" in
-        "--build-dirs" | "-bd")
+        "--build-dir" | "-bd")
             BUILD_DIRS="$BUILD_DIRS $2"
             shift
 	    while [ "$2" != "" ]
@@ -133,7 +238,11 @@ do
             YOGA_CONFIG="$2"
             read_config "${YOGA_CONFIG}"
             ;;
-        "--polict-file" | "-pf")
+        "--help" | "-h")
+            usage
+            exit 0
+            ;;
+        "--policy-file" | "-pf")
             POLICY_FILE="$2"
             shift
             ;;
@@ -1099,6 +1208,15 @@ find_manifest_date()
 #
 # MAIN
 #
+
+if [ "${HAS_ARGS}" != "true" ] && [ ! -s ${DEFAULT_YOGA_CONFIG} ]
+then
+    echo "Missing configuration file and no arguments, bailing out"
+    echo
+    usage
+    echo
+    exit 10
+fi
 
 if [ "$DATE" = "" ]
 then
