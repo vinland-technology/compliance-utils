@@ -38,8 +38,13 @@ PROGRAM_SEE_ALSO="yoda (Yocto Dependency analyzer)\n  yoga (Yoda's Generic Aggre
 OUTPUT_LICENSE="\"Public domain\""
 OUTPUT_FORMATS="\n    JSON\n    html"
 OUTPUT_FORMAT="JSON"
-OUTPUT_DIR="./yocr-output"
+OUTPUT_DIR="./compliance-results"
 INPUT_DIR="./compliance-results"
+
+background_colors=['lightgray','white']
+
+
+
 
 def error(msg):
     sys.stderr.write(msg + "\n")
@@ -53,7 +58,8 @@ def verbose(msg):
 #
 def read_flict_file(package, directory):
     flict_exit_code=None
-    flict_file=directory + "/" + package + "-compliance.txt"
+    flict_file=directory + "/" + package + "-pile-flict-compliance.txt"
+    #print("Looking for flict ret: " + flict_file)
     try:
         with open(flict_file) as f:
             flict_exit_code=f.readline().replace("\n","").strip()
@@ -62,17 +68,34 @@ def read_flict_file(package, directory):
         pass
     return flict_exit_code
 
-def read_flict_report(package, directory):
-    flict_report=directory + "/" + package + "-compliance-report.json"
+def read_component_file(package, directory):
+    comp_file=directory + "/" + package + "-component.json"
     try:
-        with open(flict_report) as fp:
+        with open(comp_file) as f:
+            return json.load(f)
+    except Exception as e:
+        pass
+    return flict_exit_code
+
+def read_flict_report(package, directory):
+    flict_report_file = directory + "/" + package + "-pile-flict-compliance-report.json"
+    try:
+        with open(flict_report_file) as fp:
             return json.load(fp)
     except Exception as e:
         #print("exception: " + str(e))
         pass
-    return None
+
+def read_flict_policy_report(package, directory):
+    flict_policy_report_file = directory + "/" + package + "-pile-flict-policy-report.json"
+    try:
+        with open(flict_policy_report_file) as fp:
+            return json.load(fp)
+    except Exception as e:
+        pass
+
     
-def read_package_info(package, directory):
+def read_package_info(package, version, directory):
     flict_json = directory + "/" + package + "-pile-flict.json"
     try:
         map={}
@@ -135,25 +158,54 @@ def license_expression(license_list):
         
     return outer_lic_expr
 
+def policy_outbound(package):
+    report = package['policy_report']
+    if report == None or ('policy_outbounds' not in report):
+        print("no pol in report: " + str(report))
+        return None
+    #print("pol in report: " + str(report['policy_outbounds']) + " " + str(package['name']))
+    return report['policy_outbounds']
+   
+
+def dependencies(package):
+    if  not 'flict_report' in package:
+        return None
+
+    flict_report = package['flict_report']
+    if flict_report == None or not 'project' in flict_report:
+        return None
+
+    project = flict_report['project']
+    if project == None or not 'project' in flict_report:
+        return None
+
+    if project == None or not 'project_pile' in project:
+        return None
+
+    pile=[]
+    p_list = project['project_pile']
+    idx = 0
+    for p in p_list:
+        if p['name'] != package['name']:
+            pile.append(p)
+    return pile
+   
+
 def outbound_license(package):
-    report = package['flictReport']
-    #    print("---------------- report? " + str(report))
-    policy_types=[ "allowed", "avoid", "denied" ]
+    report = package['flict_report']
 
-    for policy_type in policy_types:
-        if report != None and policy_type in report['outbound'] and len(report['outbound'][policy_type]) > 0:
-            expr = license_expression(report['outbound'][policy_type])
-            #print("expr: " + expr)
-            return expr
-    return "unknown"
+    if report == None or (not 'licensing' in report):
+        return "unknown"
+    
+    return report['licensing']['outbound_suggestions']
 
-def read_package_dir(package, directory):
+def read_package_dir(package, version, directory):
     map={}
     map['name']=package
     verbose("    * reading " + directory + "(" + package +")")
 
     # package information
-    package_json=read_package_info(package, directory)
+    package_json=read_package_info(package, version, directory)
     #print("p: " + str(package_json))
     component=read_from_json(package_json, 'component')
     #print("c: " + str(component))
@@ -172,7 +224,9 @@ def read_package_dir(package, directory):
     # flict exit code
     map['flictExitCode']=read_flict_file(package, directory)
     # flict compliance report
-    map['flictReport']=read_flict_report(package, directory)
+    map['flict_report']=read_flict_report(package, directory)
+    map['policy_report']=read_flict_policy_report(package, directory)
+    map['component'] = read_component_file(package, directory)
 
     # copyright and license file present
     map['copyrightLicenseFile']=copyright_and_license_file_present(package, version, directory)
@@ -182,14 +236,16 @@ def read_package_dir(package, directory):
     return map
 
 def read_yoga_dir(directory):
-    dir = directory + "/*"
+    dir = directory + "/*/*"
     packages={}
     verbose("reading " + dir)
     for file in glob.glob(dir):
         if os.path.isdir(file):
             verbose(" * " + file)
-            package=file.replace(directory, "").replace("/","")
-            map = read_package_dir(package, file)
+            dir_list=str(file).replace(directory, "").split("/")
+            package=dir_list[1]
+            version=dir_list[2]
+            map = read_package_dir(package, version, file)
             packages[package]=map
 
     return packages
@@ -209,8 +265,24 @@ def flict_exit_code_to_str(exit_code):
     else:
         return "unknown"
 
-def write_html_package(package):
+def write_markdown_package_outbound(package, args):
+    report = package['policy_report']
+    if report == None or ('policy' not in report):
+        return "Policy: none\n\n"
 
+    policy = report['policy']['policy']
+
+    policy_license_count = len(policy['allowlist']) + len(policy['avoidlist']) + len(policy['denylist']) 
+    
+    res = "<details>"
+    res = res + "<summary>Policy: " + str(policy_license_count) + "</summary>\n\n"
+    res = res + "- allowed: " + str(policy['allowlist']) + "\n" 
+    res = res + "- avoid: " + str(policy['avoidlist']) + "\n" 
+    res = res + "- denied: " + str(policy['denylist']) + "\n" 
+    res = res +  "</details>\n"
+    return res
+    
+def write_html_package2(package):
     #print("write: " + str(package))
     res =       "    <div class=\"complianceTableRow\">\n"
     res = res + "      <div class=\"complianceTableCell\">" + read_from_json(package, 'name') + "</div>\n"
@@ -222,8 +294,84 @@ def write_html_package(package):
     res = res + "      <div class=\"complianceTableCell\">" + str(read_from_json_bool(package, 'sourceCodeFile')) + " </div>\n"
     res = res + "    </div>\n"
     return res
-              
-def write_html(packages):
+
+
+def write_html_package(package, args):
+     res = "<button type=\" button\" class=\"collapsible\">"
+     res = res + read_from_json(package, 'name') + "( " + str(read_from_json(package, 'version')) + " )"
+     res = res + "</button>"
+     res = res + "<div class=\"content\">"
+     res = res + "<p>"
+     res = res + "sladlsakjdalsdjlksjd\n"
+     res = res + "</p>"
+     res = res + "</div><br>\n"
+     return res
+
+def background_color(index):
+    return background_colors[index%2]
+
+def write_markdown_package(package, index, args):
+
+    bg_color=background_color(index)
+
+    if args.colors:
+        policy_outbounds = policy_outbound(package)
+        if policy_outbounds == None:
+            outbound_bg_color="gray"
+            outbound_text="unknown"
+        elif policy_outbounds['allowed'] != []:
+            outbound_bg_color="green"
+            outbound_text="OK"
+        elif policy_outbounds['avoid'] != []:
+            outbound_bg_color="yellow"
+            outbound_text="warning"        
+        else:
+            outbound_bg_color="red"
+            outbound_text="failure"        
+            
+        compatible_tag = "<compatible style=\"background-color:" + outbound_bg_color + "\">" + outbound_text + "</compatible>"
+    else:
+        compatible_tag = ""
+    
+    res = "<details style=\"background-color:" + bg_color + ";\">"
+    res = res + "<summary>" + read_from_json(package, 'name') + " ( " + str(read_from_json(package, 'version')) + " ) " + compatible_tag + "</summary>\n\n"
+    res = res + "version: " + str(read_from_json(package, 'version')) + "\n\n"
+    if args.license_text:
+        res = res + "<details>\n<summary>declared license: " + str(read_from_json(package, 'declaredLicense')) + "</summary>\n\n"
+        if 'component' in package:
+            if 'license_texts' in package['component']:
+                for lic_text in package['component']['license_texts']:
+                    lic_name = lic_text['name']
+                    lic_text = lic_text['text']
+                    
+                    res = res +  "**" + lic_name + "**\n\n"
+                    for line in lic_text:
+                        res = res +  line             
+                    res = res +  "\n\n"
+        res = res +  "</details>\n"
+    else:
+        res = res + "declared license: " + str(read_from_json(package, 'declaredLicense')) + "\n\n"
+    #res = res + "* flict status: " + flict_exit_code_to_str(read_from_json(package, 'flictExitCode'))  + "\n"
+    res = res + "copyright and license: " + str(read_from_json_bool(package, 'copyrightLicenseFile')) + "\n\n"
+    res = res + "source code: " + str(read_from_json_bool(package, 'sourceCodeFile')) + "\n\n"
+    res = res + write_markdown_package_outbound(package, args)
+    res = res + write_markdown_dependencies(package, args)
+    res = res +  "</details>\n"
+    return res
+
+def write_markdown_dependencies(package, args):
+    deps = dependencies(package)
+    if deps == None or deps == []:
+        return "dependencies: none\n\n"
+    res = "<details>"
+    res = res + "<summary>dependencies: " + str(len(deps)) + " </summary>\n\n"
+    for dep in deps:
+        res = res + "- " + dep['name'] + "  (" + str(dep['license']).strip() + ")\n" 
+    res = res +  "</details>\n"
+    return res
+
+
+def write_html2(packages):
     res = ""
     res = res +  "<html lang=\"en-US\">\n"
     res = res +  "  <head> \n"
@@ -257,7 +405,116 @@ def write_html(packages):
     res = res +  "</body></html>\n"
 
     return res
-              
+
+def write_html(packages, args):
+    res = ""
+    res = ""
+    res = res +  "<html lang=\"en-US\">\n"
+    res = res +  "<meta charset=\"UTF-8\">"
+    res = res +  "  <head> \n"
+    res = res +  "    <link rel=\"stylesheet\" href=\"yocto-compliance.css\">\n"
+    res = res +  "  </head>\n"
+    res = res +  "  <body>\n"
+    res = res + "<script>\n"
+    res = res + "var coll = document.getElementsByClassName(\"collapsible\");"
+    res = res + "var i;"
+    res = res + ""
+    res = res + "for (i = 0; i < coll.length; i++) {"
+    res = res + "coll[i].addEventListener(\"click\", function() {"
+    res = res + "this.classList.toggle(\"active\");"
+    res = res + "var content = this.nextElementSibling;"
+    res = res + "if (content.style.maxHeight){"
+    res = res + "content.style.maxHeight = null;"
+    res = res + "} else {"
+    res = res + "content.style.maxHeight = content.scrollHeight + \"px\";"
+    res = res + "}"
+    res = res + "});"
+    res = res + "}"
+    res = res + "</script>\n"
+    res = res +  "  <h1>Yocto build compliance</h1>\n"
+    res = res +  "  <h2>Summary</h2>\n"
+    res = res +  "  <h3>${#PACKAGES[@]} packages</h3>\n"
+    res = res +  "  <ul>\n"
+    res = res +  "    <li>${MISSING_FILE} with missing report (unsupported license, only contains script, text, configuration)</li>\n"    
+    res = res +  "  </ul>\n"
+    res = res +  "<h2>Packages</h2>\n"
+    
+    for pkg in packages:
+        #print(str(packages[pkg]))
+        res = res + write_html_package(packages[pkg])
+
+    res = res +  "</body></html>\n"
+    return res
+
+
+def write_policy_markdown(package, args):
+    f_report  = read_flict_policy_report(package)
+    res = "# Policy\n\n"
+    
+    if not 'policy_report' in packages:
+        res = res + "none\n"
+
+    else:
+        policy = packages['policy_report']
+        res = res +  "<details>"
+        res = res + " <summary>" + +  "</summary>\n\n"
+        res = res + "- allowed: " + str(policy_outbounds['allowed']) + "\n" 
+        res = res + "- avoid: " + str(policy_outbounds['avoid']) + "\n" 
+        res = res + "- denied: " + str(policy_outbounds['denied']) + "\n" 
+        res = res +  "</details>\n\n\n"
+
+    res = res +  "\n\n"
+    return res
+
+
+def write_markdown(packages, args):
+    res = ""
+    res = res +  "# Yocto build compliance report\n"
+    res = res + "\n"
+    res = res +  "## Summary\n\n"
+    packages_list = list(packages)
+    res = res +  "* Number of packages: " + str(len(packages_list)) + "\n\n"
+    ec_packages_map={}
+    for p in packages_list:
+        exit_code = packages[p]['flictExitCode']
+        lic = str(packages[p]['declaredLicense']).strip()
+        if not exit_code in ec_packages_map:
+            ec_packages_map[exit_code]=[]
+        ec_packages_map[exit_code].append(packages[p])
+    for ecp in ec_packages_map:
+        print(str(ecp) + ": " + str(len(ec_packages_map[ecp])))
+
+    # TODO: make sure flict presents compat data as this:
+    # 0 - compatible, compliant with policy
+    # 1 - compatible, compliant with policy but with warnings
+    # 2 - compatible, NOT compliant with policy
+    # 3 - incompatible
+    # 10 - errors
+    res = res +  "* Compatibilities:\n\n"
+    res = res +  "    * Compatible: " + str(len(ec_packages_map['0'] + ec_packages_map['1'] + ec_packages_map['2'])) + "\n\n"
+    #res = res +  "    * Incompatible: " + str(len(ec_packages_map['3'])) + "\n\n"
+    res = res +  "    * Unknown: " + str(len(ec_packages_map[None])) + "\n\n"
+    res = res +  "* Compatibilities with policy:\n\n"
+    res = res +  "    * Compatible: " + str(len(ec_packages_map['0'])) + "\n\n"
+    res = res +  "    * Compatible with policy warning: " + str(len(ec_packages_map['1'])) + "\n\n"
+    res = res +  "    * Compatible with policy error: " + str(len(ec_packages_map['2'])) + "\n\n"
+    #res = res +  "    * Compatible with policy error: " + str(len(ec_packages_map['3'])) + "\n\n"
+    res = res +  "    * Unknown: " + str(len(ec_packages_map[None])) + "\n\n"
+    res = res +  "# Packages\n\n"
+    res = res + "\n"
+    #res = res + "| Package        | Version    | License                           | Compatible | Outbound | \n"
+    #res = res + "|----------------|------------|-----------------------------------|------------|----------|\n"
+
+    package_list = list(packages)
+    package_list.sort()
+    index=0
+    for pkg in package_list:
+        res = res + write_markdown_package(packages[pkg], index, args)
+        index+=1
+
+
+    return res
+
 def write_json(packages):
     return json.dumps(packages)
     
@@ -266,6 +523,7 @@ def fmt_funs():
     fmt_funs={}
     fmt_funs['json']=write_json
     fmt_funs['html']=write_html
+    fmt_funs['markdown']=write_markdown
     return fmt_funs
 
 def parse():
@@ -288,13 +546,27 @@ def parse():
         )
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='output verbose information to stderr', default=False)
+
+    parser.add_argument('-c', '--colors',
+                        action='store_true',
+                        dest='colors',
+                        help='mark package title with colors',
+                        default=False)
+
+    parser.add_argument('-ilt', '--include-license-text',
+                        action='store_true',
+                        dest='license_text',
+                        help='include license texts',
+                        default=False)
+
     parser.add_argument('-f', '--format',
                             type=str,
                             nargs="+",
                             help='output result in specified format(s) separated by colon, default is ' + OUTPUT_FORMAT,
-                            default=OUTPUT_FORMAT)
+                            default=[OUTPUT_FORMAT])
     parser.add_argument('-yd', '--yoga-dir', type=str, dest='yoga_dir', 
                         help='directory where yoga\'s output is located, default is ' + INPUT_DIR, default=INPUT_DIR)
+
     parser.add_argument('-d', '--output-dir', type=str, dest='outdir', 
                         help='directory for reports, default is ' + OUTPUT_DIR, default=OUTPUT_DIR)
    
@@ -306,6 +578,7 @@ def parse():
 
 def main():
     args = parse()
+
     #TODO: find css:  print( os.path.dirname(os.path.realpath(__file__))+"/../var/yocto-compliance.css" )
     verbose("verbose: " + str(args.verbose))
     verbose("mode:    " + str(args.format))
@@ -318,7 +591,8 @@ def main():
     fmt_functions=fmt_funs()
     
     for fmt in args.format:
-        open(args.outdir + "/compliance-result." + fmt.lower(), "w").write(fmt_functions[fmt.lower()](packages))
+        print("fmt: " + fmt + " .....: " + str(args.outdir + "/compliance-result." + fmt.lower()))
+        open(args.outdir + "/compliance-result." + fmt.lower(), "w").write(fmt_functions[fmt.lower()](packages, args))
         
 
 if __name__ == '__main__':
