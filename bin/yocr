@@ -270,6 +270,21 @@ def write_markdown_package_outbound(package, args):
     if report == None or ('policy' not in report):
         return "Policy: none\n\n"
 
+    policy_outbounds = policy_outbound(package)
+    
+    res = "<details>"
+    res = res + "<summary>Outbound licenses</summary>\n\n"
+    res = res + "- allowed: " + str(policy_outbounds['allowed']) + "\n" 
+    res = res + "- avoid: " + str(policy_outbounds['avoid']) + "\n" 
+    res = res + "- denied: " + str(policy_outbounds['denied']) + "\n" 
+    res = res +  "</details>\n"
+    return res
+
+def write_markdown_policy(package, args):
+    report = package['policy_report']
+    if report == None or ('policy' not in report):
+        return "Policy: none\n\n"
+
     policy = report['policy']['policy']
 
     policy_license_count = len(policy['allowlist']) + len(policy['avoidlist']) + len(policy['denylist']) 
@@ -355,6 +370,7 @@ def write_markdown_package(package, index, args):
     res = res + "copyright and license: " + str(read_from_json_bool(package, 'copyrightLicenseFile')) + "\n\n"
     res = res + "source code: " + str(read_from_json_bool(package, 'sourceCodeFile')) + "\n\n"
     res = res + write_markdown_package_outbound(package, args)
+    res = res + write_markdown_policy (package, args)
     res = res + write_markdown_dependencies(package, args)
     res = res +  "</details>\n"
     return res
@@ -444,26 +460,6 @@ def write_html(packages, args):
         res = res + write_html_package(packages[pkg])
 
     res = res +  "</body></html>\n"
-    return res
-
-
-def write_policy_markdown(package, args):
-    f_report  = read_flict_policy_report(package)
-    res = "# Policy\n\n"
-    
-    if not 'policy_report' in packages:
-        res = res + "none\n"
-
-    else:
-        policy = packages['policy_report']
-        res = res +  "<details>"
-        res = res + " <summary>" + +  "</summary>\n\n"
-        res = res + "- allowed: " + str(policy_outbounds['allowed']) + "\n" 
-        res = res + "- avoid: " + str(policy_outbounds['avoid']) + "\n" 
-        res = res + "- denied: " + str(policy_outbounds['denied']) + "\n" 
-        res = res +  "</details>\n\n\n"
-
-    res = res +  "\n\n"
     return res
 
 
