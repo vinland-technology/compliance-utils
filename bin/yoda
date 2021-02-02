@@ -468,7 +468,33 @@ def license_for_sub_pkg(pkg_file, bin_file):
                 SUB_PKG_TO_LICENSE[path]=license                
                 return license
     return "UNKNOWN"
+
+def compile_license_text(package, version):
+    print("compile_license_test: " + str(package) + " " + str(version), file=sys.stderr)
+    found_license = False
+    license_texts=[]
+    for dir in BUILD_DIRS:
+        for file in glob.glob(dir + "/" + package + "/*/license-destdir/*/*"):
+            if file.endswith("recipeinfo"):
+                pass
+            print(" * file: " + str(file), file=sys.stderr)
+            found_license = True
             
+            license_text={}
+            license_text['name']=file
+            license_text['text']=None
+            with open (file, "r") as fp:
+                data=fp.readlines()
+                license_text['text']=data
+            license_texts.append(license_text)
+            print("license_text....: " + str(len(license_texts)), file=sys.stderr)
+        if found_license:
+            break
+    
+    print("license_text....: " + str(len(license_texts)), file=sys.stderr)
+    return license_texts
+
+
 def package_file_to_exportpackage(pkg_file, indent):
     #verbose(indent + pkg_file + " <----------------")
     bin_file=find_bin_file(pkg_file)
@@ -648,7 +674,11 @@ def package_to_exportpackage(package, sub_pkg):
     exportpackages_map['package']=package
     exportpackages_map['version']=version
     exportpackages_map['license']=package_license(package)
+    exportpackages_map['license_text']=package_license(package)
     exportpackages_map['packageFiles']=exportpackage_files
+    exportpackages_map['license_texts']=compile_license_text(package, version)
+
+    
     return exportpackages_map
 
 def imagepackage_to_exportpackage(imagepackage):
@@ -893,6 +923,7 @@ def main():
                     imagepackage_map['exportpackages']={}
                     #print("---leave  " + str(imagepackage['name']))
                 imagepackages_list.append([imagepackage_map])
+
                 continue
             imagepackages_map={}
             #imagepackages_map['meta']=program_info()
