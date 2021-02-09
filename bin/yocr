@@ -471,6 +471,12 @@ def write_markdown(packages, args):
     packages_list = list(packages)
     res = res +  "* Number of packages: " + str(len(packages_list)) + "\n\n"
     ec_packages_map={}
+    ec_packages_map['0']=[]
+    ec_packages_map['1']=[]
+    ec_packages_map['2']=[]
+    ec_packages_map['3']=[]
+    ec_packages_map[None]=[]
+
     for p in packages_list:
         exit_code = packages[p]['flictExitCode']
         lic = str(packages[p]['declaredLicense']).strip()
