@@ -483,7 +483,9 @@ def compile_license_text(package, version):
             license_text={}
             license_text['name']=file
             license_text['text']=None
-            with open (file, "r") as fp:
+            #print("read: " + str(file))
+            with open (file, "r", encoding='utf-8',
+                 errors='ignore') as fp:
                 data=fp.readlines()
                 license_text['text']=data
             license_texts.append(license_text)
