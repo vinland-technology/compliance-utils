@@ -18,7 +18,7 @@ LICENSE="GPL-3.0-or-later"
 OUTPUT_LICENSE="public domain"
 
 
-SPDX_TRANSLATION_FILE=./spdx-translation.json
+TRANSLATION_FILE=""
 DEFAULT_YOGA_CONFIG=yoga.conf
 COMPATIBILITY_CHECK=true
 
@@ -207,7 +207,7 @@ do
             shift
             ;;
         "--translation-file" | "-tf")
-            SPDX_TRANSLATION_FILE="$2"
+            TRANSLATION_FILE="$2"
             shift
             ;;
         "--dist-dir" | "-dd")
@@ -493,7 +493,7 @@ fix_json()
 _obsoleted_fix_license_expressions()
 {
     inform2 "Fixing license expressions in JSON files"
-    if [ "${SPDX_TRANSLATION_FILE}" = "" ] 
+    if [ "${TRANSLATION_FILE}" = "" ] 
     then
         inform3n "Ignoring since no SPDX translation file provided"	
 	JSON_FIXED_FILES="${FLICT_COMPONENT_JSON}"
@@ -596,12 +596,18 @@ check_license_compliance()
             JSON_POLICY_ERR=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$JF_NAME-policy-report.err
             TXT_REPORT=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/$JF_NAME-compliance.txt
 
-            flict -tf "${SPDX_TRANSLATION_FILE}" --json -c $jf > ${JSON_REPORT} 2> ${JSON_ERR}
+            if [ "${TRANSLATION_FILE}" != "" ]
+            then
+                TRANSLATION_FILE_ARG="-tf \"${TRANSLATION_FILE}\""
+            fi
+                
+            
+            flict ${TRANSLATION_FILE_ARG} --json -c $jf > ${JSON_REPORT} 2> ${JSON_ERR}
             RET=$?
             if [ ! -f ${JSON_REPORT} ] || [ ! -s ${JSON_REPORT} ] || [ $RET -gt 2 ]
             then
                 echo "Failed"
-                echo "Failed creating compliance report (flict -tf "${SPDX_TRANSLATION_FILE}" --json -c $jf  > ${JSON_REPORT} 2> ${JSON_ERR})"
+                echo "Failed creating compliance report (flict -tf "${TRANSLATION_FILE_ARG}" --json -c $jf  > ${JSON_REPORT} 2> ${JSON_ERR})"
                 echo "look at $JSON_ERR for more details"
                 continue
             else
@@ -1139,12 +1145,12 @@ output_config()
     echo "# META_TOP_DIR - top directory for the meta files (e.g recipes/bb)"
     echo "META_TOP_DIR=\"${META_TOP_DIR}\""
     echo ""
-    echo "# SPDX_TRANSLATION_FILE  - file with license translations"
-    if [ "${SPDX_TRANSLATION_FILE}" = "" ]
+    echo "# TRANSLATION_FILE  - file with license translations"
+    if [ "${TRANSLATION_FILE}" = "" ]
     then
-        echo "#SPDX_TRANSLATION_FILE=fill in your translation file name here"
+        echo "#TRANSLATION_FILE=fill in your translation file name here"
     else    
-        echo "SPDX_TRANSLATION_FILE=${SPDX_TRANSLATION_FILE}"
+        echo "TRANSLATION_FILE=${TRANSLATION_FILE}"
     fi
     echo ""
     echo "# POLICY_FILE  - file with license policy"
@@ -1175,13 +1181,6 @@ check_config()
         then
             output_config > "${DEFAULT_YOGA_CONFIG}"
         fi
-    fi
-
-    # SPDX translation file
-    if [ "${SPDX_TRANSLATION_FILE}" != "" ] && [ ! -f ${SPDX_TRANSLATION_FILE} ]
-    then
-	error "Missing license translation file \"${SPDX_TRANSLATION_FILE}\""
-	exit 1
     fi
 
     FLICT=$(which flict)
