@@ -53,24 +53,30 @@ def contains_name(deps, name):
       return True
   return False
 
-def pile_of_deps(package):
-  dep_map={}
-  comp={}
-  #print("package: " + str(package))
-  if "valid" in package and package['valid']==False:
-    #print("package: " + str(package)  + " " + str(package['valid']))
+def pile_of_deps(package, pkg_dep=True):
+    dep_map={}
+    comp={}
+    #print("package: " + str(package))
+    if "valid" in package and package['valid']==False:
+        #print("package: " + str(package)  + " " + str(package['valid']))
+        return dep_map
+    if pkg_dep:
+        comp['name'] = package['package']
+    else:
+        comp['name'] = package['subPackage']
+        comp['main_package'] = package['package']
+#    print("here:  " + str(pkg_dep) + " " + str(comp['name']) + "  from: " + str(package['package']) + "|" + package['subPackage'])
+        
+    comp['license']=package['license']
+    comp['version']=package['version']
+    comp['dependencies']=[]
+    dep_map[comp['name']]=comp
+    #print("map: " + str(dep_map))
+    for dep in package['dependencies']:
+        dep_comp = pile_of_deps(dep, pkg_dep)
+        dep_map = merge_deps(dep_comp, dep_map)
+        #print("return: " + str(dep_map))
     return dep_map
-  comp['name']=package['package']
-  comp['license']=package['license']
-  comp['version']=package['version']
-  comp['dependencies']=[]
-  dep_map[comp['name']]=comp
-  #print("map: " + str(dep_map))
-  for dep in package['dependencies']:
-    dep_comp = pile_of_deps(dep)
-    dep_map=merge_deps(dep_comp, dep_map)
-  #print("return: " + str(dep_map))
-  return dep_map
 
 def dep_map_to_list(dep_map):
   dep_list=[]
@@ -93,6 +99,11 @@ def save_pile_to_file(json_data, outdir, package_name):
     file_name = package_name + "-pile-flict.json"
     save_to_file(json_data, dir_name, file_name)
   
+def save_subpackages_to_file(json_data, outdir, package_name, sub_package_name):
+    dir_name = outdir 
+    file_name = package_name + "-" + sub_package_name + "-subpackage-pile-flict.json"
+    save_to_file(json_data, dir_name, file_name)
+  
 def save_tree_to_file(json_data, outdir, package_name, package_file):
     dir_name = outdir 
     file_name = package_name + "_" + package_file + "-tree-flict.json"
@@ -107,10 +118,41 @@ def license_list_to_expression(license_list):
             license_expression=license_expression + " and " + le
     return license_expression
 
+def print_subpackages(package, outdir):
+    packageFiles = package["packageFiles"]
+    sub_packages={}
+    for file in packageFiles:
+        if "valid" not in file or file['valid']==True:
+            sub_pkg = file['subPackage']
+            if not sub_pkg in sub_packages:
+                sub_pkg_map = {}
+                sub_pkg_map['dep_map'] = {}
+                sub_pkg_map['package_files_license'] = set()
+                sub_packages[sub_pkg] = sub_pkg_map
+
+            usePackageNameAsDeps = False
+            sub_packages[sub_pkg]['dep_map'] = merge_deps(pile_of_deps(file, usePackageNameAsDeps), sub_packages[sub_pkg]['dep_map'])
+            sub_packages[sub_pkg]['package_files_license'].add(file['license'])
+            
+            #print(file['subPackage'] + "  : " + file['license'])
+        else:
+            pass
+    for sub_pkg in sub_packages:
+        package_map={}
+        package_map['top_package']=package['package']
+        package_map['name']=sub_pkg
+        package_map['top_project_license']=package['license']
+        package_map['license']=license_list_to_expression(sub_packages[sub_pkg]['package_files_license'])
+        package_map['version']=package['version']
+        package_map['dependencies']=dep_map_to_list(sub_packages[sub_pkg]['dep_map'])
+        top_map={}
+        # TODO: sync with flict (should be "package")
+        top_map['package']=package_map
+        save_subpackages_to_file(top_map, outdir, package['package'], sub_pkg)
+
 def print_pile(package, outdir):
     packageFiles = package["packageFiles"]
     dep_map={}
-    pile = {}
     package_files_license=set()
     for file in packageFiles:
       #print("file: " + str(file))
@@ -205,7 +247,7 @@ def parse():
 
     parser.add_argument('-of', '--output-format',
                         dest='output_format',
-                        help="format of the output ('pile' or 'tree'), defaults is " + DEFAULT_DEPENDENCY_FORMAT,
+                        help="format of the output ('pile', 'subpackages' 'tree'), defaults is " + DEFAULT_DEPENDENCY_FORMAT,
                         default=DEFAULT_DEPENDENCY_FORMAT)
 
     parser.add_argument('-od', '--output-directory',
@@ -235,6 +277,8 @@ def main():
     package = json.load(fp)
     if args.output_format == "pile":
       print_pile(package, args.output_directory)
+    elif args.output_format == "subpackages":
+      print_subpackages(package, args.output_directory)
     else:
       print_tree(package, args.output_directory)
 
