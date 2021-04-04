@@ -19,6 +19,7 @@ import glob
 from re import search
 import re 
 import json
+import platform
 import argparse
 import subprocess
 from enum import Enum
@@ -470,14 +471,14 @@ def license_for_sub_pkg(pkg_file, bin_file):
     return "UNKNOWN"
 
 def compile_license_text(package, version):
-    print("compile_license_test: " + str(package) + " " + str(version), file=sys.stderr)
+    #print("compile_license_test: " + str(package) + " " + str(version), file=sys.stderr)
     found_license = False
     license_texts=[]
     for dir in BUILD_DIRS:
         for file in glob.glob(dir + "/" + package + "/*/license-destdir/*/*"):
             if file.endswith("recipeinfo"):
                 pass
-            print(" * file: " + str(file), file=sys.stderr)
+            #print(" * file: " + str(file), file=sys.stderr)
             found_license = True
             
             license_text={}
@@ -489,11 +490,11 @@ def compile_license_text(package, version):
                 data=fp.readlines()
                 license_text['text']=data
             license_texts.append(license_text)
-            print("license_text....: " + str(len(license_texts)), file=sys.stderr)
+            #print("license_text....: " + str(len(license_texts)), file=sys.stderr)
         if found_license:
             break
     
-    print("license_text....: " + str(len(license_texts)), file=sys.stderr)
+    #print("license_text....: " + str(len(license_texts)), file=sys.stderr)
     return license_texts
 
 
@@ -740,6 +741,109 @@ def image_to_licensemap(image_file):
     for imagepackage in imagepackages:
         print(" * " + str(imagepackage))
 
+def _find_machine(conf):
+    for line in conf.readlines():
+        if "MACHINE" in line:
+            if line.startswith("#") or "SDKMACHINE" in line :
+                pass
+            else:
+                return line.split("=")[1].replace("\"","").strip()
+
+def _find_date(image_name, machine):
+    dates=[]
+    for file in glob.glob("tmp/deploy/licenses/*"):
+        #print("file: " + str(file))
+        # Make sure dir contains machine and image_name
+        if search(machine, (str(file))) and search(image_name, (str(file))):
+            # cut out date part
+            split_file = file.split("-")
+            dates.append(split_file[len(split_file)-1])
+            #print("use: " + str(file))
+        else:
+            #print("skip: " + str(file))
+            pass
+            
+            
+    if len(dates)==0:
+        return None
+    elif len(dates)==1:
+        return dates[0]
+    else:
+        dates.sort()
+        dates.reverse()
+        print("Several dates available: " + str(dates), file=sys.stderr, end="")
+        print(", using: \"" + str(dates[0]) + "\"", file=sys.stderr)
+        return dates[0]
+        
+def _find_mtd():
+    files = glob.glob("../*")
+    if len(files) > 0:
+        return "../"
+    files = glob.glob("../sources/*")
+    if len(files) > 0:
+        return "../sources/"
+
+    return None
+
+def _find_dd(base_dir):
+    files = glob.glob(base_dir + "/*")
+    machine = platform.machine() + "-linux"
+    dirs = []
+    for file in files:
+        if search(machine, file):
+            #print("ignore: file: \"" + str(file) + "\"")
+            pass
+        else:
+            #print("use file: \"" + str(file) + "\"")
+            dirs.append(file)
+            
+    return dirs
+            
+def find_settings(image_name):
+
+    with open("conf/local.conf") as f:
+        machine = _find_machine(f)
+    if machine == None:
+        error("Failed identifying machine")
+        exit(1)
+        
+    date = _find_date(image_name, machine)
+    if date == None:
+        error("Date not found. Is the supplied image (" + image_name + ") correct?")
+        exit(1)
+
+    mtd = _find_mtd()
+    if mtd == None:
+        error("No meta directory found. Sorry :(")
+        exit(1)
+
+    dd = _find_dd("tmp/work")
+    if dd == None:
+        error("No build directories found. Sorry :(")
+        exit(1)
+
+    verbose("file: " + f.name)
+    verbose(" * date:     " + str(date))
+    verbose(" * dd:       " + str(dd))
+    verbose(" * machine:  " + str(machine))
+    verbose(" * mtd:      " + str(mtd))
+    
+    dirs = ""
+    for d in dd:
+        dirs += " " + d
+        
+    command_line = ""
+    command_line += " -d "   + date
+    command_line += " -mtd " + mtd
+    command_line += " -m "   + machine
+    command_line += " -bd "  + dirs 
+    command_line += " -i "   + image_name + "-" + machine
+        
+        
+    print("Suggested arguments:")
+    print(command_line)
+            
+        
 def image_to_imagepackages(image_file):
     imagepackages_map = {}
     imagepackages_map['imagepackages']=[]
@@ -820,6 +924,7 @@ def parse():
                             type=str,
                             help='machine of Yocto build, default is ' + DEFAULT_MACHINE,
                             default=DEFAULT_MACHINE)
+
     parser.add_argument('-bd', '--build-directories',
                         dest='builddirs',
                         type=str,
@@ -894,6 +999,10 @@ def parse():
     
 def main():
     args = parse()
+    if args.mode == "find":
+        find_settings(args.image)
+        exit(0)
+        
     build_cache(args.includelibc)
 
     verbose("verbose: " + str(args.verbose) + "\n")
