@@ -75,7 +75,7 @@ def read_component_file(package, directory):
             return json.load(f)
     except Exception as e:
         pass
-    return flict_exit_code
+    return None
 
 def read_flict_report(package, directory):
     flict_report_file = directory + "/" + package + "-pile-flict-compliance-report.json"
@@ -354,7 +354,7 @@ def write_markdown_package(package, index, args):
     if args.license_text:
         res = res + "<details>\n<summary>declared license: " + str(read_from_json(package, 'declaredLicense')) + "</summary>\n\n"
         if 'component' in package:
-            if 'license_texts' in package['component']:
+            if package['component'] != None and 'license_texts' in package['component']:
                 for lic_text in package['component']['license_texts']:
                     lic_name = lic_text['name']
                     lic_text = lic_text['text']

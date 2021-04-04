@@ -32,19 +32,24 @@ def package_to_dot(package):
     return dep_lines
 
 def main(inpath):
-  with open(inpath) as fp:
-    # TODO: sync with flict (should be "package")
-    package = json.load(fp)["component"]
-    if "valid" not in package or package['valid']==True:
-      deps = package_to_dot(package)
-      # print result
-      print("digraph depends {")
-      print("    node [shape=plaintext]")
-      for dep in deps:
-        print("     " +dep)
-      print("}")
-    else:
-      pass
+    with open(inpath) as fp:
+        project = json.load(fp)
+        # TODO: sync with flict (should be "project")
+        if 'component' in project:
+            package = project['component']
+        else:
+            package = project['project']
+        
+        if "valid" not in package or package['valid']==True:
+            deps = package_to_dot(package)
+            # print result
+            print("digraph depends {")
+            print("    node [shape=plaintext]")
+            for dep in deps:
+                print("     " +dep)
+            print("}")
+        else:
+            pass
     
 if __name__ == "__main__":
   main(sys.argv[1])

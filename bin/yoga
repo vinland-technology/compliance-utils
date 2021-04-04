@@ -328,6 +328,8 @@ create_imagepackage_json()
 #
 # Create JSON
 #
+# squeeze out informtation for a package using yoda
+#
 create_json()
 {
     inform2n "Creating component JSON: "
@@ -923,6 +925,7 @@ per_package()
     esac
     sync
     
+    # squeeze out informtation for a package using yoda
     create_json "$PACKAGE" "$SUB_PACKAGES" "$VERSION" "$VERSION_SHORT"
     if [ $? -ne 0 ]; then error "Could not create component file for $PACKAGE"; exit 4; fi
         
