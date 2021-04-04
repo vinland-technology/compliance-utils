@@ -150,7 +150,10 @@ usage()
     echo "          Use polify file FILE."
     echo
     echo "    -ncc, --no-compatibility-checks"
-    echo "          DO not perform compatibility checks (using flict)"
+    echo "          Do not perform compatibility checks (using flict)"
+    echo
+    echo "    -fs, --find-settings"
+    echo "          Try to identify settings"
     
     echo
     echo "AUTHOR"
@@ -248,6 +251,9 @@ do
             ;;
         "--no-compatibility-checks" | "-ncc")
             COMPATIBILITY_CHECK=false
+            ;;
+        "--find-settings" | "-fs")
+            FIND_SETTINGS=true
             ;;
         *)
 	    echo assume pkg $1
@@ -1207,11 +1213,22 @@ find_manifest_date()
 #
 # MAIN
 #
+if [ "${FIND_SETTINGS}" = "true" ]
+then
+    if [ "${IMAGE}" = "" ]
+    then
+        error "You must supply an image name"
+        exit 3
+    fi
+    yoda  ${VERBOSE} -i ${IMAGE} find
+    exit
+fi
+
 
 if [ "${HAS_ARGS}" != "true" ] && [ ! -s ${DEFAULT_YOGA_CONFIG} ]
 then
     echo "Missing configuration file and no arguments, bailing out"
-    echo
+    echo 
     usage
     echo
     exit 10
