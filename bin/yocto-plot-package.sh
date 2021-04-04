@@ -159,36 +159,49 @@ create_dot_helper()
     local PKG="$1"
     if [ "$PACKAGE_NAME" = "true" ]
     then
-        grep "^\"$PKG\"" "$DOT_FILE" | grep -v "\.so" | grep -v "\-lic\"" | sed 's,\[label=\"[a-zA-Z0-9+\>\=. ]*\"\],,g' | sed 's,\[style=dotted\],,g' | sort -u 
+        grep "^\"$PKG\"" "$DOT_FILE" | grep -v "style=dotted" | grep "\.so" | grep -v "\-lic\"" | sed 's,\[label=\"[a-zA-Z0-9+\>\=. ]*\"\],,g'  | sort -u 
     else
-        grep "^\"$PKG\"" "$DOT_FILE" | grep "\.so" | sed 's,([0-9A-Za-z_]*),,g' | sed 's,\[style=dotted\],,g' | sort -u 
+        grep "^\"$PKG\"" "$DOT_FILE" | grep -v "style=dotted" | grep "\.so" | sed 's,([0-9A-Za-z_]*),,g' | sed 's,\[style=dotted\],,g' | sort -u 
     fi
 }
 
 create_dot_package()
 {
+    EXCLUDES="GLIBC -e libpthread -e librt -e libc.so -e libdl -e libc6\" -e \"rtld -e \"/bin/sh\""
     local PKG="$1"
+    debug "create_dot_package($1)"
     if [ "$RECURSIVE" = "true" ]
     then
+        debug "    ---> create_dot_helper \"$PKG\""
+        debug "    ---> create_dot_helper: $(create_dot_helper $PKG | grep -v -e $EXCLUDES)"
         if [ "$LIBC" = "false" ]
         then
-            PKGS=$(create_dot_helper $PKG | grep -v -e GLIBC -e libpthread -e librt -e libc.so -e libdl -e libc6\" -e \"rtld -e \"/bin/sh\" | tr '\n' '#')
+            PKGS=$(create_dot_helper "$PKG" | grep -v -e $EXCLUDES | tr '\n' '#')
         else
-            PKGS=$(create_dot_helper $PKG | tr '\n' '#')
+            PKGS=$(create_dot_helper "$PKG" | tr '\n' '#')
         fi
-   #     echo askhsakjdh : $PKGS
-        echo $PKGS |  tr '#' '\n' | grep -v "^[ ]*$" | while read DEP_LINE
+
+#        debug "    ---> create_dot_helper: \"$PKGS\""
+        #debug "----------------------------"
+        #debug "$PKG => $PKGS"
+#        debug $(echo $PKGS |  tr '#' '\n' | grep  "^[ ]*$" | grep  "style=dotted")
+        #debug
+        #debug "----------------------------"
+        echo $PKGS |  tr '#' '\n' | grep -v "^[ ]*$" | grep -v "style=dotted" | while read DEP_LINE
         do
             echo "$DEP_LINE"
-            DEP=$(echo $DEP_LINE | cut -d ">" -f 2 | sed -e 's,^[ ]*\",,g' -e 's,\"[ ]*$,,g' )
- #           echo "new dep: \"$DEP_LINE\" ===> \"$DEP\""
-  #          echo create_dot_package "$DEP"
+            DEP=$(echo $DEP_LINE | grep -v "style=dotted"| cut -d ">" -f 2 | sed -e 's,^[ ]*\",,g' -e 's,\"[ ]*$,,g' )
             create_dot_package "$DEP"
+            debug "create_dot_package \"$DEP\""
+            #debug "new dep: \"$DEP_LINE\" ===>                     \"$DEP\""
+            debug "     ---> create_dot_package \"$DEP\""
         done
     else
         if [ "$LIBC" = "false" ]
         then
-            create_dot_helper "$PKG" | grep -v -e GLIBC -e libpthread -e librt -e libc.so -e libdl -e libc6\" -e \"rtld -e \"/bin/sh\"
+            debug "    ---> create_dot_helper \"$PKG\""
+            debug "    ---> create_dot_helper: $(create_dot_helper $PKG | grep -v -e $EXCLUDES)"
+            create_dot_helper "$PKG" | grep -v -e $EXCLUDES
         else
             create_dot_helper "$PKG"
         fi
@@ -201,6 +214,8 @@ create_dot()
     head -2 "$DOT_FILE"
     exit_if_error $?
 
+    debug "Create dot for: \"$1\""
+    
     create_dot_package "$1" | sort -u
     exit_if_error $?
 
@@ -239,7 +254,7 @@ verify_dot_file()
 if [ "$SEARCH" = "true" ]
 then
     echo -n "Searching for $PKG in $DOT_FILE:"
-    HITS=$(cat ${DOT_FILE} | awk ' { print $1 }' | sed 's,\",,g'  | grep "$PKG" | grep -v "\-lic\"" | sed 's,\[label=\"[a-zA-Z0-9+\>\=. ]*\"\],,g' | sed 's,\[style=dotted\],,g' | sort -u )
+    HITS=$(cat ${DOT_FILE} | awk ' { print $1 }' | sed 's,\",,g'  | grep "$PKG" | grep -v "\-lic\"" | sed 's,\[label=\"[a-zA-Z0-9+\>\=. ]*\"\],,g' | sed 's,\[style=dotted\],,g' | grep -v digraph | sort -u )
     if [ "$HITS" = "" ]
     then
         echo " nothing found"
@@ -253,7 +268,7 @@ then
     exit 0
 fi
 
-create_dot "$PKG"  > $PKG_DOT_FILE
+create_dot "$PKG" > $PKG_DOT_FILE
 
 verify_dot_file $PKG_DOT_FILE $PKG
 
