@@ -26,7 +26,7 @@ PROGRAM_DESCRIPTION="Converts a flict file to dot format"
 PROGRAM_VERSION="0.1"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2021 Henrik Sandklef<hesa@sandklef.com>"
-PROGRAM_LICENSE="GPL-3.0-or-larer"
+PROGRAM_LICENSE="GPL-3.0-or-later"
 PROGRAM_AUTHOR="Henrik Sandklef"
 PROGRAM_SEE_ALSO=""
 
