@@ -1,0 +1,37 @@
+NAME
+    reusew - add reuse headers
+
+SYNOPSIS
+    reusew [OPTIONS] files
+
+OPTIONS
+    -l,  --license LICENSE
+           set license (to add) to LICENSE
+
+    -ch, --copyright-holder PERSON
+           set copyright holder (to add) to PERSON
+
+    -cy, --copyright-year YEAR
+           set copyright year (to add) to YEAR
+
+    -dr, --dry-run
+           Show the reuse command rather than executing it
+
+    -t, --type TYPE
+           set file type year to TYPE
+
+    -gt, --guess-type
+           makes a qualified guess of the file type
+
+    -h,  --help
+           print this usage information
+
+AUTHOR
+    Written by Henrik Sandklef
+
+REPORTING BUGS
+    Add an issue at https://github.com/vinland-technology/compliance-utils
+
+COPYRIGHT & LICENSE
+   Copyright 2020 Henrik Sandklef
+   License GPL-3.0-or-later

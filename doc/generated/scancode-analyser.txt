@@ -1,0 +1,40 @@
+usage: scancode-analyser.py [-h] [-v] [-d DIR] [-tl] [-f] [-ic] [-j]
+                            [-el EXCLUDED_LICENSES [EXCLUDED_LICENSES ...]]
+                            [-x EXCLUDED_REGEXPS [EXCLUDED_REGEXPS ...]]
+                            file
+
+NAME
+  scancode-analyser.py
+
+DESCRIPTION
+  A tiny tool to assist when analysing a Scancode report
+
+positional arguments:
+  file                  scancode report file
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         output verbose information to stderr
+  -d DIR, --directory DIR
+  -tl, --top-level      print only top level directory(ies) in text format
+  -f, --files           output license information per file instead of per dir
+  -ic, --include-copyrights
+                        output copyright information
+  -j, --json            output in JSON
+  -el EXCLUDED_LICENSES [EXCLUDED_LICENSES ...], --excluded-licenses EXCLUDED_LICENSES [EXCLUDED_LICENSES ...]
+                        excluded licenses (if set, remove file/dir from printout)
+  -x EXCLUDED_REGEXPS [EXCLUDED_REGEXPS ...], --exclude EXCLUDED_REGEXPS [EXCLUDED_REGEXPS ...]
+                        exclud files and dirs matching the supplied patterns
+
+AUTHOR
+  Henrik Sandklef
+
+REPORTING BUGS
+  File a ticket at https://github.com/vinland-technology/compliance-utils
+
+COPYRIGHT
+  Copyright (c) 2021 Henrik Sandklef<hesa@sandklef.com>.
+  License GPL-3.0-or-later
+
+SEE ALSO
+  

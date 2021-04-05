@@ -1,0 +1,25 @@
+NAME
+    manage-non-spdx.sh
+
+SYNOPSIS
+    manage-non-spdx.sh [OPTIONS] [ARGUMENT]
+
+DESCRIPTION
+    Checks a list of license identifiers if they are
+    SPDX identifiers. The non SPDX licenses are printed
+    in JSON format, as templates, for use with spdx-translations.py
+
+OPTIONS
+    -
+      read from stdin
+
+    -h, --help
+      prints hits help text
+
+ARGUMENT
+    If argument is a file, that files is read (aassuming
+    the file contains one license per line).
+    If the argument is not a file the arguments is assumed
+    to be a license identifier
+    If no arguments, licenses are read from stdin (just as with -)
+

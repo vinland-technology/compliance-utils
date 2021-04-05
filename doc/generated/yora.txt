@@ -1,0 +1,27 @@
+# License analysis of a Yocto
+
+This is an analysis of the report produced by yoda after a Yocto build
+
+# License analysis
+
+## Licenses in usage order
+
+~~~
+~~~
+## Licenses and packages using them
+
+## Packages and their licenses
+
+|Package                        | License             |
+|-------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+
+# Meta information
+
+**Date**: 2021-04-05
+
+**Host**: gubaidulina
+
+**OS**: Linux 5.8.0-48-generic (#54~20.04.1-Ubuntu SMP Sat Mar 20 13:40:25 UTC 2021)
+
+**Machine**: x86_64
+

@@ -1,0 +1,95 @@
+NAME
+
+    ./../bin/yoga - scan a yocto build to extract license compliance information
+
+
+SYNOPSIS
+    ./../bin/yoga [OPTION]
+
+
+DESCRIPTION
+
+    Extracts information from a Yocto build and stores the resulting data in
+    JSON files in the output directory. A license compatibility check is
+    performed either with or without a license policy
+
+
+OPTIONS
+
+    -bd, --build-dir DIR
+          Adds DIR to list of directories where to look for built files.
+          This option can, and most likely will, be used multiple times
+
+    -i, --image IMAGE
+          Sets the image to analyse to IMAGE
+
+    -mtd, --meta-top-dir DIR
+          Look for meta files (e.g. recipes) to DIR.
+
+    -tf, --spdx-translation-file FILE
+          Use FILE to translate between non SPDX to SPDX license expressions.
+
+    -dd, --dist-dir DIR
+          Set the directory of the dist to DIR
+
+    -m, --machine MACHINE
+          Set the machine used when building.
+
+    -d, --date DATE
+          Set the DATE used when bulding, defaults to using the latest
+
+    -tf, --spdx-translation-file FILE
+          Use FILE to translate between non SPDX to SPDX license expressions.
+
+    -v, --verbose
+          Output verbose information
+
+    -od, --out-dir DIR
+          Specify output directoy, defaults to compliance-results/
+
+    -la, --list-imagepackages
+          List avilable imagepackages
+
+    -ps, --pack-source-code
+          Tried to find source code, not using download or 
+          the compliance dir provided by Yocto
+
+    -h, --help
+          Prints this help text
+
+    -c, --config FILE
+          Read configuarion file FILE. By default yoga reads yoga.conf 
+          in current working directory
+
+    -pf, --policy-file FILE
+          Use polify file FILE.
+
+    -ncc, --no-compatibility-checks
+          Do not perform compatibility checks (using flict)
+
+    -fs, --find-settings
+          Try to identify settings
+
+AUTHOR
+
+    Written by Henrik Sandklef
+
+
+COPYRIGHT
+
+    Copyright (c) 2021 Henrik Sandklef
+    License GPLv3+: GNU GPL  version  3  or  later <https://gnu.org/licenses/gpl.html>.
+    This  is  free  software: you are free to change and redistribute it.  
+    There is NO WARRANTY, to the extent permitted by law.
+
+
+REPORTING BUGS
+
+    Create an issue at https://github.com/vinland-technology/compliance-utils
+
+
+SEEL ALSO
+
+    flict (link), scancode
+
+
