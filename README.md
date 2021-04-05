@@ -24,6 +24,25 @@ For each package in this files:
 
 Help text: [yoga.txt](doc/generated/yoga.txt)
 
+#### Examples
+
+This tool assumes you're located in Yocto's `build` directory.
+
+Identify yoga settings"
+```
+    yoga -i core-image-minimal -fs"
+```` 
+
+Invoke yoga as suggested by previous command (copy/past from previous command).
+This will create compliance reports in compliance-results
+```
+     yoga  -d 20210224164315 -mtd ../ -m qemux86-64   \
+      -bd tmp/work/all-poky-linux tmp/work/core2-64-poky-linux tmp/work/qemux86_64-poky-linux \
+      -i core-image-minimal-qemux86-64-qemux86-64"
+```
+The above stores the settings from the command line in a config file (yoga.conf).
+
+
 <a name="yoda"></a>
 ### yoda
 
@@ -45,14 +64,15 @@ Create a JSON file with all packages and image packages (sub packages) for image
     yoda -c yoda.conf list
 ```
 
-Create JSON files for all Cairo's 
+Create JSON files (in `compliance-results`) for all Cairo's 
 ```
     yoda -c yoda.conf -p cairo exportpackagel
 ```
 
-Create JSON files for Cairo's imagepackage cairo-gobject
+Create JSON files (in `compliance-results`) for Cairo's imagepackage cairo-gobject
+
 ```
-    yoda -c yoda.conf -p cairo -sp cairo-gobject exportpackagel
+    yoda -c yoda.conf -p cairo -sp cairo-gobject exportpackage
 ```
 
 <a name="yocr"></a>
