@@ -1,7 +1,7 @@
-usage: yoda [-h] [-v] [-f FORMAT] [-lf] [-m MACHINE]
+usage: yoda [-h] [-v] [-f FORMAT] [-lf] [-m MACHINE] [-c CONFIG]
             [-bd BUILDDIRS [BUILDDIRS ...]] [-i IMAGE] [-d DATE]
             [-mtd META_TOP_DIR] [-ip MANAGED_IMAGEPACKAGE] [-ia]
-            [-p MANAGED_PACKAGE] [-sps MANAGED_SUB_PACKAGES] [-c]
+            [-p MANAGED_PACKAGE] [-sps MANAGED_SUB_PACKAGES] [-ic]
             mode
 
 NAME
@@ -11,7 +11,7 @@ DESCRIPTION
   yoda compiles license compliance related information from a Yocto build (for later use by yoga and yocr)
 
 positional arguments:
-  mode                  list or nada
+  mode                  list, exportpackage, find, create-config
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -21,6 +21,8 @@ optional arguments:
   -lf, --list-formats   list supported formats
   -m MACHINE, --machine MACHINE
                         machine of Yocto build, default is qemux86-64
+  -c CONFIG, --config CONFIG
+                        Use settings from configuration file
   -bd BUILDDIRS [BUILDDIRS ...], --build-directories BUILDDIRS [BUILDDIRS ...]
                         distribution directories, default is tmp/work/core2-64-poky-linux tmp/work/all-poky-linux tmp/work/qemux86_64-poky-linux
   -i IMAGE, --image IMAGE
@@ -36,7 +38,21 @@ optional arguments:
                         packge to handle
   -sps MANAGED_SUB_PACKAGES, --sub-packages MANAGED_SUB_PACKAGES
                         sub packages (requires package) to handle
-  -c, --libc            include glibc libraries as dependencies
+  -ic, --include-libc   include glibc libraries as dependencies
+
+EXAMPLES
+
+  Find settings for yoda, store in yoda.conf
+    yoda -i core-image-minimal create-config
+
+  Create a JSON file with all packages and image packages (sub packages) for image core-image-minimal
+    yoda -c yoda.conf list
+
+  Create JSON files for all Cairo's 
+    yoda -c yoda.conf -p cairo exportpackagel
+
+  Create JSON files for Cairo's imagepackage cairo-gobject
+    yoda -c yoda.conf -p cairo -sp cairo-gobject exportpackagel
 
 AUTHOR
   Henrik Sandklef
