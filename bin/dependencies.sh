@@ -8,7 +8,7 @@
 #
 #
 # find dependencies recursively for an ELF program/library 
-#
+# prints out in misc formats
 #
 
 OUTPUT_DIR=~/.vinland/compliance-utils/elf-deps
@@ -265,10 +265,10 @@ usage()
         CODE_COMMENT="        "
     fi
     echo -e "${HEADER}NAME${HEADER_OUT}"
-    echo -e "   $PROG - list dependencies recursively"
+    echo -e "${CODE_IN}$PROG - list dependencies recursively${CODE_OUT}"
     echo
     echo -e "${HEADER}SYNOPSIS"
-    echo -e "   ${CODE_IN}$PROG [OPTIONS] FILES${CODE_OUT}"
+    echo -e "${CODE_IN}$PROG [OPTIONS] FILES${CODE_OUT}"
     echo
     echo -e "${HEADER}DESCRIPTION"
     echo -e "   List dependencies recursively for a given file. The files can be"
@@ -278,9 +278,11 @@ usage()
     echo -e "   (internal function) findllib."
     echo -e
     echo -e "${HEADER}OPTIONS"
+    echo -e
     echo -e "${HEADER2}Library related options"
+    echo -e
     echo -e "${CODE_IN}-e, --ELF${CODE_OUT}"
-    echo -e "use readelf to find dependencies. Default."
+    echo -e "${CODE_COMMENT}use readelf to find dependencies. Default."
     echo
     echo -e "${CODE_IN}--ldd${CODE_OUT}"
     echo -e "${CODE_COMMENT}use ldd to find dependencies. Default is readelf."
@@ -294,6 +296,7 @@ usage()
     echo -e "${CODE_COMMENT}are: $DEFAULT_LIB_DIRS"
     echo
     echo -e "${HEADER2}Format options"
+    echo -e
     echo -e "${CODE_IN}--dot${CODE_OUT}"
     echo -e "${CODE_COMMENT}create dot like file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
@@ -310,6 +313,7 @@ usage()
     echo -e "${CODE_COMMENT}create pdf file (in output dir). Autmatically adds: \"-s\" and \"-l\" "
     echo
     echo -e "${HEADER2}Output options"
+    echo -e
     echo -e "${CODE_IN}--outdir, -od DIR${CODE_OUT}"
     echo -e "${CODE_COMMENT}output logs to DIR. Default is ~/.vinland/elf-deps"
     echo
@@ -327,7 +331,7 @@ usage()
     echo
     echo -e "${CODE_IN}-u, --uniq${CODE_OUT}"
     echo -e "${CODE_COMMENT}print uniq dependencies in alphabetical order. "
-    echo -e "${CODE_COMMENT}Sets txt more and disables everything else."
+    echo -e "${CODE_COMMENT}Sets txt mode and disables everything else."
     echo
     echo -e "${HEADER}SUPPORTED PLATFORMS${HEADER_OUT}"
     echo -e "* Debian and Ubuntu"
