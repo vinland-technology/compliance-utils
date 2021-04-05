@@ -156,6 +156,20 @@ usage()
     echo "          Try to identify settings"
     
     echo
+    echo "EXAMPLES"
+    echo "    This tool assumes you're located in Yocto's `build` directory."
+    echo ""
+    echo "    Identify yoga settings"
+    echo "       yoga -i core-image-minimal -fs"
+    echo ""
+    echo "    Invoke yoga as suggested by previous command (copy/past from previous command)"
+    echo "       yoga  -d 20210224164315 -mtd ../ -m qemux86-64   \\"
+    echo "       -bd tmp/work/all-poky-linux tmp/work/core2-64-poky-linux tmp/work/qemux86_64-poky-linux \\"
+    echo "       -i core-image-minimal-qemux86-64-qemux86-64"
+    echo "    The above stores the settings from the command line in a config file (yoga.conf), "
+    echo "    so next time your run yoga is a bit easier (just execute yoga)"
+    echo
+    echo
     echo "AUTHOR"
     echo ""
     echo "    Written by Henrik Sandklef"
