@@ -7,7 +7,7 @@ Misc small utils in your every day compliance work
 <a name="yoga"></a>
 ### yoga
 
-*yoga* invokes [_yoda_](#yoda) and other tools to create a list of image
+*yoga* invokes [_yoda_](#yoda), [_flict-to-dot_](#flict-to-dot), [_yoda2flict_](#yoda2flict) and other tools to create a list of image
  packages and useful compliance information
 
 For each package in this files:
@@ -53,11 +53,13 @@ Create JSON files for Cairo's imagepackage cairo-gobject
     yoda -c yoda.conf -p cairo -sp cairo-gobject exportpackagel
 ```
 
+<a name="yocr"></a>
 ### yocr
 
 yocr creates a report summarising the compliance result from yocr. The
 report can be created for humans (html) and computers (JSON).
 
+<a name="dependencies"></a>
 ## dependencies.sh
 
 List dependencies recursively foe the given file. The files can be
@@ -65,6 +67,7 @@ either a program (name of with path) or a library (name or with path)
 If the supplied file does not have path we do our best trying to find
 it using which or (internal function) findllib. Help text: [dependencies.txt](doc/generated/dependencies.txt)
 
+<a name="flict-to-dot"></a>
 ## flict-to-dot.sh
 
 Takes a [flict](https://github.com/vinland-technology/flict) file and creates
@@ -75,12 +78,14 @@ graphical representation of a project's dependencies. Help text: [flict-to-dot.t
 
 Wrapper over [reuse](https://reuse.software/). Help text: [reusew.txt](doc/generated/reusew.txt)
 
+<a name="scancode-analyser.py"></a>
 ## scancode-analyser.py
 
 A tiny tool to assist when analysing a Scancode report
 
 Help text: [scancode-analyser.txt](doc/generated/scancode-analyser.txt)
 
+<a name="yoda2flict"></a>
 ## yoda2flict.py
 
 Transforms the output from yoda in to a format
