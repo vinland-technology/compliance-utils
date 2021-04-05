@@ -13,10 +13,10 @@ FILES=""
 usage()
 {
     echo "NAME"
-    echo"    $(basename $0) - add reuse headers"
+    echo "    $(basename $0) - add reuse headers"
     echo
     echo "SYNOPSIS"
-    echo"    $(basename $0) [OPTIONS] files"
+    echo "    $(basename $0) [OPTIONS] files"
     echo
     echo "OPTIONS"
     echo "    -l,  --license LICENSE"
@@ -41,10 +41,10 @@ usage()
     echo "           print this usage information"
     echo
     echo "AUTHOR"
-    echo"    Written by Henrik Sandklef"
+    echo "    Written by Henrik Sandklef"
     echo
     echo "REPORTING BUGS"
-    echo"    Add an issue at https://github.com/vinland-technology/compliance-utils"
+    echo "    Add an issue at https://github.com/vinland-technology/compliance-utils"
     echo
     echo "COPYRIGHT & LICENSE"
     echo "   Copyright 2020 Henrik Sandklef"
