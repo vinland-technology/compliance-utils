@@ -4,6 +4,27 @@ Misc small utils in your every day compliance work
 
 ## Yocto related tools
 
+<a name="yoga"></a>
+### yoga
+
+*yoga* invokes [_yoda_](#yoda) and other tools to create a list of image
+ packages and useful compliance information
+
+For each package in this files:
+
+* invokes yoda to analyse the package and collect relevant compliance information 
+
+* invokes flict to do license compatibility check on the package
+
+* collects source code
+
+* collects copyright and license information
+
+* creates a graph, in various formats, over the package and its dependencies
+
+Help text: [yoga.txt](doc/generated/yoga.txt)
+
+<a name="yoda"></a>
 ### yoda
 
 yoda analyses various files produced during a Yocto build and produces:
@@ -12,10 +33,10 @@ yoda analyses various files produced during a Yocto build and produces:
 
 * a file containing information (e.g dependencies) about packages 
 
-This tool is used by *yoda*, which probably is the tool you should
+This tool is used by [_yoga_](#yoga), which probably is the tool you should
 look into. Help text: [yoda.txt](doc/generated/yoda.txt)
 
-#### Example
+#### Examples
 
 Create a JSON file with all packages and image packages (sub packages) for image core-image-minimal
 ```
@@ -31,25 +52,6 @@ Create JSON files for Cairo's imagepackage cairo-gobject
 ```
     yoda -c yoda.conf -p cairo -sp cairo-gobject exportpackagel
 ```
-
-
-### yoga
-
-*yoga* invokes *yoda* to create a list of image packages 
-
-For each package in this files:
-
-* invokes yoda to analyse the package and collect relevant compliance information 
-
-* invokes flict to do license compatibility check on the package
-
-* collects source code
-
-* collects copyright and license information
-
-* creates a graph, in various formats, over the package and its dependencies
-
-Help text: [yoga.txt](doc/generated/yoga.txt)
 
 ### yocr
 
