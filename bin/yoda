@@ -40,12 +40,13 @@ PROGRAM_LICENSE="GPL-3.0-or-later"
 PROGRAM_AUTHOR="Henrik Sandklef"
 PROGRAM_SEE_ALSO="yoga (yoda's generic aggregator)\n  yocr (yoga's compliance reporter)\n  flict (FOSS License Compatibility Tool)"
 PROGRAM_EXAMPLES=""
-PROGRAM_EXAMPLES += "  This tool assumes you're located in Yocto's `build` directory.\n\n"
+PROGRAM_EXAMPLES += "  This tool assumes you're located in Yocto's `build` directory.\n"
+PROGRAM_EXAMPLES += "  You need to know the name of the image (e.g. core-image-minimal) you built. \n\n"
 PROGRAM_EXAMPLES += "  Find settings for yoda, store in yoda.conf\n"
 PROGRAM_EXAMPLES += "    " + PROGRAM_NAME_SHORT + " -i core-image-minimal create-config\n\n"
-PROGRAM_EXAMPLES += "  Create a JSON file with all packages and image packages (sub packages) for image core-image-minimal\n"
+PROGRAM_EXAMPLES += "  Create a JSON (in compliance-results) file with all packages and image packages (sub packages) for image core-image-minimal\n"
 PROGRAM_EXAMPLES += "    " + PROGRAM_NAME_SHORT + " -c yoda.conf list\n\n"
-PROGRAM_EXAMPLES += "  Create JSON files for all Cairo's \n"
+PROGRAM_EXAMPLES += "  Create JSON files (in compliance-results) for all Cairo's \n"
 PROGRAM_EXAMPLES += "    " + PROGRAM_NAME_SHORT + " -c yoda.conf -p cairo exportpackagel\n\n"
 PROGRAM_EXAMPLES += "  Create JSON files for Cairo's imagepackage cairo-gobject\n"
 PROGRAM_EXAMPLES += "    " + PROGRAM_NAME_SHORT + " -c yoda.conf -p cairo -sp cairo-gobject exportpackagel\n\n"
@@ -873,7 +874,7 @@ def find_settings(image_name, create_config=False):
         command_line += " -mtd " + mtd
         command_line += " -m "   + machine
         command_line += " -bd "  + dirs 
-        command_line += " -i "   + image_name + "-" + machine
+        command_line += " -i "   + image_name
 
 
         print("Suggested arguments:")
@@ -1085,10 +1086,10 @@ def main():
     global MACHINE
         
     global IMG_MF
-    IMG_MF="tmp/deploy/images/" + MACHINE + "/" + IMAGE + ".manifest"
+    IMG_MF="tmp/deploy/images/" + MACHINE + "/" + IMAGE + "-" + MACHINE + ".manifest"
 
     global LICENSE_MANIFEST
-    LICENSE_MANIFEST="tmp/deploy/licenses/" + IMAGE + "-" + DATE + "/license.manifest"
+    LICENSE_MANIFEST="tmp/deploy/licenses/" + IMAGE + "-" + MACHINE + "-" + DATE + "/license.manifest"
 
     verbose("DATE:             " + DATE)
     verbose("BUILD_DIRS:       " + str(BUILD_DIRS))
