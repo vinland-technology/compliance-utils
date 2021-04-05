@@ -14,9 +14,9 @@ PNG_FILES=${DOT_FILES:dot=png}
 JPG_FILES=${DOT_FILES:dot=jpg}
 PDF_FILES=${DOT_FILES:dot=pdf} ${MD_FILES:md=pdf} 
 
-PY_PROGS_TXT=./generated/scancode-analyser.txt ./generated/flict-to-dot.py ./generated/yoda2flict.py
+PY_PROGS_TXT=./generated/scancode-analyser.txt ./generated/flict-to-dot.txt ./generated/yoda2flict.txt
 SH_PROGS_TXT=./generated/dependencies.txt ./generated/manage-non-spdx.txt
-PROGS_TXT=./generated/reusew.txt ./generated/yocr.txt ./generated/yoda.txt ./generated/yoga.txt ./generated/yora.txt
+PROGS_TXT=./generated/reusew.txt ./generated/yocr.txt ./generated/yoda.txt ./generated/yoga.txt ./generated/yora.txt 
 
 ALL_FORMAT_FILES=$(PNG_FILES) $(JPG_FILES) $(PDF_FILES) $(HELP_FILES) $(PY_PROGS_TXT) $(SH_PROGS_TXT) $(PROGS_TXT)
 
