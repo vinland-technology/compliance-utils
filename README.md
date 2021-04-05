@@ -38,6 +38,8 @@ look into. Help text: [yoda.txt](doc/generated/yoda.txt)
 
 #### Examples
 
+This tool assumes you're located in Yocto's `build` directory.
+
 Create a JSON file with all packages and image packages (sub packages) for image core-image-minimal
 ```
     yoda -c yoda.conf list
