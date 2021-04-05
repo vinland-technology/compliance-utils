@@ -15,17 +15,19 @@ yoda analyses various files produced during a Yocto build and produces:
 This tool is used by *yoda*, which probably is the tool you should
 look into. Help text: [yoda.txt](doc/generated/yoda.txt)
 
-* Create a JSON file with all packages and image packages (sub packages) for image core-image-minimal
+#### Example
+
+Create a JSON file with all packages and image packages (sub packages) for image core-image-minimal
 ```
     yoda -c yoda.conf list
 ```
 
-* Create JSON files for all Cairo's 
+Create JSON files for all Cairo's 
 ```
     yoda -c yoda.conf -p cairo exportpackagel
 ```
 
-* Create JSON files for Cairo's imagepackage cairo-gobject
+Create JSON files for Cairo's imagepackage cairo-gobject
 ```
     yoda -c yoda.conf -p cairo -sp cairo-gobject exportpackagel
 ```
