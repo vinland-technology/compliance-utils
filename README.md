@@ -7,20 +7,20 @@ Misc small utils in your every day compliance work
 <a name="yoga"></a>
 ### yoga
 
-*yoga* invokes [_yoda_](#yoda), [_flict-to-dot_](#flict-to-dot), [_yoda2flict_](#yoda2flict) and other tools to create a list of image
- packages and useful compliance information
+yoga invokes miscellaneous tools to create a list of image packages
+ and useful compliance information.
 
 For each package in this files:
 
-* invokes yoda to analyse the package and collect relevant compliance information 
+* analyse (with [_yoda_](#yoda)) the package and collect relevant compliance information 
 
-* invokes flict to do license compatibility check on the package
+* invokes [flict](https://github.com/vinland-technology/flict) (and [_yoda2flict_](#yoda2flict) to do license compatibility checks on the packages
 
-* collects source code
+* collects source code (beta)
 
 * collects copyright and license information
 
-* creates a graph, in various formats, over the package and its dependencies
+* creates graphs (with [_flict-to-dot_](#flict-to-dot)) in various formats over the package and their dependencies
 
 Help text: [yoga.txt](doc/generated/yoga.txt)
 
