@@ -35,7 +35,7 @@ PROGRAM_DESCRIPTION="yoda compiles license compliance related information from a
 PROGRAM_VERSION="0.1"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
-PROGRAM_LICENSE="GPL-3.0-or-larer"
+PROGRAM_LICENSE="GPL-3.0-or-later"
 PROGRAM_AUTHOR="Henrik Sandklef"
 PROGRAM_SEE_ALSO="yoga (yoda's generic aggregator)\n  yocr (yoga's compliance reporter)\n  flict (FOSS License Compatibility Tool)"
 
@@ -907,6 +907,7 @@ def parse():
     )
     parser.add_argument('mode', type=str,
                         help='list or nada', default='list')
+
     parser.add_argument('-v', '--verbose',
                             action='store_true',
                             help='output verbose information to stderr',
