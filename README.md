@@ -38,12 +38,6 @@ Help text: [yoga.txt](doc/generated/yoga.txt)
 yocr creates a report summarising the compliance result from yocr. The
 report can be created for humans (html) and computers (JSON).
 
-## yoda2flict.py
-
-Transforms the output from yoda in to a format
-[flict](https://github.com/vinland-technology/flict) can use to check license
-compatibility. Help text: [yoda2flict.txt](doc/generated/yoda2flict.txt)
-
 ## dependencies.sh
 
 List dependencies recursively foe the given file. The files can be
@@ -60,4 +54,16 @@ graphical representation of a project's dependencies. Help text: [flict-to-dot.t
 ## reusew
 
 Wrapper over [reuse](https://reuse.software/). Help text: [reusew.txt](doc/generated/reusew.txt)
+
+## scancode-analyser.py
+
+A tiny tool to assist when analysing a Scancode report
+
+Help text: [scancode-analyser.txt](doc/generated/scancode-analyser.txt)
+
+## yoda2flict.py
+
+Transforms the output from yoda in to a format
+[flict](https://github.com/vinland-technology/flict) can use to check license
+compatibility. Help text: [yoda2flict.txt](doc/generated/yoda2flict.txt)
 
