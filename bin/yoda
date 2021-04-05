@@ -31,6 +31,7 @@ from argparse import RawTextHelpFormatter
 #
 #
 PROGRAM_NAME="Yoda (Yocto Dependencies Analyser)"
+PROGRAM_NAME_SHORT="yoda"
 PROGRAM_DESCRIPTION="yoda compiles license compliance related information from a Yocto build (for later use by yoga and yocr)"
 PROGRAM_VERSION="0.1"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
@@ -38,6 +39,18 @@ PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
 PROGRAM_LICENSE="GPL-3.0-or-later"
 PROGRAM_AUTHOR="Henrik Sandklef"
 PROGRAM_SEE_ALSO="yoga (yoda's generic aggregator)\n  yocr (yoga's compliance reporter)\n  flict (FOSS License Compatibility Tool)"
+PROGRAM_EXAMPLES=""
+PROGRAM_EXAMPLES += "  Find settings for yoda\n"
+PROGRAM_EXAMPLES += "    " + PROGRAM_NAME_SHORT + " -i core-image-minimal find\n\n"
+PROGRAM_EXAMPLES += "  Create a JSON file with all packages and image packages (sub packages) for image core-image-minimal\n"
+PROGRAM_EXAMPLES += "    " + PROGRAM_NAME_SHORT + " -d 20210224164315 -mtd ../ -m qemux86-64 -bd \\\n"
+PROGRAM_EXAMPLES += "      tmp/work/all-poky-linux tmp/work/core2-64-poky-linux \\\n"
+PROGRAM_EXAMPLES += "      tmp/work/qemux86_64-poky-linux -i core-image-minimal-qemux86-64 list\n\n"
+PROGRAM_EXAMPLES += "  Create JSON files for Cairo's imagepackage cairo-gobject\n"
+PROGRAM_EXAMPLES += "     " + PROGRAM_NAME_SHORT + " -d 20210224164315 -mtd ../ -m qemux86-64 -bd  \\\n"
+PROGRAM_EXAMPLES += "     tmp/work/all-poky-linux tmp/work/core2-64-poky-linux tmp/work/qemux86_64-poky-linux\\\n"
+PROGRAM_EXAMPLES += "     -i core-image-minimal-qemux86-64 -p cairo -sp cairo-gobject exportpackagel\n\n"
+
 
 OUTPUT_LICENSE="MIT"
 OUTPUT_DIR="./yocr-output"
@@ -798,8 +811,8 @@ def _find_dd(base_dir):
             dirs.append(file)
             
     return dirs
-            
-def find_settings(image_name):
+
+def find_settings(image_name, create_config=False):
 
     with open("conf/local.conf") as f:
         machine = _find_machine(f)
@@ -831,17 +844,41 @@ def find_settings(image_name):
     dirs = ""
     for d in dd:
         dirs += " " + d
-        
-    command_line = ""
-    command_line += " -d "   + date
-    command_line += " -mtd " + mtd
-    command_line += " -m "   + machine
-    command_line += " -bd "  + dirs 
-    command_line += " -i "   + image_name + "-" + machine
-        
-        
-    print("Suggested arguments:")
-    print(command_line)
+
+    if create_config:
+        if os.path.isfile("yoda.conf"):
+            error("yoda.conf already exists. You need to manually remove it and rerun")
+            exit(4)
+        else:
+             f = open("yoda.conf", "w")
+             f.write("########################################################\n")
+             f.write("# \n")
+             f.write("# Auto generated configuration file for yoda\n")
+             f.write("# \n")
+             f.write("########################################################\n")
+             f.write("# date \n")
+             f.write("DATE=" + date + "\n\n")
+             f.write("# image \n")
+             f.write("IMAGE=" + image_name + "\n\n")
+             f.write("# machine \n")
+             f.write("MACHINE=" + machine + "\n\n")
+             f.write("# Meta top dir \n")
+             f.write("MTD=" + mtd + "\n\n")
+             f.write("# Build dirs \n")
+             f.write("BUILD_DIRS=\"" + dirs + "\"\n\n")
+             f.close()
+        pass
+    else:
+        command_line = ""
+        command_line += " -d "   + date
+        command_line += " -mtd " + mtd
+        command_line += " -m "   + machine
+        command_line += " -bd "  + dirs 
+        command_line += " -i "   + image_name + "-" + machine
+
+
+        print("Suggested arguments:")
+        print(command_line)
             
         
 def image_to_imagepackages(image_file):
@@ -895,6 +932,7 @@ def parse():
     description = description + "DESCRIPTION\n  " + PROGRAM_DESCRIPTION + "\n\n"
     
     epilog = ""
+    epilog = epilog + "EXAMPLES\n\n" + PROGRAM_EXAMPLES + "\n\n"
     epilog = epilog + "AUTHOR\n  " + PROGRAM_AUTHOR + "\n\n"
     epilog = epilog + "REPORTING BUGS\n  File a ticket at " + PROGRAM_URL + "\n\n"
     epilog = epilog + "COPYRIGHT\n  Copyright " + PROGRAM_COPYRIGHT + ".\n  License " + PROGRAM_LICENSE + "\n\n"
@@ -906,7 +944,7 @@ def parse():
         formatter_class=RawTextHelpFormatter
     )
     parser.add_argument('mode', type=str,
-                        help='list or nada', default='list')
+                        help='list, exportpackage, find, create-config', default='list')
 
     parser.add_argument('-v', '--verbose',
                             action='store_true',
@@ -925,6 +963,12 @@ def parse():
                             type=str,
                             help='machine of Yocto build, default is ' + DEFAULT_MACHINE,
                             default=DEFAULT_MACHINE)
+
+    parser.add_argument('-c', '--config',
+                        type=str,
+                        dest='config',
+                        help='Use settings from configuration file',
+                        default=None)
 
     parser.add_argument('-bd', '--build-directories',
                         dest='builddirs',
@@ -960,7 +1004,7 @@ def parse():
                             type=str,
                             dest='managed_sub_packages',
                             help='sub packages (requires package) to handle')
-    parser.add_argument('-c', '--libc',
+    parser.add_argument('-ic', '--include-libc',
                             dest='includelibc',
                             action='store_true',
                             help="include glibc libraries as dependencies",
@@ -981,29 +1025,80 @@ def parse():
     global IMAGE
     IMAGE=str(args.image)
 
-    global IMG_MF
-    IMG_MF="tmp/deploy/images/" + MACHINE + "/" + IMAGE + ".manifest"
-
     global META_TOP_DIR
     META_TOP_DIR=str(args.meta_top_dir)
     
     global DATE
     DATE=str(args.date)
-    
-    global LICENSE_MANIFEST
-    LICENSE_MANIFEST="tmp/deploy/licenses/" + IMAGE + "-" + DATE + "/license.manifest"
 
     global BUILD_DIRS
     BUILD_DIRS=args.builddirs
     
     return args
+
+
+def read_config(config_file):
+    #print("here..." + config_file)
+    with open(config_file) as f:
+        for line in f.readlines():
+            #print(" line: " + line)
+            if line.startswith("#"):
+                pass
+            elif "=" in line:
+                trimmed_line = line.strip().replace("\"", "")
+                var = trimmed_line.split("=")[0]
+                val = trimmed_line.split("=")[1]
+                if var == "META_TOP_DIR":
+                    global META_TOP_DIR
+                    META_TOP_DIR = val
+                elif var == "MACHINE":
+                    global MACHINE
+                    MACHINE = val
+                elif var == "IMAGE":
+                    global IMAGE
+                    IMAGE = val
+                elif var == "DATE":
+                    global DATE
+                    DATE = val
+                elif var == "BUILD_DIRS":
+                    global BUILD_DIRS
+                    list = []
+                    for i in val.strip().split(" "):
+                        list.append(i)
+                    BUILD_DIRS = list
+
     
+
 def main():
     args = parse()
     if args.mode == "find":
         find_settings(args.image)
         exit(0)
+    if args.mode == "create-config":
+        find_settings(args.image, True)
+        exit(0)
+
+    if args.config:
+        read_config(args.config)
+
+    global DATE
+    global IMAGE
+    global MACHINE
         
+    global IMG_MF
+    IMG_MF="tmp/deploy/images/" + MACHINE + "/" + IMAGE + ".manifest"
+
+    global LICENSE_MANIFEST
+    LICENSE_MANIFEST="tmp/deploy/licenses/" + IMAGE + "-" + DATE + "/license.manifest"
+
+    verbose("DATE:             " + DATE)
+    verbose("BUILD_DIRS:       " + str(BUILD_DIRS))
+    verbose("IMAGE:            " + IMAGE)
+    verbose("MACHINE:          " + MACHINE)
+    verbose("META_TOP_DIR:     " + META_TOP_DIR)
+    verbose("LICENSE_MANIFEST: " + LICENSE_MANIFEST)
+    verbose("IMG_MF:           " + IMG_MF)
+
     build_cache(args.includelibc)
 
     verbose("verbose: " + str(args.verbose) + "\n")
