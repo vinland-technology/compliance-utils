@@ -48,9 +48,9 @@ The above stores the settings from the command line in a config file (yoga.conf)
 
 yoda analyses various files produced during a Yocto build and produces:
 
-* a list of packages that is put in to the image built
+* a JSON file (in `compliance-results`) of packages that is put in to the image built
 
-* a file containing information (e.g dependencies) about packages 
+* a JSON file (in `compliance-results`) containing information (e.g dependencies) about packages 
 
 This tool is used by [_yoga_](#yoga), which probably is the tool you should
 look into. Help text: [yoda.txt](doc/generated/yoda.txt)
