@@ -42,7 +42,7 @@ report can be created for humans (html) and computers (JSON).
 
 Transforms the output from yoda in to a format
 [flict](github.com/vinland-technology/flict) can use to check license
-compatibility. Help text: [yoda2flict..txt](doc/generated/yoda2flict..txt)
+compatibility. Help text: [yoda2flict..txt](doc/generated/yoda2flict.txt)
 
 ## dependencies.sh
 
