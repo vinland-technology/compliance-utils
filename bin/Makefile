@@ -1,3 +1,10 @@
+###################################################################
+#
+# SPDX-FileCopyrightText: 2021 Henrik Sandklef
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+###################################################################
 
 all:  ../yocto-build-to-flict.md ../dependencies.md
 
