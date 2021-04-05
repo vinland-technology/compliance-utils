@@ -1,0 +1,27 @@
+usage: flict-to-dot.py [-h] [-v] file
+
+NAME
+  flict-to-dot.py
+
+DESCRIPTION
+  Converts a flict file to dot format
+
+positional arguments:
+  file           file to process
+
+optional arguments:
+  -h, --help     show this help message and exit
+  -v, --verbose  output verbose information to stderr
+
+AUTHOR
+  Henrik Sandklef
+
+REPORTING BUGS
+  File a ticket at https://github.com/vinland-technology/compliance-utils
+
+COPYRIGHT
+  Copyright (c) 2021 Henrik Sandklef<hesa@sandklef.com>.
+  License GPL-3.0-or-later
+
+SEE ALSO
+  

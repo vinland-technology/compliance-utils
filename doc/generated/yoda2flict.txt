@@ -1,0 +1,35 @@
+usage: yoda2flict.py [-h] [-v] [-of OUTPUT_FORMAT] [-od OUTPUT_DIRECTORY]
+                     input
+
+NAME
+  yoda2flict
+
+DESCRIPTION
+  yoda2flict transforms the output from yoda to a format flict understands
+
+positional arguments:
+  input                 input file
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         output verbose information to stderr
+  -of OUTPUT_FORMAT, --output-format OUTPUT_FORMAT
+                        format of the output ('pile', 'subpackages' 'tree'), defaults is pile
+  -od OUTPUT_DIRECTORY, --output-directory OUTPUT_DIRECTORY
+                        directory where the resulting JSON file(s) will be created, defaults is .
+
+AUTHOR
+  Henrik Sandklef
+
+REPORTING BUGS
+  File a ticket at https://github.com/vinland-technology/compliance-utils
+
+COPYRIGHT
+  Copyright (c) 2020 Henrik Sandklef<hesa@sandklef.com>.
+  License GPL-3.0-or-later
+
+SEE ALSO
+  yoda (Yocto Dependency Analyser)
+  yoga (yoda's generic aggregator)
+  yocr (yoga's compliance reporter)
+  flict (FOSS License Compatibility Tool)
