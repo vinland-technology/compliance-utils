@@ -14,7 +14,7 @@ For each package in this files:
 
 * analyse (with [_yoda_](#yoda)) the package and collect relevant compliance information 
 
-* invokes [flict](https://github.com/vinland-technology/flict) (and [_yoda2flict_](#yoda2flict) to do license compatibility checks on the packages
+* invokes [flict](https://github.com/vinland-technology/flict) (and [_yoda2flict_](#yoda2flict)) to do license compatibility checks on the packages
 
 * collects source code (beta)
 
@@ -58,6 +58,11 @@ Create JSON files for Cairo's imagepackage cairo-gobject
 
 yocr creates a report summarising the compliance result from yocr. The
 report can be created for humans (html) and computers (JSON).
+
+<a name="yora"></a>
+### yora
+
+*This tool is under construction.* 
 
 <a name="dependencies"></a>
 ## dependencies.sh
