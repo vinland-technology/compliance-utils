@@ -21,7 +21,7 @@ PROGRAM_DESCRIPTION="yoda2flict transforms the output from yoda to a format flic
 PROGRAM_VERSION="0.1"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
-PROGRAM_LICENSE="GPL-3.0-or-larer"
+PROGRAM_LICENSE="GPL-3.0-or-later"
 PROGRAM_AUTHOR="Henrik Sandklef"
 PROGRAM_SEE_ALSO="yoda (Yocto Dependency Analyser)\n  yoga (yoda's generic aggregator)\n  yocr (yoga's compliance reporter)\n  flict (FOSS License Compatibility Tool)"
 
