@@ -1,5 +1,15 @@
 #!/usr/bin/python3
 
+###################################################################
+#
+# Scancode report anaylser
+#
+# SPDX-FileCopyrightText: 2020 Henrik Sandklef
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+###################################################################
+
 from argparse import RawTextHelpFormatter
 import argparse
 
@@ -8,10 +18,27 @@ import os
 import sys
 
 PROGRAM_NAME = "scancode-analyser.py"
-PROGRAM_DESCRIPTION = " bla bla "
-AUTHOR = "Henrik Sandklef"
+PROGRAM_DESCRIPTION = "A tiny tool to assist when analysing a Scancode report"
+PROGRAM_AUTHOR = "Henrik Sandklef"
+PROGRAM_VERSION="0.1"
+PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
+PROGRAM_COPYRIGHT="(c) 2021 Henrik Sandklef<hesa@sandklef.com>"
+PROGRAM_LICENSE="GPL-3.0-or-later"
+PROGRAM_SEE_ALSO=""
 
 UNKNOWN_LICENSE = "unknown"
+
+VERBOSE=False
+
+def error(msg):
+    sys.stderr.write(msg + "\n")
+
+def verbose(msg):
+    if VERBOSE:
+        sys.stderr.write(msg)
+        sys.stderr.write("\n")
+        sys.stderr.flush()
+
 
 def parse():
 
@@ -19,11 +46,11 @@ def parse():
     description = description + "DESCRIPTION\n  " + PROGRAM_DESCRIPTION + "\n\n"
     
     epilog = ""
-    #epilog = epilog + "AUTHOR\n  " + PROGRAM_AUTHOR + "\n\n"
-    #epilog = epilog + "PROJECT SITE\n  " + PROGRAM_URL + "\n\n"
-    #epilog = epilog + "REPORTING BUGS\n  File a ticket at " + BUG_URL + "\n\n"
-    #epilog = epilog + "COPYRIGHT\n  Copyright " + PROGRAM_COPYRIGHT + ".\n  License " + PROGRAM_LICENSE + "\n\n"
-    #epilog = epilog + "SEE ALSO\n  " + PROGRAM_SEE_ALSO + "\n\n"
+    epilog = epilog + "AUTHOR\n  " + PROGRAM_AUTHOR + "\n\n"
+    epilog = epilog + "REPORTING BUGS\n  File a ticket at " + PROGRAM_URL + "\n\n"
+    epilog = epilog + "COPYRIGHT\n  Copyright " + PROGRAM_COPYRIGHT + ".\n  License " + PROGRAM_LICENSE + "\n\n"
+    epilog = epilog + "SEE ALSO\n  " + PROGRAM_SEE_ALSO + "\n\n"
+    
     
     parser = argparse.ArgumentParser(
         description=description,
@@ -85,6 +112,9 @@ def parse():
 
     args = parser.parse_args()
 
+    global VERBOSE
+    VERBOSE=args.verbose
+    
     return args
 
 def exclude_file(file_name, excluded_regexps):
