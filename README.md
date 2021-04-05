@@ -41,8 +41,8 @@ report can be created for humans (html) and computers (JSON).
 ## yoda2flict.py
 
 Transforms the output from yoda in to a format
-[flict](github.com/vinland-technology/flict) can use to check license
-compatibility. Help text: [yoda2flict..txt](doc/generated/yoda2flict.txt)
+[flict](https://github.com/vinland-technology/flict) can use to check license
+compatibility. Help text: [yoda2flict.txt](doc/generated/yoda2flict.txt)
 
 ## dependencies.sh
 
@@ -53,7 +53,7 @@ it using which or (internal function) findllib. Help text: [dependencies.txt](do
 
 ## flict-to-dot.sh
 
-Takes a [flict](github.com/vinland-technology/flict) file and creates
+Takes a [flict](https://github.com/vinland-technology/flict) file and creates
 a dit file (to create graph files). This useful when you want a
 graphical representation of a project's dependencies. Help text: [flict-to-dot.txt](doc/generated/flict-to-dot.txt)
 
