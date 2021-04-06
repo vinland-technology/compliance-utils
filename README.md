@@ -30,20 +30,17 @@ Help text: [yoga.txt](doc/generated/yoga.txt)
 
 This tool assumes you're located in Yocto's `build` directory.
 
-Identify yoga settings"
+Identify yoga settings and create yoga.conf
 ```
-    yoga -i core-image-minimal -fs"
+    yoga -i core-image-minimal -cc
 ```` 
 
-Invoke yoga as suggested by previous command (copy/past from previous command).
-This will create compliance reports in compliance-results
+Invoke yoga as. This will create compliance reports in compliance-results
 ```
-     yoga  -d 20210224164315 -mtd ../ -m qemux86-64   \
-      -bd tmp/work/all-poky-linux tmp/work/core2-64-poky-linux tmp/work/qemux86_64-poky-linux \
-      -i core-image-minimal-qemux86-64-qemux86-64"
+     yoga -ncc
 ```
-The above stores the settings from the command line in a config file (yoga.conf).
 
+*Note: -ncc is to discard checking license compatibility with flict*
 
 <a name="yoda"></a>
 ### yoda
@@ -60,6 +57,11 @@ look into. Help text: [yoda.txt](doc/generated/yoda.txt)
 #### Examples
 
 This tool assumes you're located in Yocto's `build` directory.
+
+Create a conf file for the image core-image-minimal
+```
+    yoda -i core-image-minimal create-config
+```
 
 Create a JSON file with all packages and image packages (sub packages) for image core-image-minimal
 ```
