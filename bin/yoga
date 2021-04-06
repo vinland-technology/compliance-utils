@@ -326,6 +326,8 @@ really_create_ipkg_json()
         echo "OK"
     else
         echo "Fail"
+        echo "Check error file: $ERR_FILE"
+        tail -10 $ERR_FILE
 	#rm  ${IMAGEPACKAGES_JSON}
         exit 1
     fi
@@ -1168,8 +1170,8 @@ output_config()
     echo "#"
     echo "#####################################################"
     echo ""
-    echo "# DATE - build date (chose one)"
-    echo "# DATE=\""$(echo $DATE | tr '\n' ' ')"\""
+    echo "# DATE - build date"
+    echo "DATE=$DATE"
     echo ""
     echo "# MACHINE - machine this image was built for"
     echo "MACHINE=\"$MACHINE\""
@@ -1280,7 +1282,7 @@ then
         yoda  ${VERBOSE} -i ${IMAGE} find
     else
         ARGS=$(yoda  ${VERBOSE} -i ${IMAGE} find | tail -1)
-        echo $0 ${ARGS} --noop
+        $0 ${ARGS} --noop
     fi
     exit 0
 fi
