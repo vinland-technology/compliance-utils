@@ -765,18 +765,30 @@ def _find_machine(conf):
 def _find_date(image_name, machine):
     dates=[]
     for file in glob.glob("tmp/deploy/licenses/*"):
-        #print("file: " + str(file))
+        #print("file: " + str(file) + " " + image_name)
         # Make sure dir contains machine and image_name
-        if search(machine, (str(file))) and search(image_name, (str(file))):
-            # cut out date part
-            split_file = file.split("-")
-            dates.append(split_file[len(split_file)-1])
+        #if search(machine, (str(file))):
+            #print("found file machine: " + str(file) + " " + machine)
+
+        if search(machine, (str(file))): # and search(image_name, (str(file))):
+            #print("found file *  : " + str(file) + " " + image_name)
+            # cut out last part
+            split_file = file.split("/")
+            list_len = len(split_file)
+            last_dir = split_file[list_len - 1]
+
+            date_dir=last_dir.replace(image_name, "").replace(machine, "").replace("-","")
+            if date_dir != "":
+                #print ("last_dir: " + str(date_dir))
+                dates.append(date_dir)
+                
+            #print("--------------")
+            #print ("last_dir: " + str(last_dir))
+            #print ("image_name: \"" + str(image_name) + "\"")
+            #print ("machine:    \"" + str(machine) + "\"")
+            #print ("last_dir:   \"" + str(date_dir) + "\"")
             #print("use: " + str(file))
-        else:
-            #print("skip: " + str(file))
-            pass
-            
-            
+
     if len(dates)==0:
         return None
     elif len(dates)==1:
@@ -1084,13 +1096,38 @@ def main():
     global DATE
     global IMAGE
     global MACHINE
+    if DATE == "" or DATE == None:
+        error("No date set...")
+        exit(12)
+    if IMAGE == "" or IMAGE == None:
+        error("No image set...")
+        exit(12)
+    if MACHINE == "" or MACHINE == None:
+        error("No machine set...")
+        exit(12)
+    
         
     global IMG_MF
     IMG_MF="tmp/deploy/images/" + MACHINE + "/" + IMAGE + "-" + MACHINE + ".manifest"
 
     global LICENSE_MANIFEST
-    LICENSE_MANIFEST="tmp/deploy/licenses/" + IMAGE + "-" + MACHINE + "-" + DATE + "/license.manifest"
+    LICENSE_MANIFEST = "tmp/deploy/licenses/" + IMAGE + "-" + MACHINE + "-" + DATE + "/license.manifest"
 
+    if not os.path.isfile(IMG_MF):
+        error("Could not find image manifest, tried:")
+        error(IMG_MF)
+        exit(12)
+    
+    if not os.path.isfile(LICENSE_MANIFEST):
+        error("Could not find license.manifest, tried :")
+        error(LICENSE_MANIFEST)
+        exit(12)
+    
+    if not os.path.isdir(META_TOP_DIR):
+        error("Could not find top level dir for meta, tried :")
+        error(META_TOP_DIR)
+        exit(12)
+    
     verbose("DATE:             " + DATE)
     verbose("BUILD_DIRS:       " + str(BUILD_DIRS))
     verbose("IMAGE:            " + IMAGE)
