@@ -31,6 +31,9 @@ MYDIR="$(dirname "${MYNAME}")"
 REAL_DIR="$(realpath $MYDIR)"
 
 
+#
+NOOP=false
+
 error()
 {
     echo "$*" 1>&2
@@ -154,6 +157,9 @@ usage()
     echo
     echo "    -fs, --find-settings"
     echo "          Try to identify settings"
+    echo
+    echo "    -cc, --create-config"
+    echo "          Try to identify settings and store in config file"
     
     echo
     echo "EXAMPLES"
@@ -268,6 +274,12 @@ do
             ;;
         "--find-settings" | "-fs")
             FIND_SETTINGS=true
+            ;;
+        "--create_config" | "-cc")
+            CREATE_CONFIG=true
+            ;;
+        "--noop")
+            NOOP=true
             ;;
         *)
 	    echo assume pkg $1
@@ -624,33 +636,36 @@ check_license_compliance()
             fi
                 
             
-            flict ${TRANSLATION_FILE_ARG} --json -c $jf > ${JSON_REPORT} 2> ${JSON_ERR}
+            flict ${TRANSLATION_FILE_ARG} -of json -pf $jf > ${JSON_REPORT} 2> ${JSON_ERR}
             RET=$?
             if [ ! -f ${JSON_REPORT} ] || [ ! -s ${JSON_REPORT} ] || [ $RET -gt 2 ]
             then
                 echo "Failed"
-                echo "Failed creating compliance report (flict -tf "${TRANSLATION_FILE_ARG}" --json -c $jf  > ${JSON_REPORT} 2> ${JSON_ERR})"
+                echo "Failed creating compliance report (flict ${TRANSLATION_FILE_ARG} -of json -pf $jf > ${JSON_REPORT} 2> ${JSON_ERR})"
                 echo "look at $JSON_ERR for more details"
                 continue
             else
                 echo "OK"
             fi
-            
-            inform3n "policy report for $(basename $jf): "
-            flict -crf ${JSON_REPORT} -lpf ${POLICY_FILE}  > ${JSON_POLICY_REPORT} 2>${JSON_POLICY_ERR}
-            if [ ! -f ${JSON_POLICY_REPORT} ] || [ ! -s ${JSON_POLICY_REPORT} ]
+
+            if [ "${POLICY_FILE}" != "" ]
             then
-                echo "Failed"
-                echo "Failed creating policy report (flict -crf ${JSON_REPORT} -lpf ${POLICY_FILE}  > ${JSON_POLICY_REPORT} 2>${JSON_POLICY_ERR})"
-                echo "look at $JSON_POLICY_ERR for more details"
-                continue
-            else
-                echo "OK"
-            fi
+                inform3n "policy report for $(basename $jf): "
+                flict -crf ${JSON_REPORT} -lpf ${POLICY_FILE}  > ${JSON_POLICY_REPORT} 2>${JSON_POLICY_ERR}
+                if [ ! -f ${JSON_POLICY_REPORT} ] || [ ! -s ${JSON_POLICY_REPORT} ]
+                then
+                    echo "Failed"
+                    echo "Failed creating policy report (flict -crf ${JSON_REPORT} -lpf ${POLICY_FILE}  > ${JSON_POLICY_REPORT} 2>${JSON_POLICY_ERR})"
+                    echo "look at $JSON_POLICY_ERR for more details"
+                    continue
+                else
+                    echo "OK"
+                fi
             
-            inform3n "compliance status for $(basename $jf): "
-            jq ".policy_outbounds.policy_result" ${JSON_POLICY_REPORT} > $TXT_REPORT
-            flict_exit_code_to_string $RET
+                inform3n "compliance status for $(basename $jf): "
+                jq ".policy_outbounds.policy_result" ${JSON_POLICY_REPORT} > $TXT_REPORT
+                flict_exit_code_to_string $RET
+            fi
         done
     else
         echo "PASS, ignored by user request"
@@ -1153,8 +1168,8 @@ output_config()
     echo "#"
     echo "#####################################################"
     echo ""
-    echo "# DATE - build date (leave this and yoda will find the latest)"
-    echo "# DATE=\"$DATE\""
+    echo "# DATE - build date (chose one)"
+    echo "# DATE=\""$(echo $DATE | tr '\n' ' ')"\""
     echo ""
     echo "# MACHINE - machine this image was built for"
     echo "MACHINE=\"$MACHINE\""
@@ -1217,30 +1232,58 @@ check_config()
             exit 2
         fi
     fi
+}
 
-
-    
+find_manifest_date_impl()
+{
+    for f in $(find tmp/deploy/licenses/${IMAGE}-${MACHINE}-*/ -type f -name "license.manifest"  | sed 's,/license\.manifest,,g' )
+    do
+        basename $f  | tr '-' '\n' | tail -1
+    done
 }
 
 find_manifest_date()
 {
-    find tmp/deploy/licenses/${IMAGE}*/ -name "license.manifest" | sort | tail -1 | sed 's,/license\.manifest,,g' | xargs basename | tr '-' '\n' | tail -1
+    RESULT_DATE=$(find_manifest_date_impl)
+
+    if [ "$RESULT_DATE" = "" ]
+    then
+        error "Could not find a date from the license.manifest"
+        error "Tried with: find tmp/deploy/licenses/${IMAGE}-${MACHINE}-*/ -type f -name 'license.manifest'"
+        return 
+    fi
+
+    if [ $(echo $RESULT_DATE | tr ' ' '\n' | wc -l) -ne 1 ]
+    then
+        error "Found multiple dates from the license.manifest:"
+        error "$RESULT_DATE"
+        error "Choose one and use '-d CHOSEN_DATE'"
+        return 
+    fi
+    
+    echo $RESULT_DATE
 }
+
 
 #
 # MAIN
 #
-if [ "${FIND_SETTINGS}" = "true" ]
+if [ "${FIND_SETTINGS}" = "true" ] || [ "${CREATE_CONFIG}" = "true" ] 
 then
     if [ "${IMAGE}" = "" ]
     then
         error "You must supply an image name"
         exit 3
     fi
-    yoda  ${VERBOSE} -i ${IMAGE} find
-    exit
+    if [ "${FIND_SETTINGS}" = "true" ]
+    then
+        yoda  ${VERBOSE} -i ${IMAGE} find
+    else
+        ARGS=$(yoda  ${VERBOSE} -i ${IMAGE} find | tail -1)
+        echo $0 ${ARGS} --noop
+    fi
+    exit 0
 fi
-
 
 if [ "${HAS_ARGS}" != "true" ] && [ ! -s ${DEFAULT_YOGA_CONFIG} ]
 then
@@ -1254,9 +1297,20 @@ fi
 if [ "$DATE" = "" ]
 then
     DATE=$(find_manifest_date)
+    if [ "$DATE" = "" ]
+    then
+        exit 10
+    fi
 fi
 
 check_config
+
+if [ "$NOOP" = "true" ]
+then
+    echo leaving for config....
+    exit 0
+fi
+
 
 YBTF_ARGS=" $VERBOSE -d $DATE  -m $MACHINE  -i $IMAGE -bd ${BUILD_DIRS}  -mtd ${META_TOP_DIR} "
 #echo "YBTF_ARGS: $YBTF_ARGS"
