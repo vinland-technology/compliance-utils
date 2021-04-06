@@ -1079,8 +1079,48 @@ def read_config(config_file):
                         list.append(i)
                     BUILD_DIRS = list
 
-    
 
+def check_settings():
+    global DATE
+    global IMAGE
+    global MACHINE
+    global IMG_MF
+    global LICENSE_MANIFEST
+
+    if DATE == "" or DATE == None:
+        error("No date set...")
+        exit(12)
+    if IMAGE == "" or IMAGE == None:
+        error("No image set...")
+        exit(12)
+    if MACHINE == "" or MACHINE == None:
+        error("No machine set...")
+        exit(12)
+    
+    if not os.path.isfile(IMG_MF):
+        error("Could not find image manifest, tried:")
+        error(IMG_MF)
+        exit(12)
+    
+    if not os.path.isfile(LICENSE_MANIFEST):
+        error("Could not find license.manifest, tried :")
+        error(LICENSE_MANIFEST)
+        exit(12)
+    
+    if not os.path.isdir(META_TOP_DIR):
+        error("Could not find top level dir for meta, tried :")
+        error(META_TOP_DIR)
+        exit(12)
+
+    verbose("DATE:             " + DATE)
+    verbose("BUILD_DIRS:       " + str(BUILD_DIRS))
+    verbose("IMAGE:            " + IMAGE)
+    verbose("MACHINE:          " + MACHINE)
+    verbose("META_TOP_DIR:     " + META_TOP_DIR)
+    verbose("LICENSE_MANIFEST: " + LICENSE_MANIFEST)
+    verbose("IMG_MF:           " + IMG_MF)
+    
+    
 def main():
     args = parse()
     if args.mode == "find":
@@ -1096,46 +1136,13 @@ def main():
     global DATE
     global IMAGE
     global MACHINE
-    if DATE == "" or DATE == None:
-        error("No date set...")
-        exit(12)
-    if IMAGE == "" or IMAGE == None:
-        error("No image set...")
-        exit(12)
-    if MACHINE == "" or MACHINE == None:
-        error("No machine set...")
-        exit(12)
-    
-        
     global IMG_MF
     IMG_MF="tmp/deploy/images/" + MACHINE + "/" + IMAGE + "-" + MACHINE + ".manifest"
-
     global LICENSE_MANIFEST
     LICENSE_MANIFEST = "tmp/deploy/licenses/" + IMAGE + "-" + MACHINE + "-" + DATE + "/license.manifest"
 
-    if not os.path.isfile(IMG_MF):
-        error("Could not find image manifest, tried:")
-        error(IMG_MF)
-        exit(12)
+    check_settings()
     
-    if not os.path.isfile(LICENSE_MANIFEST):
-        error("Could not find license.manifest, tried :")
-        error(LICENSE_MANIFEST)
-        exit(12)
-    
-    if not os.path.isdir(META_TOP_DIR):
-        error("Could not find top level dir for meta, tried :")
-        error(META_TOP_DIR)
-        exit(12)
-    
-    verbose("DATE:             " + DATE)
-    verbose("BUILD_DIRS:       " + str(BUILD_DIRS))
-    verbose("IMAGE:            " + IMAGE)
-    verbose("MACHINE:          " + MACHINE)
-    verbose("META_TOP_DIR:     " + META_TOP_DIR)
-    verbose("LICENSE_MANIFEST: " + LICENSE_MANIFEST)
-    verbose("IMG_MF:           " + IMG_MF)
-
     build_cache(args.includelibc)
 
     verbose("verbose: " + str(args.verbose) + "\n")
