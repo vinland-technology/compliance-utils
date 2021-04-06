@@ -142,7 +142,8 @@ def print_subpackages(package, outdir):
         package_map['top_package']=package['package']
         package_map['name']=sub_pkg
         package_map['top_project_license']=package['license']
-        package_map['license']=license_list_to_expression(sub_packages[sub_pkg]['package_files_license'])
+        package_map['license']=package['license']
+        package_map['test_license']=license_list_to_expression(sub_packages[sub_pkg]['package_files_license'])
         package_map['version']=package['version']
         package_map['dependencies']=dep_map_to_list(sub_packages[sub_pkg]['dep_map'])
         top_map={}
@@ -166,7 +167,8 @@ def print_pile(package, outdir):
     package_map={}
     package_map['name']=package['package']
     package_map['top_project_license']=package['license']
-    package_map['license']=license_list_to_expression(package_files_license)
+    package_map['license']=package['license']
+    package_map['test_license']=license_list_to_expression(package_files_license)
     package_map['version']=package['version']
     package_map['dependencies']=dep_map_to_list(dep_map)
     top_map={}
