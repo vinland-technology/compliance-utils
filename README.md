@@ -10,13 +10,17 @@ Misc small utils in your every day compliance work
 yoga invokes miscellaneous tools to create a list of image packages
  and useful compliance information.
 
-First of all, yoga creates ( (with [_yoda_](#yoda)) a JSON file with information about which packages are included in the image.
+First of all, yoga creates (with [_yoda_](#yoda)) a JSON file with
+information about which packages are included in the image.
 
 For each package in this files:
 
-* analyse (with [_yoda_](#yoda)) the package and collect relevant compliance information 
+* analyse (with [_yoda_](#yoda)) the package and collect relevant
+  compliance information
 
-* invokes [flict](https://github.com/vinland-technology/flict) (and [_yoda2flict_](#yoda2flict)) to do license compatibility checks on the packages
+* invokes [flict](https://github.com/vinland-technology/flict) (and
+  [_yoda2flict_](#yoda2flict)) to do license compatibility checks on
+  the packages
 
 * collects source code (beta)
 
