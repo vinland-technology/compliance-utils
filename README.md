@@ -90,6 +90,11 @@ report can be created for humans (html) and computers (JSON).
 
 *This tool is under construction.* 
 
+<a name="check-compat"></a>
+## check-compat.sh
+
+*This tool is under construction.* 
+
 <a name="dependencies"></a>
 ## dependencies.sh
 
@@ -117,6 +122,7 @@ A tiny tool to assist when analysing a Scancode report
 Help text: [scancode-analyser.txt](doc/generated/scancode-analyser.txt)
 
 <a name="yoda2flict"></a>
+
 ## yoda2flict.py
 
 Transforms the output from yoda in to a format
