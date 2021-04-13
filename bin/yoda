@@ -10,7 +10,6 @@
 #
 ###################################################################
 
-
 import os.path
 import os
 import getpass
@@ -108,11 +107,11 @@ VERBOSE=False
 BUILD_DIRS=[]
 
 def error(msg):
-    sys.stderr.write(msg + "\n")
+    sys.stderr.write(str(msg) + "\n")
 
 def verbose(msg):
     if VERBOSE:
-        sys.stderr.write(msg)
+        sys.stderr.write(str(msg))
         sys.stderr.write("\n")
         sys.stderr.flush()
         
