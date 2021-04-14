@@ -559,9 +559,22 @@ def files_for_sub_pkg(sub_pkg_short):
     if not sub_pkg_short in PKG_FILES:
         # TODO: add excludes
         FILES=[]
-        
+
+        file_list=[]
+        command = "/usr/bin/find " + str(sub_pkg_path) + " -type f ; echo" # echo added to ignore 1
+        try:
+            res = subprocess.check_output(command, shell=True)
+        except Exception as e:
+            error("Exception when executing: " + str(command))
+            error("Please report this bug")
+            exit(100)
+        result = str(res.decode("utf-8")).strip()
+        file_list=result.split("\n")
+
         #verbose("Looking recursively in: " + sub_pkg_path)
-        for f in glob.glob(sub_pkg_path+"/**", recursive=True):
+        #for f in glob.glob(sub_pkg_path+"/**", recursive=True):
+        for f in file_list:
+
             #print(" * : " + f)
             if os.path.isfile(f) and not os.path.islink(f):
                 #verbose("   * store: " + f + "\n")
