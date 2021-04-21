@@ -96,11 +96,18 @@ def parse():
                         help='output in JSON',
                         default=False)
 
-    parser.add_argument('-el', '--excluded-licenses',
+    parser.add_argument('-xl', '--exclude-licenses',
                         dest='excluded_licenses',
                         type=str,
                         nargs="+",
                         help="excluded licenses (if set, remove file/dir from printout)",
+                        default=None)
+
+    parser.add_argument('-exl', '--exact-exclude-licenses',
+                        dest='exact_excluded_licenses',
+                        type=str,
+                        nargs="+",
+                        help="excluded licenses (if they appear as only license) (if set, remove file/dir from printout)",
                         default=None)
 
     parser.add_argument('-x', '--exclude',
@@ -134,15 +141,15 @@ def exact_match(license_name, excluded_licenses):
     return False
 
 def collect_license_dir(report, dir, args, dirs_info, files_info):
-    files              = args.files
-    include_copyrights = args.include_copyrights
-    excluded_licenses   = args.excluded_licenses    
+    files                   = args.files
+    include_copyrights      = args.include_copyrights
+    excluded_licenses       = args.excluded_licenses
+    exact_excluded_licenses = args.exact_excluded_licenses
 
 
     file_count = 0 
     
     for file in report['files']:
-
         file_name = file['path']
         file_type = file['type']
 
@@ -152,10 +159,8 @@ def collect_license_dir(report, dir, args, dirs_info, files_info):
             continue
         
         file_info = {}
-        file_lic_info = set()
-        file_c_info = set()
-
-
+#        file_lic_info = set()
+#        file_c_info = set()
         
         is_file = file_type == 'file'
 
@@ -174,18 +179,39 @@ def collect_license_dir(report, dir, args, dirs_info, files_info):
 
             if file['licenses'] == None or file['licenses'] == []:
                 file_info['licenses'] = [ UNKNOWN_LICENSE ]
+                verbose("exact check not performed on " + str(file_name))
             else:
-                file_info['licenses'] = set()
-                for lic_val in file['license_expressions']:
-                    #print (file_name + "   lic_val: " + lic_val + "  ????")
-                    if excluded_licenses == None or not exact_match(lic_val, excluded_licenses):
-                        #print("Adding license: " + str(lic_val))
-                        file_info['licenses'].add(lic_val)
+                exact_found = False
+                if exact_excluded_licenses:
+                    verbose("exact_excluded_licenses in use " + file_name + " --->" )
+                    licenses = list(set(file['license_expressions']))
+                    if len(licenses) != 1:
+                        verbose("exact: but more than one " + file_name + " " + str(licenses))
+                    elif exact_match(licenses[0], exact_excluded_licenses):
+                        verbose("exact: yes " + str(licenses[0]) + " vs " + str(exact_excluded_licenses) + " " + str(file_name))
+                        exact_found = True
                     else:
-                        #print(file_name + " No .. since: " + lic_val + " in " + str(lic_val in excluded_licenses) + " " + str(excluded_licenses))
-                        pass
+                        verbose("exact: no, so ignore: " + str(licenses[0]))
+
+                if not exact_found:
+                    verbose("check license... normally for " + file_name)
+                    for lic_val in file['license_expressions']:
+                        #print (file_name + "   lic_val: " + lic_val + "  ????")
+                        if excluded_licenses == None or not exact_match(lic_val, excluded_licenses):
+                            if not lic_val in file_info['licenses']:
+                                verbose("Adding license: " + str(lic_val) + " to file: " + file_name)
+                                file_info['licenses'].append(lic_val)
+                            else:
+                                verbose("Ignore adding license: " + str(lic_val) + " to file: " + file_name)
+                        else:
+                            #print(file_name + " No .. since: " + lic_val + " in " + str(lic_val in excluded_licenses) + " " + str(excluded_licenses))
+                            pass
+                else:
+                    verbose("check license... NO NO NO")
                     
+                        
             if is_file:
+
                 files_info[file_name] = file_info
 
                 # Fill in this file's information in corresponding dirs (recursively)
@@ -198,16 +224,22 @@ def collect_license_dir(report, dir, args, dirs_info, files_info):
                     if dir_name not in dirs_info:
                         dirs_info[dir_name] = {}
                         dirs_info[dir_name]['path'] = dir_name
-                        dirs_info[dir_name]['licenses'] = set()
-                        dirs_info[dir_name]['copyrights'] = set()
+                        dirs_info[dir_name]['licenses'] = []
+                        dirs_info[dir_name]['copyrights'] = []
                     #print("Adding to " + dir_name + " <--- " + str(file_info['licenses']))
-                    dirs_info[dir_name]['licenses'].update(file_info['licenses'])
+                    lic_set = set(dirs_info[dir_name]['licenses'])
+                    lic_set.update(file_info['licenses'])
+                    dirs_info[dir_name]['licenses'] = list(lic_set)
                     #print("Adding to " + dir_name + " <--- " + str(dirs_info[dir_name]['licenses']))
                     if include_copyrights:
-                        dirs_info[dir_name]['copyrights'].update(file_info['copyrights'])
+                        cop_set = set(dirs_info[dir_name]['copyrights'])
+                        cop_set.update(file_info['copyrights'])
+                        dirs_info[dir_name]['copyrights'] = list(cop_set)
+
+    
 
     #print(dir + " checked " + str(file_count) + " files")
-                        
+
     if files:
         return files_info
     else:
@@ -242,7 +274,9 @@ def main():
         report = json.load(fp)
 
     if args.dir:
-        result = collect_license_dir(report, args.dir, args)
+        files_info = {}
+        dirs_info = {}
+        result = collect_license_dir(report, args.dir, args, dirs_info, files_info)
     else:
         result = output_license_per_dir(report, args)
 
