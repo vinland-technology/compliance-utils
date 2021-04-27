@@ -18,6 +18,7 @@ SC_TAG=21.3.31
 #
 DEBUG=false
 PARALLEL_ARGS=" -n $(cat /proc/cpuinfo | grep processor | wc -l) "
+MYNAME=scancode-wrapper.sh
 
 #
 #
@@ -127,6 +128,69 @@ scancode_version()
     exit_if_error $? "Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} ./scancode --version"
 }
 
+usage()
+{
+    echo "NAME"
+    echo ""
+    echo "    ${MYNAME} - scan for copyright and license using scancode"
+    echo ""
+    echo
+    echo "SYNOPSIS"
+    echo
+    echo "    ${MYNAME} [OPTION] <DIR>"
+    echo ""
+    echo ""
+    echo "DESCRIPTION"
+    echo ""
+    echo ""
+    echo ""
+    echo "OPTIONS"
+    echo ""
+    echo "    -np, --no-parallel"
+    echo "          do not use parallel processes when scanning. By default all"
+    echo "          processors are used. This option is useful if you want to "
+    echo "          keep scancode in the background"
+    echo
+    echo "    -v, --verbose"
+    echo "          enable verbose printout"
+    echo
+    echo "    pull"
+    echo "          pull docker image with Scancode version: $SC_TAG"
+    echo "          Pulls $SC_IMAGE from docker.io"
+    echo
+    echo "EXAMPLES"
+    echo ""
+    echo "    \$ $MYNAME src"
+    echo "    Scans src and creates src-scan.json"
+    echo
+    echo "AUTHOR"
+    echo ""
+    echo "    Written by Henrik Sandklef"
+    echo
+    echo "    Please note that this is simply a wrapper around the great program"
+    echo "    Scancode."
+    echo
+    echo "COPYRIGHT"
+    echo ""
+    echo "    Copyright (c) 2021 Henrik Sandklef"
+    echo "    License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>."
+    echo "    This  is  free  software: you are free to change and redistribute it.  "
+    echo "    There is NO WARRANTY, to the extent permitted by law."
+    echo
+    echo
+    echo "REPORTING BUGS"
+    echo ""
+    echo "    Create an issue at https://github.com/vinland-technology/compliance-utils"
+    echo
+    echo
+    echo "SEEL ALSO"
+    echo ""
+    echo "    Scancode https://github.com/nexB/scancode-toolkit"
+    echo "    - this is indeed a great program"
+    echo
+}
+   
+
 while [ "$1" != "" ]
 do
     case "$1" in
@@ -135,6 +199,10 @@ do
             ;;
         "--no-parallel"|"-np")
             PARALLEL_ARGS=" -n 1 "
+            ;;
+        "--help"|"-h")
+            usage
+            exit 0
             ;;
         "--scancode-version"|"-sv")
             scancode_version
