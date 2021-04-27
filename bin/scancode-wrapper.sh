@@ -7,7 +7,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-
 #
 # Scancode docker image settings
 #
@@ -18,6 +17,14 @@ SC_TAG=21.3.31
 # internal vars
 #
 DEBUG=false
+PARALLEL_ARGS=" -n $(cat /proc/cpuinfo | grep processor | wc -l) "
+
+#
+#
+#
+DOCKER_ARGS=" ${SC_IMAGE}:${SC_TAG}"
+
+
 
 error()
 {
@@ -87,14 +94,58 @@ dload_image()
     fi
 }
 
+scan_dir()
+{
+    if [ "${DIR_TO_SCAN}" = "" ] || [ ! -d "${DIR_TO_SCAN}" ] || [ $(echo ${DIR_TO_SCAN} | grep "/" | wc -l) -ne 0 ]
+    then
+        error "\"${DIR_TO_SCAN}\" is either empty, not a directory or contains \"/\""
+        exit 1
+    fi
+
+    SC_REPORT=${DIR_TO_SCAN}-scan.json
+    MOUNT_DIR=/tmp
+
+    DOCKER_MOUNT_ARGS="-v $(pwd):${MOUNT_DIR}"
+
+    CHOWN_COMMAND="bash -c "
+
+    verbose "Scanning of ${DIR_TO_SCAN} "
+    docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} ./scancode -clipe ${PARALLEL_ARGS} --json /tmp/${SC_REPORT} ${MOUNT_DIR}/${DIR_TO_SCAN} 
+    exit_if_error $? "Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} ./scancode -clipe ${PARALLEL_ARGS} --json /tmp/${SC_REPORT} ${MOUNT_DIR}/${DIR_TO_SCAN} " 
+
+    verbose "Changing ownership of ${DIR_TO_SCAN} to local user"
+    docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} bash -c "chown \$(stat -c \"%u.%g\" ${MOUNT_DIR}/${DIR_TO_SCAN}) ${MOUNT_DIR}/${SC_REPORT}"
+    exit_if_error $? 'Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} bash -c "chown \$(stat -c \"%u.%g\" ${MOUNT_DIR}/${DIR_TO_SCAN}) ${MOUNT_DIR}/${SC_REPORT}'
+
+    verbose "Created ${SC_REPORT}"
+}
+
+scancode_version()
+{
+    verbose "Getting version information from Scancode"
+    docker run --rm -i -t ${DOCKER_ARGS} ./scancode --version
+    exit_if_error $? "Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} ./scancode --version"
+}
+
 while [ "$1" != "" ]
 do
     case "$1" in
         "--verbose"|"-v")
             DEBUG=true
             ;;
+        "--no-parallel"|"-np")
+            PARALLEL_ARGS=" -n 1 "
+            ;;
+        "--scancode-version"|"-sv")
+            scancode_version
+            exit 0
+            ;;
         "pull")
             dload_image ${SC_IMAGE} ${SC_TAG}
+            exit 0
+            ;;
+        "version")
+            
             exit 0
             ;;
         *)
@@ -102,31 +153,9 @@ do
             ;;
     esac
     shift
-            
+    
 done
 
 check_image ${SC_IMAGE} ${SC_TAG}
 
-if [ "${DIR_TO_SCAN}" = "" ] || [ ! -d "${DIR_TO_SCAN}" ] || [ $(echo ${DIR_TO_SCAN} | grep "/" | wc -l) -ne 0 ]
-then
-    error "\"${DIR_TO_SCAN}\" is either empty, not a directory or contains \"/\""
-    exit 1
-fi
-
-SC_REPORT=${DIR_TO_SCAN}-scan.json
-MOUNT_DIR=/tmp
-
-DOCKER_MOUNT_ARGS="-v $(pwd):${MOUNT_DIR}"
-DOCKER_ARGS=" ${SC_IMAGE}:${SC_TAG}"
-
-CHOWN_COMMAND="bash -c "
-
-verbose "Scanning of ${DIR_TO_SCAN} "
-docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} ./scancode -clipe --json /tmp/${SC_REPORT} ${MOUNT_DIR}/${DIR_TO_SCAN} 
-exit_if_error $? "Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} ./scancode -clipe --json /tmp/${SC_REPORT} ${MOUNT_DIR}/${DIR_TO_SCAN} " 
-
-verbose "Changing ownership of ${DIR_TO_SCAN} to local user"
-docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} bash -c "chown \$(stat -c \"%u.%g\" ${MOUNT_DIR}/${DIR_TO_SCAN}) ${MOUNT_DIR}/${SC_REPORT}"
-exit_if_error $? 'Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} bash -c "chown \$(stat -c \"%u.%g\" ${MOUNT_DIR}/${DIR_TO_SCAN}) ${MOUNT_DIR}/${SC_REPORT}'
-
-verbose "Created ${SC_REPORT}"
+scan_dir
