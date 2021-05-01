@@ -19,11 +19,12 @@ import os
 import sys
 import argparse
 from argparse import RawTextHelpFormatter
+import subprocess
 
 
-PROGRAM_NAME="flict-to-dot.py"
+PROGRAM_NAME="flict-to-dot"
 PROGRAM_DESCRIPTION="Converts a flict file to dot format"
-PROGRAM_VERSION="0.1"
+COMPLIANCE_UTILS_VERSION="__COMPLIANCE_UTILS_VERSION__"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2021 Henrik Sandklef<hesa@sandklef.com>"
 PROGRAM_LICENSE="GPL-3.0-or-later"
@@ -31,6 +32,15 @@ PROGRAM_AUTHOR="Henrik Sandklef"
 PROGRAM_SEE_ALSO=""
 
 VERBOSE=False
+if COMPLIANCE_UTILS_VERSION == "__COMPLIANCE_UTILS_VERSION__":
+    command = "git rev-parse --short HEAD"
+    try:
+        res = subprocess.check_output(command, shell=True)
+        COMPLIANCE_UTILS_VERSION=str(res.decode("utf-8"))
+    except Exception as e:
+        COMPLIANCE_UTILS_VERSION="unknown"
+
+
 
 #
 # 
@@ -65,21 +75,31 @@ def parse():
         formatter_class=RawTextHelpFormatter
     )
 
-    parser.add_argument('file', type=str,
-                        help='file to process', default=None)
+    parser.add_argument('file',
+                        help='file to process',
+                        default="")
 
     parser.add_argument('-v', '--verbose',
                         action='store_true',
                         help='output verbose information to stderr',
                         default=False)
 
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version=COMPLIANCE_UTILS_VERSION,
+                        default=False)
+
     args = parser.parse_args()
 
+    
     global VERBOSE
     VERBOSE=args.verbose
     
     return args
-    
+
+def version():
+    print("lsdfj")
+
 def error(msg):
     sys.stderr.write(msg + "\n")
 
@@ -93,6 +113,10 @@ def verbose(msg):
 def main():
     args = parse()
 
+    if args.version:
+        version()
+        exit(0)
+    
     verbose("Opening file: " + str(args.file))
     try:
         with open(args.file) as fp:
