@@ -24,7 +24,7 @@ For each package in this files:
 
 * collects source code (beta)
 
-* collects copyright and license information
+* collects copyright and license information (beta)
 
 * creates graphs (with [_flict-to-dot_](#flict-to-dot)) in various formats over the package and their dependencies
 
