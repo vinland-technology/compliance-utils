@@ -10,10 +10,8 @@
 #
 # COmpliance tools image settings
 #
-DOCKER_IMAGE=sandklef/hesa-compliance-tools
+DOCKER_IMAGE=sandklef/compliance-tools
 DOCKER_TAG=0.1
-
-SC_TAG=21.3.31
 
 
 COMPLIANCE_UTILS_VERSION=__COMPLIANCE_UTILS_VERSION__
@@ -35,6 +33,8 @@ MYNAME=scancode-wrapper.sh
 #
 #
 DOCKER_ARGS=" ${DOCKER_IMAGE}:${DOCKER_TAG}"
+MOUNT_DIR=/compliance-tools
+DOCKER_MOUNT_ARGS="-v $(pwd):${MOUNT_DIR}"
 
 
 
@@ -115,19 +115,16 @@ scan_dir()
     fi
 
     SC_REPORT=${DIR_TO_SCAN}-scan.json
-    MOUNT_DIR=/tmp
-
-    DOCKER_MOUNT_ARGS="-v $(pwd):${MOUNT_DIR}"
 
     CHOWN_COMMAND="bash -c "
 
     verbose "Scanning of ${DIR_TO_SCAN} "
-    docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} ./scancode -clipe ${PARALLEL_ARGS} --json /tmp/${SC_REPORT} ${MOUNT_DIR}/${DIR_TO_SCAN} 
-    exit_if_error $? "Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} ./scancode -clipe ${PARALLEL_ARGS} --json /tmp/${SC_REPORT} ${MOUNT_DIR}/${DIR_TO_SCAN} " 
+    docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} scancode -clipe ${PARALLEL_ARGS} --json ${SC_REPORT} ${DIR_TO_SCAN} 
+    exit_if_error $? "Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} scancode -clipe ${PARALLEL_ARGS} --json ${SC_REPORT} ${DIR_TO_SCAN} " 
 
     verbose "Changing ownership of ${DIR_TO_SCAN} to local user"
-    docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} bash -c "chown \$(stat -c \"%u.%g\" ${MOUNT_DIR}/${DIR_TO_SCAN}) ${MOUNT_DIR}/${SC_REPORT}"
-    exit_if_error $? 'Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} bash -c "chown \$(stat -c \"%u.%g\" ${MOUNT_DIR}/${DIR_TO_SCAN}) ${MOUNT_DIR}/${SC_REPORT}'
+    docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} bash -c "chown \$(stat -c \"%u.%g\" ${DIR_TO_SCAN}) ${SC_REPORT}"
+    exit_if_error $? 'Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} bash -c "chown \$(stat -c \"%u.%g\" ${DIR_TO_SCAN}) ${SC_REPORT}'
 
     verbose "Created ${SC_REPORT}"
 }
