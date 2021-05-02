@@ -160,7 +160,12 @@ usage()
     echo ""
     echo "    -v, --verbose"
     echo "          enable verbose printout"
-    echo
+    echo ""
+    echo "    -np, --no-parallel"
+    echo "          do not use parallel processes when scanning (with Scancode). "
+    echo "          By default all processors are used. This option is useful if "
+    echo "          you want to keep scancode in the background"
+    echo 
     echo "    --version"
     echo "          output version information for this tool and the"
     echo "          built in programs"
@@ -229,6 +234,8 @@ usage()
 
 verbose "$PROG"
 ARGS=$*
+# Measure on host, use in docker (same as host)
+PARALLEL_ARGS=" -n $(cat /proc/cpuinfo | grep processor | wc -l) "
 
 case $PROG in
     "compliance-tool")
@@ -247,9 +254,19 @@ case $PROG in
                     docker_versions
                     exit 0
                     ;;
+                "--no-parallel"|"-np")
+                    PARALLEL_ARGS=" -n 1 "
+                    ;;
                 "bash"|"shell")
                     PROG=bash
                     ARGS=""
+                    ;;
+                "scancode-wrapper")
+                    DIR_TO_SCAN=$2
+                    shift
+                    SC_REPORT=${DIR_TO_SCAN}-scan.json
+                    PROG=scancode
+                    ARGS="-clipe ${PARALLEL_ARGS} --json ${SC_REPORT} ${DIR_TO_SCAN}"
                     ;;
                 *)
                     PROG=$1
