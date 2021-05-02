@@ -1,0 +1,133 @@
+#!/bin/bash
+
+# FOSS Compliance Utils / scancode-wrapper.sh
+#
+# SPDX-FileCopyrightText: 2021 Henrik Sandklef
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+COMPLIANCE_UTILS_VERSION=__COMPLIANCE_UTILS_VERSION__
+if [ "${COMPLIANCE_UTILS_VERSION}" = "__COMPLIANCE_UTILS_VERSION__" ]
+then
+    GIT_DIR=$(dirname ${BASH_SOURCE[0]})
+    COMPLIANCE_UTILS_VERSION=$(cd $GIT_DIR && git rev-parse --short HEAD)
+fi
+
+PROG=$(basename "$0")
+
+#
+# compliance tools docker image settings
+#
+DOCKER_IMAGE=sandklef/hesa-compliance-tools
+DOCKER_TAG=0.1
+
+DOCKER_ARGS=" ${DOCKER_IMAGE}:${DOCKER_TAG}"
+MOUNT_DIR=/tmp
+DOCKER_MOUNT_ARGS="-v $(pwd):${MOUNT_DIR}"
+
+
+error()
+{
+    echo "$*" 1>&2
+}
+
+verbose()
+{
+    if [ "$DEBUG" = "true" ]
+    then
+        echo "$*" 1>&2
+    fi
+}
+
+verbosen()
+{
+    if [ "$DEBUG" = "true" ]
+    then
+        echo -n "$*" 1>&2
+    fi
+}
+
+exit_if_error()
+{
+    if [ $1 -ne 0 ]
+    then
+        error "ERROR..."
+        if [ "$2" != "" ]
+        then
+            error "$2"
+        fi
+        exit $1
+    fi
+}
+
+check_image()
+{
+    local image=$1
+    local tag=$2
+    verbosen  "Checking docker image $image ($tag): "
+    
+    PRESENT=$(docker images | grep -e "$image" | grep "${tag}" | wc -l)
+    if [ $PRESENT -gt 0 ] 
+    then
+        verbose "OK, present"
+    else
+        verbose "Fail, missing"
+        error "No docker image \"${DOCKER_IMAGE}:${DOCKER_TAG}\""
+        exit 1
+    fi
+}
+
+dload_image()
+{
+    local image=$1
+    local tag=$2
+    verbosen  "Downloading docker image $image ($tag): "
+    
+    docker pull "${image}:${tag}"
+    if [ $? -eq 0 ] 
+    then
+        verbose "OK"
+    else
+        verbose "Fail, could not pull image"
+        error "Could not pull docker image \"${DOCKER_IMAGE}:${DOCKER_TAG}\""
+        exit 1
+    fi
+}
+
+
+verbose "$PROG"
+ARGS=$*
+
+case $PROG in
+    "compliance-tool")
+        while [ "$1" != "" ]
+        do
+            case "$1" in
+                "--verbose")
+                    DEBUG=true
+                    ;;
+                "--version")
+                    echo "$COMPLIANCE_UTILS_VERSION"
+                    docker_versions
+                    PROG=
+                    exit 0
+                    ;;
+                *)
+                    PROG=$1
+                    shift
+                    ARGS="$*"
+            esac
+            shift
+        done
+        ;;
+    *)
+        echo "Ignoring $PROG"
+        ;;
+esac
+
+verbose "Running $PROG $* via docker"
+verbose "docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} $PROG $*"
+docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} $PROG $*
+
+    
