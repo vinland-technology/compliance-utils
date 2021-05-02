@@ -263,6 +263,10 @@ case $PROG in
                     PROG=bash
                     ARGS=""
                     ;;
+                "pull")
+                    docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    exit 0
+                    ;;
                 *)
                     PROG=$1
                     shift
