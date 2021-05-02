@@ -19,7 +19,7 @@ PROG=$(basename "$0")
 #
 # compliance tools docker image settings
 #
-DOCKER_IMAGE=sandklef/hesa-compliance-tools
+DOCKER_IMAGE=sandklef/compliance-tools
 DOCKER_TAG=0.1
 
 DOCKER_ARGS=" ${DOCKER_IMAGE}:${DOCKER_TAG}"
@@ -95,6 +95,25 @@ dload_image()
     fi
 }
 
+run_docker()
+{
+    local PROG=$1
+    shift 
+    local ARGS="$*"
+    verbose "docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} $PROG $ARGS"
+    docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} $PROG $ARGS
+}
+
+docker_versions()
+{
+    echo -n " * Compliance utils: " && run_docker flict-to-dot --version 
+    echo -n " * Flict:            " && run_docker flict --version 
+    echo -n " * License detector: unknown" && echo 
+    echo -n " * Ninka:            " && run_docker ninka | head -1 | cut -d " " -f 2
+    echo -n " * Ort:              " && run_docker ort --version | grep version | cut -d "," -f 2 | cut -d " " -f 3 | sed 's,\.,,g'
+    echo -n " * Reuse:            " && run_docker reuse --version | cut -d " " -f 2
+    echo -n " * Scancode:         " && run_docker scancode --version | cut -d " " -f 3
+}
 
 verbose "$PROG"
 ARGS=$*
@@ -108,10 +127,13 @@ case $PROG in
                     DEBUG=true
                     ;;
                 "--version")
-                    echo "$COMPLIANCE_UTILS_VERSION"
+                    echo "Compliance utils:    $COMPLIANCE_UTILS_VERSION"
                     docker_versions
-                    PROG=
                     exit 0
+                    ;;
+                "bash"|"shell")
+                    PROG=bash
+                    ARGS=""
                     ;;
                 *)
                     PROG=$1
@@ -122,12 +144,10 @@ case $PROG in
         done
         ;;
     *)
-        echo "Ignoring $PROG"
+        verbose "Ignoring $PROG since it is the program to start"
         ;;
 esac
 
-verbose "Running $PROG $* via docker"
-verbose "docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} $PROG $*"
-docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} $PROG $*
 
-    
+run_docker $PROG $ARGS
+verbose "Running $PROG $* via docker"
