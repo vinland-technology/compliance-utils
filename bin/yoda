@@ -32,7 +32,7 @@ from argparse import RawTextHelpFormatter
 PROGRAM_NAME="Yoda (Yocto Dependencies Analyser)"
 PROGRAM_NAME_SHORT="yoda"
 PROGRAM_DESCRIPTION="yoda compiles license compliance related information from a Yocto build (for later use by yoga and yocr). "
-PROGRAM_VERSION="0.1"
+COMPLIANCE_UTILS_VERSION="__COMPLIANCE_UTILS_VERSION__"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
 PROGRAM_LICENSE="GPL-3.0-or-later"
@@ -103,6 +103,14 @@ START_TIME=0
 STOP_TIME=0
 
 VERBOSE=False
+if COMPLIANCE_UTILS_VERSION == "__COMPLIANCE_UTILS_VERSION__":
+    GIT_DIR=os.path.dirname(os.path.realpath(__file__))
+    command = "cd " + GIT_DIR + " && git rev-parse --short HEAD"
+    try:
+        res = subprocess.check_output(command, shell=True)
+        COMPLIANCE_UTILS_VERSION=str(res.decode("utf-8"))
+    except Exception as e:
+        COMPLIANCE_UTILS_VERSION="unknown"
 
 BUILD_DIRS=[]
 
@@ -1033,6 +1041,10 @@ def parse():
                             action='store_true',
                             help="include glibc libraries as dependencies",
                             default=False)
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version=COMPLIANCE_UTILS_VERSION,
+                        default=False)
 
     args = parser.parse_args()
 
