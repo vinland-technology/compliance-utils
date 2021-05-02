@@ -8,10 +8,21 @@
 #
 
 #
-# Scancode docker image settings
+# COmpliance tools image settings
 #
-SC_IMAGE=sandklef/sandklef-scancode
+DOCKER_IMAGE=sandklef/hesa-compliance-tools
+DOCKER_TAG=0.1
+
 SC_TAG=21.3.31
+
+
+COMPLIANCE_UTILS_VERSION=__COMPLIANCE_UTILS_VERSION__
+if [ "${COMPLIANCE_UTILS_VERSION}" = "__COMPLIANCE_UTILS_VERSION__" ]
+then
+    GIT_DIR=$(dirname ${BASH_SOURCE[0]})
+    COMPLIANCE_UTILS_VERSION=$(cd $GIT_DIR && git rev-parse --short HEAD)
+fi
+
 
 #
 # internal vars
@@ -23,7 +34,7 @@ MYNAME=scancode-wrapper.sh
 #
 #
 #
-DOCKER_ARGS=" ${SC_IMAGE}:${SC_TAG}"
+DOCKER_ARGS=" ${DOCKER_IMAGE}:${DOCKER_TAG}"
 
 
 
@@ -73,7 +84,7 @@ check_image()
         verbose "OK, present"
     else
         verbose "Fail, missing"
-        error "No docker image \"${SC_IMAGE}:${SC_TAG}\""
+        error "No docker image \"${DOCKER_IMAGE}:${DOCKER_TAG}\""
         exit 1
     fi
 }
@@ -90,7 +101,7 @@ dload_image()
         verbose "OK"
     else
         verbose "Fail, could not pull image"
-        error "Could not pull docker image \"${SC_IMAGE}:${SC_TAG}\""
+        error "Could not pull docker image \"${DOCKER_IMAGE}:${DOCKER_TAG}\""
         exit 1
     fi
 }
@@ -124,7 +135,7 @@ scan_dir()
 scancode_version()
 {
     verbose "Getting version information from Scancode"
-    docker run --rm -i -t ${DOCKER_ARGS} ./scancode --version
+    docker run --rm -i -t ${DOCKER_ARGS} scancode --version
     exit_if_error $? "Failed to execute: docker run --rm -i -t ${DOCKER_MOUNT_ARGS} ${DOCKER_ARGS} ./scancode --version"
 }
 
@@ -154,9 +165,12 @@ usage()
     echo "    -v, --verbose"
     echo "          enable verbose printout"
     echo
+    echo "    --version"
+    echo "          output version information"
+    echo
     echo "    pull"
-    echo "          pull docker image with Scancode version: $SC_TAG"
-    echo "          Pulls $SC_IMAGE from docker.io"
+    echo "          pull docker image with Scancode version: $DOCKER_TAG"
+    echo "          Pulls $DOCKER_IMAGE from docker.io"
     echo
     echo "EXAMPLES"
     echo ""
@@ -209,11 +223,12 @@ do
             exit 0
             ;;
         "pull")
-            dload_image ${SC_IMAGE} ${SC_TAG}
+            dload_image ${DOCKER_IMAGE} ${DOCKER_TAG}
             exit 0
             ;;
-        "version")
-            
+        "version"|"--version")
+            echo "Compliance Utils version: " $COMPLIANCE_UTILS_VERSION
+            scancode_version
             exit 0
             ;;
         *)
@@ -224,6 +239,6 @@ do
     
 done
 
-check_image ${SC_IMAGE} ${SC_TAG}
+check_image ${DOCKER_IMAGE} ${DOCKER_TAG}
 
 scan_dir

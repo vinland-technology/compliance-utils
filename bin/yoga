@@ -163,7 +163,7 @@ usage()
     
     echo
     echo "EXAMPLES"
-    echo "    This tool assumes you're located in Yocto's `build` directory."
+    echo "    This tool assumes you're located in Yocto's build directory."
     echo ""
     echo "    Identify yoga settings"
     echo "       yoga -i core-image-minimal -fs"
@@ -184,7 +184,7 @@ usage()
     echo "COPYRIGHT"
     echo ""
     echo "    Copyright (c) 2021 Henrik Sandklef"
-    echo "    License GPLv3+: GNU GPL  version  3  or  later <https://gnu.org/licenses/gpl.html>."
+    echo "    License GPLv3+: GNU GPL  version 3 or later <https://gnu.org/licenses/gpl.html>."
     echo "    This  is  free  software: you are free to change and redistribute it.  "
     echo "    There is NO WARRANTY, to the extent permitted by law."
     echo

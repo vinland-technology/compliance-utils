@@ -14,6 +14,13 @@
 OUTPUT_DIR=~/.vinland/compliance-utils/elf-deps
 FORMAT=txt
 
+COMPLIANCE_UTILS_VERSION=__COMPLIANCE_UTILS_VERSION__
+if [ "${COMPLIANCE_UTILS_VERSION}" = "__COMPLIANCE_UTILS_VERSION__" ]
+then
+    GIT_DIR=$(dirname ${BASH_SOURCE[0]})
+    COMPLIANCE_UTILS_VERSION=$(cd $GIT_DIR && git rev-parse --short HEAD)
+fi
+
 # for f in $(apt-file list libc6 | grep "gnu/lib" | cut -d ":" -f 2 ); do echo -n " -e $(basename $f)" ; done | xcpin
 EXCLUDE_LIBC_STUFF="$EXCLUDE_LIBC_STUFF -e libBrokenLocale-2.31.so -e libBrokenLocale.so.1 -e libSegFault.so -e libanl-2.31.so -e libanl.so.1 -e libc-2.31.so -e libc.so.6 -e libdl-2.31.so -e libdl.so.2 -e libm-2.31.so -e libm.so.6 -e libmemusage.so -e libmvec-2.31.so -e libmvec.so.1 -e libnsl-2.31.so -e libnsl.so.1 -e libnss_compat-2.31.so -e libnss_compat.so.2 -e libnss_dns-2.31.so -e libnss_dns.so.2 -e libnss_files-2.31.so -e libnss_files.so.2 -e libnss_hesiod-2.31.so -e libnss_hesiod.so.2 -e libnss_nis-2.31.so -e libnss_nis.so.2 -e libnss_nisplus-2.31.so -e libnss_nisplus.so.2 -e libpcprofile.so -e libpthread-2.31.so -e libpthread.so.0 -e libresolv-2.31.so -e libresolv.so.2 -e librt-2.31.so -e librt.so.1 -e libthread_db-1.0.so -e libthread_db.so.1 -e libutil-2.31.so -e libutil.so.1 "
 
@@ -337,6 +344,9 @@ usage()
     echo -e "* Debian and Ubuntu"
     echo -e "* Fedora and RedHat"
     echo
+    echo "    --version"
+    echo "          output version information"
+    echo
     echo -e "${HEADER}EXAMPLES${HEADER_OUT}"
     echo -e "${CODE_IN}$PROG evince${CODE_OUT}"
     echo -e "${CODE_COMMENT}lists all dependencies for the program evince"
@@ -547,6 +557,10 @@ do
         "--lib-dir")
             LIB_DIRS="$LIB_DIRS $2"
             shift
+            ;;
+        "--version")
+            echo "Compliance Utils version: " $COMPLIANCE_UTILS_VERSION
+            exit 0
             ;;
         *)
             FILES="$FILES $1"

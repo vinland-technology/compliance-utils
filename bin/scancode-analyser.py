@@ -16,17 +16,26 @@ import argparse
 import json
 import os
 import sys
+import subprocess
 
 PROGRAM_NAME = "scancode-analyser.py"
 PROGRAM_DESCRIPTION = "A tiny tool to assist when analysing a Scancode report"
 PROGRAM_AUTHOR = "Henrik Sandklef"
-PROGRAM_VERSION="0.1"
+COMPLIANCE_UTILS_VERSION="__COMPLIANCE_UTILS_VERSION__"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2021 Henrik Sandklef<hesa@sandklef.com>"
 PROGRAM_LICENSE="GPL-3.0-or-later"
 PROGRAM_SEE_ALSO=""
 
 UNKNOWN_LICENSE = "unknown"
+
+if COMPLIANCE_UTILS_VERSION == "__COMPLIANCE_UTILS_VERSION__":
+    command = "git rev-parse --short HEAD"
+    try:
+        res = subprocess.check_output(command, shell=True)
+        COMPLIANCE_UTILS_VERSION=str(res.decode("utf-8"))
+    except Exception as e:
+        COMPLIANCE_UTILS_VERSION="unknown"
 
 VERBOSE=False
 
@@ -116,6 +125,11 @@ def parse():
                         nargs="+",
                         help="exclud files and dirs matching the supplied patterns",
                         default=None)
+
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version=COMPLIANCE_UTILS_VERSION,
+                        default=False)
 
     args = parser.parse_args()
 

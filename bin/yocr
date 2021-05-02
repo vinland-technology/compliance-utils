@@ -349,10 +349,10 @@ def write_markdown_package(package, index, args):
         compatible_tag = ""
     
     res = "<details style=\"background-color:" + bg_color + ";\">"
-    res = res + "<summary>" + read_from_json(package, 'name') + " ( " + str(read_from_json(package, 'version')) + " ) " + compatible_tag + "</summary>\n\n"
-    res = res + "version: " + str(read_from_json(package, 'version')) + "\n\n"
+    res = res + "<summary>**" + read_from_json(package, 'name') + "**" + compatible_tag + "</summary>\n\n"
+    res = res + "* version: " + str(read_from_json(package, 'version')) + "\n\n"
     if args.license_text:
-        res = res + "<details>\n<summary>declared license: " + str(read_from_json(package, 'declaredLicense')) + "</summary>\n\n"
+        res = res + "<details>\n<summary>* declared license: " + str(read_from_json(package, 'declaredLicense')) + "</summary>\n\n"
         if 'component' in package:
             if package['component'] != None and 'license_texts' in package['component']:
                 for lic_text in package['component']['license_texts']:
@@ -365,13 +365,13 @@ def write_markdown_package(package, index, args):
                     res = res +  "\n\n"
         res = res +  "</details>\n"
     else:
-        res = res + "declared license: " + str(read_from_json(package, 'declaredLicense')) + "\n\n"
+        res = res + "* declared license: " + str(read_from_json(package, 'declaredLicense')) + "\n\n"
     #res = res + "* flict status: " + flict_exit_code_to_str(read_from_json(package, 'flictExitCode'))  + "\n"
-    res = res + "copyright and license: " + str(read_from_json_bool(package, 'copyrightLicenseFile')) + "\n\n"
-    res = res + "source code: " + str(read_from_json_bool(package, 'sourceCodeFile')) + "\n\n"
-    res = res + write_markdown_package_outbound(package, args)
-    res = res + write_markdown_policy (package, args)
-    res = res + write_markdown_dependencies(package, args)
+    res = res + "* copyright and license: " + str(read_from_json_bool(package, 'copyrightLicenseFile')) + "\n\n"
+    res = res + "* source code: " + str(read_from_json_bool(package, 'sourceCodeFile')) + "\n\n"
+    res = res + "* " + write_markdown_package_outbound(package, args)
+    res = res + "* " + write_markdown_policy (package, args)
+    res = res + "* " + write_markdown_dependencies(package, args)
     res = res +  "</details>\n"
     return res
 
@@ -382,7 +382,7 @@ def write_markdown_dependencies(package, args):
     res = "<details>"
     res = res + "<summary>dependencies: " + str(len(deps)) + " </summary>\n\n"
     for dep in deps:
-        res = res + "- " + dep['name'] + "  (" + str(dep['license']).strip() + ")\n" 
+        res = res + "    * " + dep['name'] + "  (" + str(dep['license']).strip() + ")\n" 
     res = res +  "</details>\n"
     return res
 
@@ -517,7 +517,7 @@ def write_markdown(packages, args):
 
     return res
 
-def write_json(packages):
+def write_json(packages, args):
     return json.dumps(packages)
     
 

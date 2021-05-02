@@ -33,7 +33,8 @@ PROGRAM_SEE_ALSO=""
 
 VERBOSE=False
 if COMPLIANCE_UTILS_VERSION == "__COMPLIANCE_UTILS_VERSION__":
-    command = "git rev-parse --short HEAD"
+    GIT_DIR=os.path.dirname(os.path.realpath(__file__))
+    command = "cd " + GIT_DIR + " && git rev-parse --short HEAD"
     try:
         res = subprocess.check_output(command, shell=True)
         COMPLIANCE_UTILS_VERSION=str(res.decode("utf-8"))

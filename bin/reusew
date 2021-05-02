@@ -8,6 +8,7 @@ COPYRIGHT_HOLDER=$(getent passwd "$(whoami)" | cut -d ':' -f 5 | sed 's/,//g')
 COPYRIGHT_YEAR=$(date '+%Y')
 LICENSE=GPL-3.0-or-later
 
+
 FILES=""
 
 usage()
