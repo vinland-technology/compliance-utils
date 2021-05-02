@@ -188,6 +188,9 @@ usage()
     echo "    scancode [ARGS]"
     echo "          Starts scancode with the arguments [ARGS]"
     echo
+    echo "    scancode-wrapper [DIR]"
+    echo "          Starts scan (Scancode) of DIR, storing result in DIR-scan.json"
+    echo
     echo "    pull"
     echo "          Pulls the docker image $DOCKER_IMAGE ($DOCKER_TAG)"
     echo "          from docker.io"
@@ -199,8 +202,8 @@ usage()
     echo "    or like this:"
     echo "        scancode -clipe X --json X.json"
     echo ""
-    echo "    Get version information from Scancode" 
-    echo "        scancode --version"
+    echo "    Invoke scancode-wrapper to scan directory X" 
+    echo "        scancode-wrapper X"
     echo "" 
     echo "AUTHOR"
     echo ""
@@ -231,7 +234,6 @@ usage()
     echo ""
 }
 
-
 verbose "$PROG"
 ARGS=$*
 # Measure on host, use in docker (same as host)
@@ -261,13 +263,6 @@ case $PROG in
                     PROG=bash
                     ARGS=""
                     ;;
-                "scancode-wrapper")
-                    DIR_TO_SCAN=$2
-                    shift
-                    SC_REPORT=${DIR_TO_SCAN}-scan.json
-                    PROG=scancode
-                    ARGS="-clipe ${PARALLEL_ARGS} --json ${SC_REPORT} ${DIR_TO_SCAN}"
-                    ;;
                 *)
                     PROG=$1
                     shift
@@ -275,6 +270,12 @@ case $PROG in
             esac
             shift
         done
+        ;;
+    "scancode-wrapper")
+        DIR_TO_SCAN=$1
+        SC_REPORT=${DIR_TO_SCAN}-scan.json
+        PROG=scancode
+        ARGS=" -clipe ${PARALLEL_ARGS} --json ${SC_REPORT} ${DIR_TO_SCAN} "
         ;;
     *)
         verbose "Ignoring $PROG since it is the program to start"
