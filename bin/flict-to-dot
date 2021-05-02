@@ -41,8 +41,6 @@ if COMPLIANCE_UTILS_VERSION == "__COMPLIANCE_UTILS_VERSION__":
     except Exception as e:
         COMPLIANCE_UTILS_VERSION="unknown"
 
-
-
 #
 # 
 #
