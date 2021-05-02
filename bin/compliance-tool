@@ -19,11 +19,11 @@ PROG=$(basename "$0")
 #
 # compliance tools docker image settings
 #
-DOCKER_IMAGE=sandklef/hesa-compliance-tools
+DOCKER_IMAGE=sandklef/compliance-tools
 DOCKER_TAG=0.1
 
 DOCKER_ARGS=" ${DOCKER_IMAGE}:${DOCKER_TAG}"
-MOUNT_DIR=/tmp
+MOUNT_DIR=/compliance-tools
 DOCKER_MOUNT_ARGS="-v $(pwd):${MOUNT_DIR}"
 
 
@@ -129,8 +129,8 @@ usage()
     echo ""
     echo "DESCRIPTION"
     echo ""
-    echo "    ${PROG} provides a manages a docker image with useful"
-    echo "    license compliance tools: "
+    echo "    ${PROG} manages a docker image with useful license compliance tools."
+    echo "    Included tools:"
     echo "        flict"
     echo "        license-detectork"
     echo "        ninka"
@@ -138,9 +138,9 @@ usage()
     echo "        reuse"
     echo "        scancode"
     echo ""
-    echo "    The current directory is mounted under /tmp. This is crucial to let the"
+    echo "    The current directory is mounted under ${MOUNT_DIR}. This is crucial to let the"
     echo "    tools work on your files and directories and output result outside the"
-    echo "    docker container"
+    echo "    docker container. ${MOUNT_DIR} is also set as the docker WORKDIR"
     echo ""
     echo "    When invoked under any of the following names:"
     echo "        flict, license-detector, ninka, ort"
@@ -151,7 +151,7 @@ usage()
     echo "    To ease up executing the commands you can add the directory where ${PROG} "
     echo "    is loacted to PATH. You can typically do this by adding the following to "
     echo "    your ~/.bashrc (assuming you're using bash):"
-    echo "         PATH=$(realpath ${BASH_SOURCE[0]}):\$PATH"
+    echo "         PATH=$(realpath $(dirname ${BASH_SOURCE[0]})/../wrappers):\$PATH"
     echo ""
     echo "OPTIONS"
     echo ""
@@ -190,9 +190,9 @@ usage()
     echo "EXAMPLES"
     echo ""
     echo "    Invoke Scancode to scan directory X (in the current directory)" 
-    echo "        ${PROG} scancode -clipe /tmp/X --json /tmp/X.json"
+    echo "        ${PROG} scancode -clipe X --json X.json"
     echo "    or like this:"
-    echo "        scancode -clipe /tmp/X --json /tmp/X.json"
+    echo "        scancode -clipe X --json X.json"
     echo ""
     echo "    Get version information from Scancode" 
     echo "        scancode --version"
@@ -201,7 +201,7 @@ usage()
     echo ""
     echo "    Written by Henrik Sandklef"
     echo
-    echo "    Please note that this is simply a wrapper around many great programs"
+    echo "    Please note that this is simply a wrapper around some great programs."
     echo
     echo "COPYRIGHT"
     echo ""
@@ -215,7 +215,6 @@ usage()
     echo ""
     echo "    Create an issue at https://github.com/vinland-technology/compliance-utils"
     echo
-    echo
     echo "SEEL ALSO"
     echo ""
     echo "    flict            - https://github.com/vinland-technology/flict"
@@ -224,8 +223,6 @@ usage()
     echo "    ort              - https://github.com/oss-review-toolkit/ort" 
     echo "    reuse            - https://reuse.software/"
     echo "    scancode         - https://github.com/nexB/scancode-toolkit" 
-    echo ""
-    echo
     echo ""
 }
 
