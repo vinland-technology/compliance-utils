@@ -199,7 +199,7 @@ usage()
     echo ""
     echo "    Invoke Scancode to scan directory X (in the current directory)" 
     echo "        ${PROG} scancode -clipe X --json X.json"
-    echo "    or like this:"
+    echo "    or like this (assuming you've modified the PATH variable as described above):"
     echo "        scancode -clipe X --json X.json"
     echo ""
     echo "    Invoke scancode-wrapper to scan directory X" 
