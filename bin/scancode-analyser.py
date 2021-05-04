@@ -30,7 +30,8 @@ PROGRAM_SEE_ALSO=""
 UNKNOWN_LICENSE = "unknown"
 
 if COMPLIANCE_UTILS_VERSION == "__COMPLIANCE_UTILS_VERSION__":
-    command = "git rev-parse --short HEAD"
+    GIT_DIR=os.path.dirname(os.path.realpath(__file__))
+    command = "cd " + GIT_DIR + " && git rev-parse --short HEAD"
     try:
         res = subprocess.check_output(command, shell=True)
         COMPLIANCE_UTILS_VERSION=str(res.decode("utf-8"))
@@ -119,6 +120,12 @@ def parse():
                         help="excluded licenses (if they appear as only license) (if set, remove file/dir from printout)",
                         default=None)
 
+    parser.add_argument('-exu', '--exact-exclude-unknown',
+                        dest='exact_excluded_unknown_licenses',
+                        action='store_true',
+                        help="exclude exact unknown licenses (if they appear as only license) (if set, remove file/dir from printout)",
+                        default=None)
+
     parser.add_argument('-x', '--exclude',
                         dest='excluded_regexps',
                         type=str,
@@ -159,8 +166,9 @@ def collect_license_dir(report, dir, args, dirs_info, files_info):
     include_copyrights      = args.include_copyrights
     excluded_licenses       = args.excluded_licenses
     exact_excluded_licenses = args.exact_excluded_licenses
+    exact_excluded_unknown_licenses = args.exact_excluded_unknown_licenses
 
-
+    
     file_count = 0 
     
     for file in report['files']:
@@ -192,8 +200,11 @@ def collect_license_dir(report, dir, args, dirs_info, files_info):
                     file_info['copyrights'].add(copy_key)
 
             if file['licenses'] == None or file['licenses'] == []:
-                file_info['licenses'] = [ UNKNOWN_LICENSE ]
-                verbose("exact check not performed on " + str(file_name))
+                if exact_excluded_unknown_licenses:
+                    verbose("unknown and ignored " + str(file_name))
+                else:
+                    file_info['licenses'] = [ UNKNOWN_LICENSE ]
+                    verbose("exact check not performed on " + str(file_name))
             else:
                 exact_found = False
                 if exact_excluded_licenses:
