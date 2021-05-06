@@ -36,7 +36,7 @@ MYNAME="${BASH_SOURCE[0]}"
 MYDIR="$(dirname "${MYNAME}")"
 REAL_DIR="$(realpath $MYDIR)"
 
-YODA2FLICT=yoda2flict.py
+YODA2FLICT=yoda2flict
 
 #
 NOOP=false
