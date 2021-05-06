@@ -36,6 +36,7 @@ MYNAME="${BASH_SOURCE[0]}"
 MYDIR="$(dirname "${MYNAME}")"
 REAL_DIR="$(realpath $MYDIR)"
 
+YODA2FLICT=yoda2flict.py
 
 #
 NOOP=false
@@ -400,10 +401,10 @@ split_package_json()
 {
     inform2n "Splitting component file"
     PKG_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/${PACKAGE}-component.json
-    yoda2flict.py -of tree -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION} ${PKG_JSON}
+    ${YODA2FLICT} -of tree -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION} ${PKG_JSON}
     if [ $? -ne 0 ]
     then
-        echo "yoda2flict.py -of tree -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION} ${PKG_JSON} failed"
+        echo "${YODA2FLICT} -of tree -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION} ${PKG_JSON} failed"
         return
     else
         echo "OK"
@@ -467,12 +468,12 @@ create_flict_json()
         return
     fi
 
-    # This is how yoda2flict.py names the put
+    # This is how ${YODA2FLICT} names the put
     FLICT_COMPONENT_JSON=${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/${PACKAGE}-pile-flict.json
-    yoda2flict.py -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/ ${COMPONENT_JSON}
+    ${YODA2FLICT} -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/ ${COMPONENT_JSON}
     if [ $? -ne 0 ]
     then
-        echo "yoda2flict.py -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/  ${COMPONENT_JSON} failed"
+        echo "${YODA2FLICT} -od ${PERMANENT_OUT_DIR}/$PACKAGE/${VERSION}/  ${COMPONENT_JSON} failed"
         return
     else
         echo "OK"
