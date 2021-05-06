@@ -11,7 +11,6 @@
 ###################################################################
 
 PROGRAM_NAME="Yoga (Yoda's Generic Aggregator)"
-PROGRAM_VERSION="0.1"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
 LICENSE="GPL-3.0-or-later"
@@ -21,6 +20,13 @@ OUTPUT_LICENSE="public domain"
 TRANSLATION_FILE=""
 DEFAULT_YOGA_CONFIG=yoga.conf
 COMPATIBILITY_CHECK=true
+
+COMPLIANCE_UTILS_VERSION=__COMPLIANCE_UTILS_VERSION__
+if [ "${COMPLIANCE_UTILS_VERSION}" = "__COMPLIANCE_UTILS_VERSION__" ]
+then
+    GIT_DIR=$(dirname ${BASH_SOURCE[0]})
+    COMPLIANCE_UTILS_VERSION=$(cd $GIT_DIR && git rev-parse --short HEAD)
+fi
 
 # yoga -d 20201204180707  -mtd ../sources -m britz -dd tmp/work/all-mbient-linux tmp/work/armv8a-mbient-linux tmp/work/britz-mbient-linux  -i apricot-image-ui-britz
 
@@ -160,6 +166,9 @@ usage()
     echo
     echo "    -cc, --create-config"
     echo "          Try to identify settings and store in config file"
+    echo "    --version"
+    echo "          output version information"
+    echo
     
     echo
     echo "EXAMPLES"
@@ -280,6 +289,10 @@ do
             ;;
         "--noop")
             NOOP=true
+            ;;
+        "--version")
+            echo "Compliance Utils version: " $COMPLIANCE_UTILS_VERSION
+            exit 0
             ;;
         *)
 	    echo assume pkg $1
