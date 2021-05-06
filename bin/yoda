@@ -255,7 +255,7 @@ def image_imagepackages(image_file):
 def program_info():
     return {
         'name': PROGRAM_NAME,
-        'version': PROGRAM_VERSION,
+        'version': COMPLIANCE_UTILS_VERSION,
         'url': PROGRAM_URL,
         'copyright': PROGRAM_COPYRIGHT,
         'result-license': OUTPUT_LICENSE
