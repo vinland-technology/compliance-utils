@@ -511,10 +511,10 @@ create_graphs()
         inform3n "$jf_short: "
         DOT_FILE=${GRAPH_OUT_DIR}/$jf_short.dot
         #printf " * %-${FILE_FMT_LEN}s " "$(basename $DOT_FILE):"
-        flict-to-dot.py $jf > $DOT_FILE
+        flict-to-dot $jf > $DOT_FILE
         if [ $? -ne 0 ]
         then
-            echo "Fail (flict-to-dot.py $jf > $DOT_FILE)"
+            echo "Fail (flict-to-dot $jf > $DOT_FILE)"
             RES=Fail
         else
             echo -n "OK ("
