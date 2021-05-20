@@ -1,0 +1,90 @@
+#!/bin/bash
+
+PROG=in2license
+TMP_FILE=/tmp/${PROG}-${USER}-$$.tmp
+FILE=
+DEBUG=false
+
+verbose()
+{
+    if [ "$DEBUG" = "true" ]
+    then
+        echo -e "$*"
+    fi
+}
+
+
+error()
+{
+    echo "$*" 1>&2
+}
+
+while [ "$1" != "" ]
+do
+    case "$1" in
+        "--verbose"|"-v")
+            DEBUG=true
+            echo "DEBUG=$DEBUG"
+            ;;
+        "--loop"|"-l")
+            LOOP=true
+            verbose "will be looping"
+            ;;
+        "--file"|"-f")
+            verbose "Will read from file \"$2\""
+            FILE="$2"
+            shift
+            ;;
+        *)
+            echo "SYNTAX ERROR ($1)"
+            ;;
+    esac
+    shift
+done
+
+if [ "$FILE" != "" ] && [ "$LOOP" = "true" ]
+then
+    error "Can't use -f and -l together"
+    exit 1
+fi
+    
+
+check_file()
+{
+    local LICENSE_FILE="$1"
+    verbose "File read, looking up license"
+    verbose " command: spdx-lookup -f ${TMP_FILE} info"
+    verbose "\n\n"
+    spdx-lookup -f ${LICENSE_FILE} info
+}
+
+if [ "$FILE" != "" ]
+then
+    verbose "Reading from $FILE"
+    check_file $FILE
+else
+    while (true)
+    do
+        verbose "Reading from stdin"
+        echo
+        echo "Interactive mode, typically press"
+        echo " - <ctrl-c> to leave loop"
+        echo " - <ctrl-d> to end mark end of license text"
+        echo
+        echo "Enter license text to analyse:"
+        cat > ${TMP_FILE}
+        verbose "Created file: ${TMP_FILE}"
+        check_file ${TMP_FILE}
+        if [ "$LOOP" != "true" ]
+        then
+            break
+        fi
+        echo 
+    done
+fi
+
+
+
+
+
+
