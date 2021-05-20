@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROG=in2license
+PROG=lookup-license
 TMP_FILE=/tmp/${PROG}-${USER}-$$.tmp
 FILE=
 DEBUG=false
@@ -67,9 +67,9 @@ else
     do
         verbose "Reading from stdin"
         echo
-        echo "Interactive mode, typically press"
-        echo " - <ctrl-c> to leave loop"
-        echo " - <ctrl-d> to end mark end of license text"
+        echo "Interactive mode:"
+        echo " - press <ctrl-c> to leave loop"
+        echo " - paste text and press <ctrl-d> to mark mark end of license text"
         echo
         echo "Enter license text to analyse:"
         cat > ${TMP_FILE}
