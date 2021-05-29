@@ -37,7 +37,7 @@ PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
 PROGRAM_LICENSE="GPL-3.0-or-later"
 PROGRAM_AUTHOR="Henrik Sandklef"
-PROGRAM_SEE_ALSO="yoga (yoda's generic aggregator)\n  yocr (yoga's compliance reporter)\n  flict (FOSS License Compatibility Tool)"
+PROGRAM_SEE_ALSO="yoga (yoda's generic aggregator)\n  yocr (yoga's compliance reporter)\n   (FOSS License Compatibility Tool)"
 PROGRAM_EXAMPLES=""
 PROGRAM_EXAMPLES += "  This tool assumes you're located in Yocto's `build` directory.\n"
 PROGRAM_EXAMPLES += "  You need to know the name of the image (e.g. core-image-minimal) you built. \n\n"
@@ -66,6 +66,7 @@ DATE_FMT='%Y-%m-%d'
 LOOKUP_LIBS_FOR_BIN=[ "/usr/lib", "/lib", "/usr/lib/*", "/usr/lib/*/*", "/usr/bin", "/bin", "/usr/libexec", "/usr/libexec/*", "usr/lib/*/*/loaders/" ]
 
 class FileType(Enum):
+    UNKNOWN=0,
     DIRECTORY=1,
     SOFT_LINK=2,
     HARD_LINK=3,
@@ -77,8 +78,8 @@ class FileType(Enum):
     UNICODE_TEXT=9,
     ASCII_TEXT_EXECUTABLE=10,
     GIR=11,
-    PYTHON_SCRIPT=12
-    HTML=12
+    PYTHON_SCRIPT=12,
+    HTML=13
     
 
 # map for sub-package => package
@@ -220,7 +221,10 @@ def imagepackage_to_sub_package(imagepackage):
     for dir in BUILD_DIRS:
         file = dir + "/*/*/*/runtime-reverse/" + imagepackage
         verbose("Looking for sub package using file: " + file)
+        #print("Looking for sub package using file: " + file + "  ip: " + imagepackage)
+        
         for file_path in glob.glob(file, recursive=True):
+            #print("  * find: " + file_path)
             if os.path.islink(file_path):
                 followed_link = os.readlink(file_path)
                 sub_package = os.path.basename(followed_link)
@@ -306,6 +310,7 @@ def host_info():
     }
 
 def file_type(file):
+    #print("file_type: " + file, sys.stderr)
     # sneaky way, check suffix
     if file.endswith(".html"):
         return FileType.HTML
@@ -314,8 +319,11 @@ def file_type(file):
     res = subprocess.check_output(command, shell=True)
     result = str(res.decode("utf-8")).replace(file+":", "")
 
+    #print("file: " + str(file), file=sys.stderr)
+    #print(" *: " + str(result), file=sys.stderr)
     #verbose("result: " + result)
     if "LSB shared object" in result:
+        #print(" * LSB: " + str(file) + " LSB", file=sys.stderr)
         #verbose("LSB for " + file)
         if "interpreter" in result:
             if ".so" in file:
@@ -324,13 +332,15 @@ def file_type(file):
                 return FileType.ELF_LIBRARY
             else:
                 #verbose("LSB for " + file  + " is program")
+                #print("LSB for " + file  + " is program: " + str(result))
+                
                 return FileType.ELF_PROGRAM
         else:
             #verbose("LSB for " + file  + " is lib")
             return FileType.ELF_LIBRARY
     elif "directory" in result:
         return FileType.DIRECTORY
-
+    return FileType.UNKNOWN
 #
 # if a bin (e.g. libpthread.so.0) is NOT a file (but a link?)
 #   we need to fall back
@@ -351,7 +361,7 @@ def find_bin_link_worker_helper(bin_name, search_dir):
                 #verbose("    found: " + bin_file + " aint't that kinda sweet")
                 #verbose("    reading type of " + bin_file)
                 ftype = file_type(bin_file)
-                #verbose("    type: " + str(ftype))
+                verbose("    type: " + str(ftype))
                 if ftype == FileType.ELF_LIBRARY or ftype == FileType.ELF_PROGRAM: 
                     FILES.append(bin_file)
                 else:
@@ -412,7 +422,7 @@ def find_bin_file(bin_name):
     
 def dependencies(elf_file):
     if elf_file not in BIN_PATHS:
-        #print("dependencies")
+        #print("dependencies: " + elf_file)
         DEPS=[]
         command = "LD_LIBRARY_PATH=/tmp /usr/bin/readelf -d " + elf_file
         res = subprocess.check_output(command, shell=True)
@@ -519,17 +529,22 @@ def compile_license_text(package, version):
 
 
 def package_file_to_exportpackage(pkg_file, indent):
+    #print("package_file_to_exportpackage")
     #verbose(indent + pkg_file + " <----------------")
     bin_file=find_bin_file(pkg_file)
     if bin_file == None:
         return failed_exportpackage(pkg_file, "Failed to find binary file for " + pkg_file)
+    #print("Here we are.... : " + str(bin_file))
     deps=dependencies(bin_file)
+    ftype = file_type(bin_file)
     deps_deps=[]
     for dep in deps:
         dep_exportpackage = package_file_to_exportpackage(dep, indent+"  ")
         deps_deps.append(dep_exportpackage)
     exportpackage={}
     exportpackage['file']=pkg_file
+    exportpackage['file_type']=str(ftype).replace("FileType.", "")
+    exportpackage['file_path']=str(bin_file)
     sub_pkg=sub_package_for_bin_file(bin_file)
     exportpackage['subPackage']=sub_pkg
     package=SUB_PKG_TO_PACKAGE_MAP[sub_pkg]
@@ -706,7 +721,7 @@ def package_to_exportpackage(package, sub_pkg):
                 version=sub_pkg_to_version_short(package, sub_pkg_path, sp)
         except Exception as e:
             error("Could not create exportpackage from: " + str(sp))
-            error(e)
+            error(str(e))
     exportpackages_map['package']=package
     exportpackages_map['version']=version
     exportpackages_map['license']=package_license(package)
@@ -930,11 +945,17 @@ def image_to_imagepackages(image_file):
                 'valid': "false",
                 'cause': "Can't find sub-package for abstract package " + imagepackage
             })
+            # HESA / TMP
+            exit(9)
             continue
+        #print(" sub_pkg:      " + sub_pkg)
         sub_pkg_path = sub_package_to_path(sub_pkg)
+        #print(" sub_pkg_path: " + str(sub_pkg_path))
         #        package = sub_pkg_to_package(BUILD_DIR, sub_pkg)
         if sub_pkg_path is None:
             error("Failed to find sub-package-path for: " + imagepackage + " " + sub_pkg)
+            # HESA / TMP
+            exit(8)
             continue
         if sub_pkg in SUB_PKG_TO_PACKAGE_MAP:
             package = SUB_PKG_TO_PACKAGE_MAP[sub_pkg]
@@ -1186,6 +1207,7 @@ def main():
             imagepackages = map['imagepackages']
             imagepackages_list=[]
             for imagepackage in imagepackages:
+                
                 verbose("Handling imagepackage: " + str(imagepackage['name']))
                 imagepackage_map={}
                 imagepackage_map['imagepackage']=imagepackage
