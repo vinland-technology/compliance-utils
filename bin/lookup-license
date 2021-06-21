@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROG=lookup-license
-TMP_FILE=/tmp/${PROG}-${USER}-$$.tmp
+TMP_DIR=/tmp
 FILE=
 DEBUG=false
 
@@ -30,6 +30,11 @@ do
             LOOP=true
             verbose "will be looping"
             ;;
+        "--tmp-dir"|"-td")
+            TMP_DIR=$2
+            shift
+            verbose "TMP_DIR set to $TMP_DIR"
+            ;;
         "--file"|"-f")
             verbose "Will read from file \"$2\""
             FILE="$2"
@@ -48,6 +53,7 @@ then
     exit 1
 fi
     
+TMP_FILE=${TMP_DIR}/${PROG}-${USER}-$$.tmp
 
 check_file()
 {
