@@ -52,8 +52,13 @@ then
     error "Can't use -f and -l together"
     exit 1
 fi
-    
+
+if [ ! -d ${TMP_DIR} ]
+then
+    mkdir -p ${TMP_DIR}
+fi
 TMP_FILE=${TMP_DIR}/${PROG}-${USER}-$$.tmp
+
 
 check_file()
 {
