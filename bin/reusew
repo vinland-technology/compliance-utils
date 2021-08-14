@@ -8,6 +8,14 @@ COPYRIGHT_HOLDER=$(getent passwd "$(whoami)" | cut -d ':' -f 5 | sed 's/,//g')
 COPYRIGHT_YEAR=$(date '+%Y')
 LICENSE=GPL-3.0-or-later
 
+VERSION_FILE=$(dirname ${BASH_SOURCE[0]})/../VERSION
+CU_VERSION=$(cat ${VERSION_FILE})
+if [ -z ${CU_VERSION} ]
+then
+    echo "WARNING: Could not retrieve version from $VERSION_FILE" 1>&2
+    CU_VERSION="unknown"
+fi
+
 
 FILES=""
 
@@ -40,6 +48,9 @@ usage()
     echo                
     echo "    -h,  --help"
     echo "           print this usage information"
+    echo
+    echo "    -V,  --version"
+    echo "           output version number"
     echo
     echo "AUTHOR"
     echo "    Written by Henrik Sandklef"
@@ -80,6 +91,10 @@ do
             ;;
         "--dry-run"|"-dr")
             DRY_RUN=echo
+            ;;
+        "--version"|"-V")
+            echo ${CU_VERSION}
+            exit 0
             ;;
         *)
             FILES="$FILES $1"

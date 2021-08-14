@@ -14,11 +14,11 @@ import argparse
 from argparse import RawTextHelpFormatter
 import json
 import os
+import subprocess
 import sys
 
 PROGRAM_NAME="yoda2flict"
 PROGRAM_DESCRIPTION="yoda2flict transforms the output from yoda to a format flict understands"
-PROGRAM_VERSION="0.1"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
 PROGRAM_LICENSE="GPL-3.0-or-later"
@@ -28,6 +28,13 @@ PROGRAM_SEE_ALSO="yoda (Yocto Dependency Analyser)\n  yoga (yoda's generic aggre
 DEFAULT_DEPENDENCY_FORMAT="pile"
 DEFAULT_OUTPUT_DIRECTORY="."
 VERBOSE=False
+CU_DIR=os.path.dirname(os.path.realpath(__file__))
+command = "cat " + CU_DIR + "/../VERSION"
+try:
+    res = subprocess.check_output(command, shell=True)
+    CU_VERSION=str(res.decode("utf-8"))
+except Exception as e:
+    CU_VERSION="unknown"
 
 here = "."
 
@@ -241,6 +248,11 @@ def parse():
     )
     parser.add_argument('input', type=str,
                             help='input file')
+
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version=CU_VERSION,
+                        default=False)
 
     parser.add_argument('-v', '--verbose',
                             action='store_true',

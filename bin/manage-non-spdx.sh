@@ -28,6 +28,13 @@ declare -A NEW_LICENSE_IDS
 SPDX_LICENSES_FILE=${VINLAND_BASE_DIR}/${SPDX_LICENSES_FILE_NAME}
 
 PROGRAM=$(basename $0)
+VERSION_FILE=$(dirname ${BASH_SOURCE[0]})/../VERSION
+CU_VERSION=$(cat ${VERSION_FILE})
+if [ -z ${CU_VERSION} ]
+then
+    echo "WARNING: Could not retrieve version from $VERSION_FILE" 1>&2
+    CU_VERSION="unknown"
+fi
 
 if [ ! -d ${VINLAND_BASE_DIR} ]
 then
@@ -67,6 +74,10 @@ parse()
                 ;;
             "-h"|"--help")
                 usage
+                ;;
+            "-V"|"--version")
+                echo "$CU_VERSION"
+                exit 0
                 ;;
             *)
                 ARG="$ARG $1"
@@ -157,7 +168,10 @@ usage()
     echo "      read from stdin"
     echo 
     echo "    -h, --help"
-    echo "      prints hits help text"
+    echo "      prints this help text"
+    echo
+    echo "    -V, --version"
+    echo "      output version number"
     echo
     echo "ARGUMENT"
     echo "    If argument is a file, that files is read (aassuming"
