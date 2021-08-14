@@ -21,7 +21,7 @@ import glob
 #import re 
 import json
 import argparse
-#import subprocess
+import subprocess
 #import time
 #from datetime import date
 from argparse import RawTextHelpFormatter
@@ -43,6 +43,13 @@ INPUT_DIR="./compliance-results"
 
 background_colors=['lightgray','white']
 
+CU_DIR = os.path.dirname(os.path.realpath(__file__))
+command = "cat " + CU_DIR + "/../VERSION"
+try:
+    res = subprocess.check_output(command, shell=True)
+    CU_VERSION=str(res.decode("utf-8"))
+except Exception as e:
+    CU_VERSION="unknown"
 
 
 
@@ -546,6 +553,11 @@ def parse():
         epilog=epilog,
         formatter_class=RawTextHelpFormatter
         )
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version=CU_VERSION,
+                        default=False)
+
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='output verbose information to stderr', default=False)
 

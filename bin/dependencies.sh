@@ -14,11 +14,12 @@
 OUTPUT_DIR=~/.vinland/compliance-utils/elf-deps
 FORMAT=txt
 
-COMPLIANCE_UTILS_VERSION=__COMPLIANCE_UTILS_VERSION__
-if [ "${COMPLIANCE_UTILS_VERSION}" = "__COMPLIANCE_UTILS_VERSION__" ]
+VERSION_FILE=$(dirname ${BASH_SOURCE[0]})/../VERSION
+CU_VERSION=$(cat ${VERSION_FILE})
+if [ -z ${CU_VERSION} ]
 then
-    GIT_DIR=$(dirname ${BASH_SOURCE[0]})
-    COMPLIANCE_UTILS_VERSION=$(cd $GIT_DIR && git rev-parse --short HEAD)
+    echo "WARNING: Could not retrieve version from $VERSION_FILE" 1>&2
+    CU_VERSION="unknown"
 fi
 
 # for f in $(apt-file list libc6 | grep "gnu/lib" | cut -d ":" -f 2 ); do echo -n " -e $(basename $f)" ; done | xcpin
@@ -558,8 +559,8 @@ do
             LIB_DIRS="$LIB_DIRS $2"
             shift
             ;;
-        "--version")
-            echo "Compliance Utils version: " $COMPLIANCE_UTILS_VERSION
+        "--version"|"-V")
+            echo ${CU_VERSION}
             exit 0
             ;;
         *)

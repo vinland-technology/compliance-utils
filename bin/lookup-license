@@ -5,6 +5,14 @@ TMP_DIR=/tmp
 FILE=
 DEBUG=false
 
+VERSION_FILE=$(dirname ${BASH_SOURCE[0]})/../VERSION
+CU_VERSION=$(cat ${VERSION_FILE})
+if [ -z ${CU_VERSION} ]
+then
+    echo "WARNING: Could not retrieve version from $VERSION_FILE" 1>&2
+    CU_VERSION="unknown"
+fi
+
 verbose()
 {
     if [ "$DEBUG" = "true" ]
@@ -25,6 +33,10 @@ do
         "--verbose"|"-v")
             DEBUG=true
             echo "DEBUG=$DEBUG"
+            ;;
+        "--version"|"-V")
+            echo "$CU_VERSION"
+            exit 0
             ;;
         "--loop"|"-l")
             LOOP=true
