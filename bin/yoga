@@ -21,11 +21,12 @@ TRANSLATION_FILE=""
 DEFAULT_YOGA_CONFIG=yoga.conf
 COMPATIBILITY_CHECK=true
 
-COMPLIANCE_UTILS_VERSION=__COMPLIANCE_UTILS_VERSION__
-if [ "${COMPLIANCE_UTILS_VERSION}" = "__COMPLIANCE_UTILS_VERSION__" ]
+VERSION_FILE=$(dirname ${BASH_SOURCE[0]})/../VERSION
+CU_VERSION=$(cat ${VERSION_FILE})
+if [ -z ${CU_VERSION} ]
 then
-    GIT_DIR=$(dirname ${BASH_SOURCE[0]})
-    COMPLIANCE_UTILS_VERSION=$(cd $GIT_DIR && git rev-parse --short HEAD)
+    echo "WARNING: Could not retrieve version from $VERSION_FILE" 1>&2
+    CU_VERSION="unknown"
 fi
 
 # yoga -d 20201204180707  -mtd ../sources -m britz -dd tmp/work/all-mbient-linux tmp/work/armv8a-mbient-linux tmp/work/britz-mbient-linux  -i apricot-image-ui-britz
@@ -291,8 +292,8 @@ do
         "--noop")
             NOOP=true
             ;;
-        "--version")
-            echo "Compliance Utils version: " $COMPLIANCE_UTILS_VERSION
+        "--version"|"-V")
+            echo "$CU_VERSION"
             exit 0
             ;;
         *)
@@ -378,7 +379,7 @@ create_json()
     local COMPONENT_JSON=${PERMANENT_OUT_DIR}/${PACKAGE}/${VERSION}/${PACKAGE}-component.json
     if [ ! -f ${COMPONENT_JSON} ]
     then
-	#echo "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage"
+	echo "yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage"
         yoda ${YBTF_ARGS} ${PACKAGE_ARGS} exportpackage  > ${COMPONENT_JSON}
         RET=$?
         if [ $RET -ne 0 ] || [ ! -s  "${COMPONENT_JSON}" ]  
@@ -1295,7 +1296,15 @@ then
     then
         yoda  ${VERBOSE} -i ${IMAGE} find
     else
+        set -o pipefail
         ARGS=$(yoda  ${VERBOSE} -i ${IMAGE} find | tail -1)
+        RET=$?
+        if [ $RET -ne 0 ]
+        then
+            error "Failed finding settings...."
+            exit 3
+        fi
+         
         $0 ${ARGS} --noop
     fi
     exit 0

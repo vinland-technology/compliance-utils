@@ -32,7 +32,6 @@ from argparse import RawTextHelpFormatter
 PROGRAM_NAME="Yoda (Yocto Dependencies Analyser)"
 PROGRAM_NAME_SHORT="yoda"
 PROGRAM_DESCRIPTION="yoda compiles license compliance related information from a Yocto build (for later use by yoga and yocr). "
-COMPLIANCE_UTILS_VERSION="__COMPLIANCE_UTILS_VERSION__"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
 PROGRAM_LICENSE="GPL-3.0-or-later"
@@ -104,14 +103,13 @@ START_TIME=0
 STOP_TIME=0
 
 VERBOSE=False
-if COMPLIANCE_UTILS_VERSION == "__COMPLIANCE_UTILS_VERSION__":
-    GIT_DIR=os.path.dirname(os.path.realpath(__file__))
-    command = "cd " + GIT_DIR + " && git rev-parse --short HEAD"
-    try:
-        res = subprocess.check_output(command, shell=True)
-        COMPLIANCE_UTILS_VERSION=str(res.decode("utf-8"))
-    except Exception as e:
-        COMPLIANCE_UTILS_VERSION="unknown"
+CU_DIR=os.path.dirname(os.path.realpath(__file__))
+command = "cat " + CU_DIR + "/../VERSION"
+try:
+    res = subprocess.check_output(command, shell=True)
+    CU_VERSION=str(res.decode("utf-8"))
+except Exception as e:
+    CU_VERSION="unknown"
 
 BUILD_DIRS=[]
 
@@ -259,7 +257,7 @@ def image_imagepackages(image_file):
 def program_info():
     return {
         'name': PROGRAM_NAME,
-        'version': COMPLIANCE_UTILS_VERSION,
+        'version': CU_VERSION,
         'url': PROGRAM_URL,
         'copyright': PROGRAM_COPYRIGHT,
         'result-license': OUTPUT_LICENSE
@@ -813,7 +811,7 @@ def _find_date(image_name, machine):
             last_dir = split_file[list_len - 1]
 
             date_dir=last_dir.replace(image_name, "").replace(machine, "").replace("-","")
-            if date_dir != "":
+            if date_dir != "" and date_dir.isdigit():
                 #print ("last_dir: " + str(date_dir))
                 dates.append(date_dir)
                 
@@ -824,6 +822,8 @@ def _find_date(image_name, machine):
             #print ("last_dir:   \"" + str(date_dir) + "\"")
             #print("use: " + str(file))
 
+    
+            
     if len(dates)==0:
         return None
     elif len(dates)==1:
@@ -859,6 +859,10 @@ def _find_dd(base_dir):
             
     return dirs
 
+#def find_image(image_name):
+#    for file in glob.glob("tmp/deploy/licenses/*")
+    
+
 def find_settings(image_name, create_config=False):
 
     with open("conf/local.conf") as f:
@@ -884,10 +888,11 @@ def find_settings(image_name, create_config=False):
 
     verbose("file: " + f.name)
     verbose(" * date:     " + str(date))
+    verbose(" * image:    " + str(image_name))
     verbose(" * dd:       " + str(dd))
     verbose(" * machine:  " + str(machine))
     verbose(" * mtd:      " + str(mtd))
-    
+
     dirs = ""
     for d in dd:
         dirs += " " + d
@@ -1064,7 +1069,7 @@ def parse():
                             default=False)
     parser.add_argument('-V', '--version',
                         action='version',
-                        version=COMPLIANCE_UTILS_VERSION,
+                        version=CU_VERSION,
                         default=False)
 
     args = parser.parse_args()

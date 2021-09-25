@@ -24,7 +24,6 @@ import subprocess
 
 PROGRAM_NAME="flict-to-dot"
 PROGRAM_DESCRIPTION="Converts a flict file to dot format"
-COMPLIANCE_UTILS_VERSION="__COMPLIANCE_UTILS_VERSION__"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
 PROGRAM_COPYRIGHT="(c) 2021 Henrik Sandklef<hesa@sandklef.com>"
 PROGRAM_LICENSE="GPL-3.0-or-later"
@@ -36,14 +35,13 @@ OUTPUT_FORMAT_YAML="yaml"
 OUTPUT_FORMAT_DEFAULT=OUTPUT_FORMAT_DOT
 
 VERBOSE=False
-if COMPLIANCE_UTILS_VERSION == "__COMPLIANCE_UTILS_VERSION__":
-    GIT_DIR=os.path.dirname(os.path.realpath(__file__))
-    command = "cd " + GIT_DIR + " && git rev-parse --short HEAD"
-    try:
-        res = subprocess.check_output(command, shell=True)
-        COMPLIANCE_UTILS_VERSION=str(res.decode("utf-8"))
-    except Exception as e:
-        COMPLIANCE_UTILS_VERSION="unknown"
+CU_DIR=os.path.dirname(os.path.realpath(__file__))
+command = "cat " + CU_DIR + "/../VERSION"
+try:
+    res = subprocess.check_output(command, shell=True)
+    CU_VERSION=str(res.decode("utf-8"))
+except Exception as e:
+    CU_VERSION="unknown"
 
 #
 # 
@@ -128,7 +126,7 @@ def parse():
 
     parser.add_argument('-V', '--version',
                         action='version',
-                        version=COMPLIANCE_UTILS_VERSION,
+                        version=CU_VERSION,
                         default=False)
 
     args = parser.parse_args()
