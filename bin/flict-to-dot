@@ -31,6 +31,10 @@ PROGRAM_LICENSE="GPL-3.0-or-later"
 PROGRAM_AUTHOR="Henrik Sandklef"
 PROGRAM_SEE_ALSO=""
 
+OUTPUT_FORMAT_DOT="dot"
+OUTPUT_FORMAT_YAML="yaml"
+OUTPUT_FORMAT_DEFAULT=OUTPUT_FORMAT_DOT
+
 VERBOSE=False
 if COMPLIANCE_UTILS_VERSION == "__COMPLIANCE_UTILS_VERSION__":
     GIT_DIR=os.path.dirname(os.path.realpath(__file__))
@@ -58,6 +62,41 @@ def package_to_dot(package):
           dep_lines.update(package_to_dot(dep))
     return dep_lines
 
+#
+#  non recursive list of deps
+#
+def package_to_yaml_non_recursive(package):
+    name = package["name"]
+    version = package["version"]
+    lic = package["license"]
+    dependencies = package["dependencies"]
+    dep_lines = set()
+
+    ret = "---\n"
+    ret += "package:"
+    ret += "    name:" + name + "\n"
+    ret += "    version:" + version + "\n"
+    ret += "    license:" + lic + "\n"
+    ret += "    project_site:\n"
+    ret += "    source_uri:\n"
+
+    
+    ret += "    dependencies:\n"
+    
+    for dep in dependencies:
+      if "valid" not in dep or dep['valid']:
+          dep_name = dep["name"]
+          #dep_lic  = dep["license"]
+          dep_version = dep["version"]
+          dep_component = dep["component"]
+          ret += "    - {"
+          ret += "package: " + dep_name
+          ret += ", subpackage: " + dep_component
+          if dep_version != None and dep_version != "":
+              ret += ", version: " + dep_version
+          ret += "}\n"
+    print(ret, end="")
+
 def parse():
     description = "NAME\n  " + PROGRAM_NAME + "\n\n"
     description = description + "DESCRIPTION\n  " + PROGRAM_DESCRIPTION + "\n\n"
@@ -77,6 +116,10 @@ def parse():
     parser.add_argument('file',
                         help='file to process',
                         default="")
+
+    parser.add_argument('--format', '-f',
+                        help='Format of the output',
+                        default=OUTPUT_FORMAT_DEFAULT)
 
     parser.add_argument('-v', '--verbose',
                         action='store_true',
@@ -132,15 +175,20 @@ def main():
                 exit(1)
 
             if "valid" not in package or package['valid']==True:
-                deps = package_to_dot(package)
-                # print result
-                verbose("Begin printing deps")
-                print("digraph depends {")
-                print("    node [shape=plaintext]")
-                for dep in deps:
-                    verbose(" * " + str(dep))
-                    print("     " +dep)
-                print("}")
+                if args.format.lower() == OUTPUT_FORMAT_DOT:
+                    deps = package_to_dot(package)
+                    # print result
+                    verbose("Begin printing deps")
+                    print("digraph depends {")
+                    print("    node [shape=plaintext]")
+                    for dep in deps:
+                        verbose(" * " + str(dep))
+                        print("     " +dep)
+                    print("}")
+                elif args.format.lower() == OUTPUT_FORMAT_YAML:
+                    top_package_to_yaml_non_recursive(package)
+                else:
+                    print("uh ohj")
             else:
                 pass
     except FileNotFoundError:
