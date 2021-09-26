@@ -10,7 +10,6 @@
 #
 ###################################################################
 
-#import datetime
 from argparse import RawTextHelpFormatter
 import argparse
 import json
@@ -68,7 +67,7 @@ def spdx_package(top_package, package, homepage):
         #print("simplified: " + str(simplified))
     except Exception as e:
         COMPLIANCE_UTILS_VERSION="unknown"
-    s_pkg['licenseDeclared'] = license
+    s_pkg['licenseDeclared'] = package['license']
     s_pkg['licenseConcluded'] = license
     
     return s_pkg
