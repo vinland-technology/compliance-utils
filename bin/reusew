@@ -134,8 +134,8 @@ do
     fi
     if [ "$DRY_RUN" != "" ]
     then
-        echo reuse $REUSE_ARGUMENTS $TYPE $FILES
+        echo reuse $REUSE_ARGUMENTS $TYPE $file
     else
-        echo reuse $REUSE_ARGUMENTS $TYPE $FILES  | bash
+        echo reuse $REUSE_ARGUMENTS $TYPE $file  | bash
     fi
 done
