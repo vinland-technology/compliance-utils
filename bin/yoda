@@ -720,10 +720,15 @@ def package_to_exportpackage(package, sub_pkg):
         except Exception as e:
             error("Could not create exportpackage from: " + str(sp))
             error(str(e))
+    sub_pkg_path = sub_package_to_path(sp)
+    reply = pkg_recipe_spec_info(package, sub_pkg_path, sub_pkg)
     exportpackages_map['package']=package
     exportpackages_map['version']=version
     exportpackages_map['license']=package_license(package)
     exportpackages_map['license_text']=package_license(package)
+    exportpackages_map['description'] = reply['description']
+    exportpackages_map['homepage'] = reply['url']
+
     exportpackages_map['packageFiles']=exportpackage_files
     exportpackages_map['license_texts']=compile_license_text(package, version)
 
@@ -773,6 +778,56 @@ def print_imagepackages_as_txt(imagepackages):
             print("    invalid:            " + str(imagepackage['cause']))
 
 
+def pkg_recipe_spec_info(package, sub_pkg_path, sub_pkg):
+#    print("package: " + str(package))
+ #   print("spp:     " + str(sub_pkg_path))
+  #  print("sp:      " + str(sub_pkg))
+    recipe_dir = os.path.join(sub_pkg_path,"..")
+    recipe_dir = os.path.join(recipe_dir,"..")
+   # print("top:     " + str(recipe_dir))
+    recipe_files = []
+    for f in glob.glob(recipe_dir + "/*.spec"):
+        recipe_files.append(f)
+    file_count = len(recipe_files)
+
+    description = ""
+    url = ""
+
+    if file_count == 0:
+        print("zer0...")
+        exit(0)
+    elif file_count > 1:
+        print("too many")
+        exit(0)
+    else:
+        recipe_file = recipe_files[0]
+
+        descr = False
+        proj_url = ""
+        #print(" ==> " + recipe_file)
+        with open(recipe_file) as f:
+            for line in f.readlines():
+                if descr:
+                    if search("^[ \t]*$", line):
+                        #print("finished reading description...: " + line)
+                        descr = False
+                    else:
+                        #print("description: " + description)
+                        description += line.replace("\n","")
+                elif line.startswith("URL:"):
+                    proj_url = line.replace("URL:", "").strip()
+                    #print("url: " + url)
+                elif search("%description[ ]*$", line):
+                    #print("description coming up")
+                    descr = True
+
+        reply = {}
+        reply['url'] = proj_url
+        reply['description'] = description
+        return reply
+    
+
+    
 def sub_pkg_to_version(package, sub_pkg_path, sub_pkg):
     ret=sub_pkg_path
     for dir in BUILD_DIRS:
@@ -972,6 +1027,7 @@ def image_to_imagepackages(image_file):
             #verbose("arg 1: " + BUILD_DIR + "\n")
             #verbose("arg 2: " + sub_pkg + "\n")
             verbose("-----------------------------------------package to store: " + package + " from " + sub_pkg)
+
             imagepackages_map['imagepackages'].append({
                 'imagepackage': imagepackage,
                 'package': package,
@@ -1235,7 +1291,7 @@ def main():
             print(json.dumps(imagepackages_map))
         elif args.managed_package != None:
             if args.format=='JSON':
-                exportpackages_map=package_to_exportpackage(args.managed_package, args.managed_sub_packages)
+                exportpackages_map = package_to_exportpackage(args.managed_package, args.managed_sub_packages)
                 print(json.dumps(exportpackages_map))
 
         else:
