@@ -320,7 +320,7 @@ def file_type(file):
     #print("file: " + str(file), file=sys.stderr)
     #print(" *: " + str(result), file=sys.stderr)
     #verbose("result: " + result)
-    if "LSB shared object" in result:
+    if "LSB shared object" in result or ("ELF" in result and "executable" in result):
         #print(" * LSB: " + str(file) + " LSB", file=sys.stderr)
         #verbose("LSB for " + file)
         if "interpreter" in result:
