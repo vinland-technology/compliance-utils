@@ -82,6 +82,7 @@ class YodaSBoM:
             s_pkg['versionInfo'] = package['version']
             s_pkg['homepage'] = homepage
             s_pkg['description'] = ""
+            s_pkg['supplier'] = ""
             s_pkg['downloadLocation'] = ""
             s_pkg['copyrightText'] = ""
             s_pkg['filesAnalyzed'] = False
