@@ -22,17 +22,15 @@ import sys
 import time
 import uuid
 
-PROGRAM_NAME="yoda2sbom (Yoda file to SBoM)"
-PROGRAM_NAME_SHORT="yoda2sbom.py"
-PROGRAM_DESCRIPTION="yoda2sbom.py"
+PROGRAM_NAME="sca (Scancode report file analyser)"
+PROGRAM_NAME_SHORT="sca.py"
+PROGRAM_DESCRIPTION="Reads a Scancode report and extracts information from selected files"
 PROGRAM_URL="https://github.com/vinland-technology/compliance-utils"
-PROGRAM_COPYRIGHT="(c) 2020 Henrik Sandklef<hesa@sandklef.com>"
+PROGRAM_COPYRIGHT="(c) 2021 Henrik Sandklef<hesa@sandklef.com>"
 PROGRAM_LICENSE="GPL-3.0-or-later"
 PROGRAM_AUTHOR="Henrik Sandklef"
 PROGRAM_SEE_ALSO=""
 PROGRAM_EXAMPLES=""
-PROGRAM_EXAMPLES += "  This tool assumes you're located in Yocto's `build` directory.\n"
-PROGRAM_EXAMPLES += "  \n\n"
 
 
 def parse():
