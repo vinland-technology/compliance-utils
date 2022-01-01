@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -o pipefail
+
+LICENSE=$1
+
+LICENSE_TEXT=$(curl -s https://scancode-licensedb.aboutcode.org/$LICENSE.LICENSE)
+
+if [ $? -ne 0 ]
+then
+    echo "Failed downloading https://scancode-licensedb.aboutcode.org/$LICENSE.LICENSE"
+    exit 1
+fi
+
+echo $LICENSE_TEXT | xsel -b
+
+echo $LICENSE_TEXT
