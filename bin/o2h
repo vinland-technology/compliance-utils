@@ -16,9 +16,10 @@ def start_page():
     print("  <title>Compatibility matrix</title>")
     print("</head>")
     print('<style>')
-    with open('matrix.css') as fp:
-        for line in fp.readlines():
-            print(line)
+    print('table{ text-align: center; } .table-container{ width: 500px; height: 300px; overflow: scroll;} table th, table td {   white-space: nowrap;   padding: 10px 20px;   font-family: Arial; } table tr th:first-child, table td:first-child{   position: sticky;   width: 100px;   left: 0;   z-index: 10;   background: lightgrey; } table tr th:first-child{   z-index: 11; } table tr th{   position: sticky;   top: 0;   z-index: 9;   background: lightgrey; }  #rotated {  } ')
+#    with open('matrix.css') as fp:
+#        for line in fp.readlines():
+#            print(line)
     print('</style>')
 #    print('<link rel="stylesheet" href="matrix.css">')
     print("<body>")
