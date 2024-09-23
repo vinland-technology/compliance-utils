@@ -1,0 +1,100 @@
+#!/bin/env python3
+
+from elmat import Elmat
+import json
+import sys
+
+elmat = Elmat(None, True, True)
+_matrix = elmat.matrix()
+
+def start_page():
+    print("<!DOCTYPE html>")
+    print("<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\">")
+    print("<head>")
+    print("  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">")
+
+    print("  <title>Compatibility matrix</title>")
+    print("</head>")
+    print('<style>')
+    with open('matrix.css') as fp:
+        for line in fp.readlines():
+            print(line)
+    print('</style>')
+#    print('<link rel="stylesheet" href="matrix.css">')
+    print("<body>")
+
+
+_value_color = {
+    'Same':'lightgreen',
+    'Yes': 'lightgreen',
+    'No': 'red',
+    'Unknown': 'lightgrey',
+    'Check dependency': 'lightgrey'
+}
+    
+_value_text = {
+    'Same':'Same',
+    'Yes': 'Yes ',
+    'No': ' No ',
+    'Unknown': '????',
+    'Check dependency': '????'
+}
+
+def ____value_color(value):
+    if value == 'Same':
+        return 'lightgreen'
+    if value == 'Yes':
+        return 'lightgreen'
+    if value == 'No':
+        return 'red'
+    if value == 'Unknown':
+        return 'lightgrey'
+    if value == 'Check dependency':
+        return 'lightgrey'
+    return 'yellow'
+
+
+def _cell_info(value):
+    f'      <td style="background-color: {_value_color.get(value)}">{_value_text.get(value)}</td>'
+
+def table_row(lic, matrix_data):
+    print(f'    <tr>')
+    print(f'      <td>{lic}</th>')
+    for value in matrix_data.get(lic).values():
+        print(f'      <td style="background-color: {_value_color.get(value)}">{_value_text.get(value)}</td>') 
+    print(f'    </tr>')
+
+
+def table_start(matrix_data):
+    print(f'  <table>')
+    print(f'    <tr style="min-height: 150px;">')
+    print(f'      <th>MATRIX</th>')
+    for lic in matrix_data:
+        if 'timestamp' in lic:
+            continue
+        elif 'timeformat' in lic:
+            continue
+        else:
+            print(f'      <th><div id="rotated">{lic}</th>')
+    print(f'    </tr>')
+
+def table_end():
+    print(f'  </table>')
+
+def table(matrix_data):
+    table_start(matrix_data)
+    table_row('Proprietary-linked', matrix_data)
+    for lic in matrix_data:
+        if 'Proprietary-linked' in lic:
+            continue
+        if 'timestamp' in lic:
+            continue
+        elif 'timeformat' in lic:
+            continue
+        else:
+            table_row(lic, matrix_data)
+    table_end()
+
+start_page()
+table(_matrix)
+print("</body>")
